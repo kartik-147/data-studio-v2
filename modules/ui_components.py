@@ -253,3 +253,35 @@ def get_type_badge_html(detected_type: str) -> str:
     }
     css_class = type_class_map.get(detected_type, "ds-badge-neutral")
     return f'<span class="ds-badge {css_class}">{detected_type}</span>'
+
+
+def render_placeholder_page(
+    title: str,
+    subtitle: str,
+    icon: str,
+    module_phase: str = "Upcoming Module"
+) -> None:
+    """Render a polished placeholder screen for future analytics modules."""
+    render_page_header(title=title, subtitle=subtitle, icon=icon)
+    
+    render_notification(
+        title=f"{title} is scheduled for implementation",
+        message=f"{subtitle} This module will be activated in an upcoming development phase.",
+        variant="info"
+    )
+    
+    render_empty_state(
+        title="No active analysis dataset",
+        description=f"Once a dataset is loaded and configured, the {title.lower()} engine will generate analytical outputs here.",
+        icon=icon
+    )
+    
+    st.markdown("<h5 style='margin-top: 20px; margin-bottom: 12px;'>Preview Layout Architecture</h5>", unsafe_allow_html=True)
+    render_skeleton_loader(variant="dashboard")
+    
+    col1, col2 = st.columns([6, 4])
+    with col1:
+        render_skeleton_loader(variant="chart")
+    with col2:
+        render_skeleton_loader(variant="table")
+
