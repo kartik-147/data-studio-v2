@@ -34,7 +34,7 @@ from modules.dashboard import render_dashboard_page
 from modules.data_profiler import render_dataset_page
 from modules.data_quality import render_data_quality_page
 from modules.data_preparation import render_data_preparation_page
-from modules.eda_tools import render_eda_page
+from modules.eda_page import render_eda_page
 from modules.visualization import render_visualization_page
 from modules.ai_analyst import render_ai_analyst_page
 from modules.settings import render_settings_page
