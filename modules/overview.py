@@ -1,6 +1,7 @@
 """
 DATA STUDIO v2 — Overview Landing Module (Module 1 Foundation)
 """
+from modules.ui_components import render_notification
 import streamlit as st
 from modules.ui_components import (
     render_page_header,

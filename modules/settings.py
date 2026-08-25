@@ -1,5 +1,7 @@
 """
 DATA STUDIO v2 — Settings Module (Module 1 Foundation)
+=============================================================================
+Manage workspace appearance, view active session properties, and diagnostics.
 """
 import streamlit as st
 from modules.ui_components import (
@@ -10,19 +12,21 @@ from modules.ui_components import (
 )
 from modules.config import APP_VERSION, APP_NAME
 from modules.data_loader import clear_dataset_state
+from modules.auth import get_current_user
+
 
 def render_settings_page() -> None:
     """Render application settings and appearance preferences."""
     render_page_header(
         title="Settings",
-        subtitle="Manage workspace appearance, view session properties, and configure application preferences.",
+        subtitle="Manage workspace appearance, view session diagnostics, and platform preferences.",
         icon="settings"
     )
     
     # Section: Theme & Appearance
     render_section_header(
         title="Appearance & Theme",
-        subtitle="Customize the visual mode across all Data Studio modules."
+        subtitle="Customize the visual mode across all Data Studio views and visualizations."
     )
     
     current_theme = st.session_state.get("theme", "Dark")
@@ -39,14 +43,15 @@ def render_settings_page() -> None:
             st.session_state["theme"] = theme_choice
             st.rerun()
             
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
     
     # Section: Session Information
     render_section_header(
         title="Session Diagnostics",
-        subtitle="Active session parameters and system state."
+        subtitle="Active session parameters, identity, and memory footprint."
     )
     
+    user = get_current_user()
     c1, c2, c3 = st.columns(3)
     with c1:
         render_metric_card(
@@ -64,23 +69,22 @@ def render_settings_page() -> None:
         )
     with c3:
         render_metric_card(
-            label="Platform Version",
-            value=APP_VERSION,
-            status="Stable"
+            label="User Identity",
+            value=user.get("full_name", "User"),
+            description=user.get("email", ""),
+            status="Guest" if user.get("is_guest") else "Registered"
         )
         
-    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
     
     # Section: Reset Session
     render_section_header(
-        title="Workspace State Management",
-        subtitle="Clear or reset session state back to default initialization."
+        title="Dataset State Management",
+        subtitle="Purge active dataset from memory back to initial state."
     )
     
-    if st.button("Reset Session State", key="settings_reset_session_btn"):
+    if st.button("Clear Active Dataset", key="settings_reset_dataset_btn"):
         clear_dataset_state()
         st.session_state["current_page"] = "Overview"
-        st.session_state["theme"] = "Dark"
-        st.success("Session state reset to defaults.")
+        st.toast("Active dataset cleared from memory.")
         st.rerun()
-
