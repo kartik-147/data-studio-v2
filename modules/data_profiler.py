@@ -10,6 +10,8 @@ import pandas as pd
 import streamlit as st
 
 from modules.config import is_dataset_loaded
+from modules.auth import get_current_user
+from modules.firebase_service import log_dataset_upload
 from modules.ui_components import (
     render_page_header,
     render_section_header,
@@ -185,6 +187,13 @@ def _render_dataset_workspace() -> None:
 
     # Top Workspace Controls: Active Dataset Indicator & Replacement Options
     _render_workspace_action_bar(dataset_name, file_type, metadata)
+
+    # Session Guard: Log dataset upload metadata once per dataset signature
+    current_sig = f"{dataset_name}_{metadata.get('total_rows', 0)}_{metadata.get('total_columns', 0)}_{metadata.get('memory_bytes', 0)}"
+    if st.session_state.get("logged_dataset_signature") != current_sig:
+        user_info = get_current_user()
+        log_dataset_upload(user_info, metadata, file_type=file_type)
+        st.session_state["logged_dataset_signature"] = current_sig
 
     # 4 Key Summary Metric Cards
     _render_metric_summary_grid(metadata)

@@ -15,6 +15,7 @@ from modules.user_storage import (
     email_exists,
     save_user
 )
+from modules.firebase_service import log_user_login
 
 # Email Regex Pattern
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
@@ -126,6 +127,7 @@ def register_user(
 
     # Safe user payload for session
     user_info = {
+        "id": new_user["user_id"],
         "user_id": new_user["user_id"],
         "full_name": new_user["full_name"],
         "email": new_user["email"]
@@ -159,6 +161,7 @@ def authenticate_user(email: str, password: str) -> Tuple[bool, str, Optional[Di
         return False, "Invalid email or password.", None
 
     user_info = {
+        "id": user["user_id"],
         "user_id": user["user_id"],
         "full_name": user["full_name"],
         "email": user["email"]
@@ -180,6 +183,7 @@ def get_current_user() -> Dict[str, Any]:
     """Retrieve metadata of the currently authenticated identity."""
     if not is_authenticated():
         return {
+            "id": "anonymous",
             "user_id": "anonymous",
             "full_name": "Anonymous",
             "email": "",
@@ -190,6 +194,7 @@ def get_current_user() -> Dict[str, Any]:
 
     user_info = st.session_state.get("user_info", {})
     return {
+        "id": user_info.get("user_id", "usr_unknown"),
         "user_id": user_info.get("user_id", "usr_unknown"),
         "full_name": user_info.get("full_name", "User"),
         "email": user_info.get("email", ""),
@@ -205,11 +210,17 @@ def login_user_session(user_info: Dict[str, Any]) -> None:
     st.session_state["auth_provider"] = "email"
     st.session_state["is_guest"] = False
     st.session_state["user_info"] = {
-        "user_id": user_info["user_id"],
+        "id": user_info.get("id") or user_info.get("user_id"),
+        "user_id": user_info.get("user_id") or user_info.get("id"),
         "full_name": user_info["full_name"],
         "email": user_info["email"]
     }
     st.session_state["current_page"] = "Overview"
+
+    # Session Guard: Log login event once per session
+    if not st.session_state.get("login_event_logged", False):
+        log_user_login(st.session_state["user_info"])
+        st.session_state["login_event_logged"] = True
 
 
 def start_guest_session() -> None:
@@ -221,11 +232,23 @@ def start_guest_session() -> None:
     st.session_state["auth_provider"] = "guest"
     st.session_state["is_guest"] = True
     st.session_state["user_info"] = {
+        "id": "guest_session",
         "user_id": "guest_session",
         "full_name": "Guest User",
         "email": "guest@datastudio.internal"
     }
     st.session_state["current_page"] = "Overview"
+
+    # Session Guard: Log guest session once per session
+    if not st.session_state.get("login_event_logged", False):
+        log_user_login({
+            "id": "guest_session",
+            "user_id": "guest_session",
+            "full_name": "Guest User",
+            "email": "guest@datastudio.internal",
+            "is_guest": True
+        })
+        st.session_state["login_event_logged"] = True
 
 
 def logout_user() -> None:
@@ -238,6 +261,8 @@ def logout_user() -> None:
     st.session_state["auth_provider"] = None
     st.session_state["user_info"] = None
     st.session_state["is_guest"] = False
+    st.session_state["login_event_logged"] = False
+    st.session_state["logged_dataset_signature"] = None
     
     # 2. Reset Dataset State
     st.session_state["dataset"] = None

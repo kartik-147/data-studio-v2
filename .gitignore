@@ -9,8 +9,12 @@ venv/
 ENV/
 .venv/
 
-# Streamlit
+# Streamlit & Secrets
 .streamlit/secrets.toml
+.streamlit/secrets.*
+serviceAccountKey*.json
+*firebase*.json
+*credential*.json
 
 # Data & Exports
 temp_uploads/

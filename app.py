@@ -1,72 +1,34 @@
 """
+DATA STUDIO v2 — Main Application Shell & Dynamic Router
 =============================================================================
-DATA STUDIO v2 — MAIN APPLICATION ENTRY POINT
-Professional Analytics Platform Architecture
-=============================================================================
+Unified application entry point managing session state, theme injection,
+sidebar navigation, and authentication route protection.
 """
+import sys
+import os
+import importlib
 import streamlit as st
 
-# Automatic dynamic reload for modular development
-import importlib
-import modules.config
-import modules.user_storage
-import modules.auth
-import modules.login_page
-import modules.data_loader
-import modules.ui_components
-import modules.dashboard_engine
-import modules.data_quality_engine
-import modules.overview
-import modules.dashboard
-import modules.data_profiler
-import modules.data_quality
-import modules.data_preparation
-import modules.eda_tools
-import modules.visualization
-import modules.ai_analyst
-import modules.settings
+# Ensure project root is in Python path
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-importlib.reload(modules.config)
-importlib.reload(modules.user_storage)
-importlib.reload(modules.auth)
-importlib.reload(modules.login_page)
-importlib.reload(modules.data_loader)
-importlib.reload(modules.ui_components)
-importlib.reload(modules.dashboard_engine)
-importlib.reload(modules.data_quality_engine)
-importlib.reload(modules.overview)
-importlib.reload(modules.dashboard)
-importlib.reload(modules.data_profiler)
-importlib.reload(modules.data_quality)
-importlib.reload(modules.data_preparation)
-importlib.reload(modules.eda_tools)
-importlib.reload(modules.visualization)
-importlib.reload(modules.ai_analyst)
-importlib.reload(modules.settings)
-
-# Core Configuration & Design System
+# Import configuration, state, and themes
 from modules.config import (
     APP_NAME,
-    APP_SUBTITLE,
     APP_VERSION,
     NAV_GROUPS,
-    ALL_PAGES,
     init_session_state
 )
-from modules.ui_components import (
-    load_css,
-    get_icon_svg
-)
-
-# Authentication & Security Layer (Module 5)
+from modules.ui_components import load_css
 from modules.auth import (
     is_authenticated,
     get_current_user,
     logout_user
 )
-from modules.login_page import render_login_page
+from modules.firebase_service import is_admin_user
 
-# Page Renderers
+# Import Page Views
+from modules.login_page import render_login_page
 from modules.overview import render_overview_page
 from modules.dashboard import render_dashboard_page
 from modules.data_profiler import render_dataset_page
@@ -76,6 +38,7 @@ from modules.eda_tools import render_eda_page
 from modules.visualization import render_visualization_page
 from modules.ai_analyst import render_ai_analyst_page
 from modules.settings import render_settings_page
+from modules.admin_analytics import render_admin_analytics_page
 
 # Streamlit Page Settings
 st.set_page_config(
@@ -95,6 +58,7 @@ def render_sidebar() -> str:
     """Render the structured sidebar navigation according to the design system."""
     current_page = st.session_state.get("current_page", "Overview")
     current_theme = st.session_state.get("theme", "Dark")
+    user = get_current_user()
     
     with st.sidebar:
         # Application Brand
@@ -112,7 +76,7 @@ def render_sidebar() -> str:
         # Navigation Groups
         for group_name, pages in NAV_GROUPS.items():
             if group_name == "SYSTEM":
-                continue  # Render settings in bottom area
+                continue  # Render settings and admin in bottom area
                 
             st.markdown(f'<div class="ds-nav-group-title">{group_name}</div>', unsafe_allow_html=True)
             for page in pages:
@@ -126,7 +90,7 @@ def render_sidebar() -> str:
                         st.rerun()
                         
         # Bottom Area
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
         st.markdown('<div class="ds-nav-group-title">SYSTEM</div>', unsafe_allow_html=True)
         
         # Settings Navigation
@@ -135,6 +99,14 @@ def render_sidebar() -> str:
             if st.session_state["current_page"] != "Settings":
                 st.session_state["current_page"] = "Settings"
                 st.rerun()
+
+        # Admin Analytics Navigation (Visible only to authorized admin)
+        if is_admin_user(user):
+            is_admin_active = (current_page == "Admin Analytics")
+            if st.button("Admin Analytics", key="nav_Admin_Analytics", use_container_width=True, type="primary" if is_admin_active else "secondary"):
+                if st.session_state["current_page"] != "Admin Analytics":
+                    st.session_state["current_page"] = "Admin Analytics"
+                    st.rerun()
                 
         # Theme Toggle
         theme_toggle_label = "Switch to Light Mode" if current_theme == "Dark" else "Switch to Dark Mode"
@@ -143,7 +115,6 @@ def render_sidebar() -> str:
             st.rerun()
 
         # Authenticated User Identity Card & Sign Out
-        user = get_current_user()
         badge_cls = "ds-user-badge-guest" if user.get("is_guest") else "ds-user-badge-registered"
         badge_text = "Guest Session" if user.get("is_guest") else "Registered Account"
         
@@ -192,6 +163,8 @@ def main():
         render_ai_analyst_page()
     elif active_page == "Settings":
         render_settings_page()
+    elif active_page == "Admin Analytics":
+        render_admin_analytics_page()
     else:
         render_overview_page()
 

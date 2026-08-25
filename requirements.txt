@@ -5,3 +5,4 @@ plotly>=5.20.0
 openpyxl>=3.1.0
 bcrypt>=4.1.0
 xlrd>=1.2.0
+firebase-admin>=6.5.0
