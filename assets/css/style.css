@@ -179,26 +179,53 @@ html, body, [class*="css"] {
 header[data-testid="stHeader"] {
   background: transparent !important;
   color: var(--text-primary) !important;
-  z-index: 999 !important;
-  display: block !important;
+  z-index: 99999 !important;
 }
 
-/* Sidebar collapse/expand button — only style the BUTTON, not the wrapper div.
-   Styling the wrapper div breaks Streamlit's internal positioning logic. */
-button[data-testid="stSidebarCollapseButton"],
-div[data-testid="stSidebarCollapsedControl"] button {
+/* Ensure the sidebar collapse / expand toggle button is always crisp, prominent and visible */
+div[data-testid="stSidebarCollapsedControl"],
+div[data-testid="collapsedControl"] {
+  display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
+  z-index: 999999 !important;
+  position: fixed !important;
+  top: 12px !important;
+  left: 12px !important;
+}
+
+button[data-testid="stSidebarCollapseButton"],
+div[data-testid="stSidebarCollapsedControl"] button,
+div[data-testid="collapsedControl"] button {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  align-items: center !important;
+  justify-content: center !important;
   color: var(--text-primary) !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  box-shadow: var(--shadow-sm) !important;
+  padding: 4px 6px !important;
+  cursor: pointer !important;
+}
+
+div[data-testid="stSidebarCollapsedControl"] button:hover,
+button[data-testid="stSidebarCollapseButton"]:hover {
+  background: var(--surface-hover) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
 }
 
 /* Make the collapse button chevron SVG readable */
 div[data-testid="stSidebarCollapsedControl"] svg,
-button[data-testid="stSidebarCollapseButton"] svg {
+button[data-testid="stSidebarCollapseButton"] svg,
+div[data-testid="collapsedControl"] svg {
   color: var(--text-primary) !important;
   stroke: var(--text-primary) !important;
-  width: 16px !important;
-  height: 16px !important;
+  width: 18px !important;
+  height: 18px !important;
 }
 
 div[data-testid="stToolbar"] {
@@ -399,14 +426,14 @@ div[data-testid="stSidebarNav"] {
 [data-testid="stSidebar"] .stButton > button {
   background: transparent !important;
   border: 1px solid transparent !important;
-  color: var(--text-secondary) !important;
+  color: var(--text-primary) !important;
   font-size: 15px !important;
-  font-weight: 500 !important;
-  height: 40px !important;
+  font-weight: 600 !important;
+  height: 42px !important;
   width: 100% !important;
-  margin: 2px 0 !important;
-  padding: 8px 12px !important;
-  border-radius: 7px !important;
+  margin: 3px 0 !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
   text-align: left !important;
   display: flex !important;
   align-items: center !important;
@@ -418,7 +445,7 @@ div[data-testid="stSidebarNav"] {
 [data-testid="stSidebar"] .stButton > button:hover {
   background: var(--surface-hover) !important;
   border-color: var(--border) !important;
-  color: var(--text-primary) !important;
+  color: var(--accent) !important;
   transform: none !important;
 }
 
@@ -426,9 +453,9 @@ div[data-testid="stSidebarNav"] {
 [data-testid="stSidebar"] .stButton > button[kind="primary"],
 [data-testid="stSidebar"] .stButton > button[data-testid="baseButton-primary"] {
   background: var(--accent-subtle) !important;
-  border-color: var(--accent-subtle-border) !important;
+  border: 1px solid var(--accent-subtle-border) !important;
   color: var(--accent) !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   box-shadow: none !important;
 }
 

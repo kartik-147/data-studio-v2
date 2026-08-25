@@ -232,6 +232,48 @@ def render_sidebar() -> str:
     return st.session_state.get("current_page", "Overview")
 
 
+import streamlit.components.v1 as components
+
+
+def ensure_sidebar_expanded() -> None:
+    """Ensure the sidebar is automatically opened/expanded upon logging into the workspace."""
+    components.html(
+        """
+        <script>
+        (function() {
+            function autoExpand() {
+                try {
+                    const doc = window.parent.document;
+                    if (!doc) return;
+                    const sidebar = doc.querySelector('section[data-testid="stSidebar"]');
+                    const isCollapsed = !sidebar || sidebar.getAttribute('aria-expanded') === 'false' || sidebar.clientWidth < 50;
+                    
+                    if (isCollapsed) {
+                        const btn = doc.querySelector(
+                            'button[data-testid="stSidebarCollapseButton"], ' +
+                            '[data-testid="stSidebarCollapsedControl"] button, ' +
+                            '[data-testid="collapsedControl"] button, ' +
+                            'button[aria-label="Expand sidebar"], ' +
+                            'button[aria-label="Open sidebar"]'
+                        );
+                        if (btn) {
+                            btn.click();
+                        }
+                    }
+                } catch(e) {}
+            }
+            autoExpand();
+            setTimeout(autoExpand, 100);
+            setTimeout(autoExpand, 300);
+            setTimeout(autoExpand, 700);
+        })();
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
+
+
 def main() -> None:
     """Main routing dispatcher with route-level authentication protection."""
 
@@ -239,6 +281,9 @@ def main() -> None:
     if not is_authenticated():
         render_login_page()
         return
+
+    # Auto-expand sidebar on login/navigation
+    ensure_sidebar_expanded()
 
     # Render clean sidebar and get active page
     active_page = render_sidebar()
