@@ -75,7 +75,7 @@ def load_css(theme: str = "Light") -> None:
     if theme.lower() == "dark":
         dark_override = """
         /* Propagate dark theme tokens globally */
-        .stApp, .main, [data-testid="stSidebar"], body {
+        .stApp, .main, body {
             background-color: var(--bg-primary) !important;
         }
         """
