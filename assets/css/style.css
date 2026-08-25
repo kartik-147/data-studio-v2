@@ -179,14 +179,34 @@ html, body, [class*="css"] {
 header[data-testid="stHeader"] {
   background: transparent !important;
   color: var(--text-primary) !important;
+  z-index: 999999 !important;
+  display: block !important;
 }
 
-/* Ensure sidebar collapse/expand chevron button remains clearly visible */
-header[data-testid="stHeader"] button {
+/* Ensure sidebar collapse/expand chevron button remains clearly visible at top left */
+header[data-testid="stHeader"] button,
+button[data-testid="stSidebarCollapseButton"],
+div[data-testid="stSidebarCollapsedControl"],
+div[data-testid="stSidebarCollapsedControl"] button {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
   color: var(--text-primary) !important;
   background: var(--surface) !important;
   border: 1px solid var(--border) !important;
   border-radius: 6px !important;
+  z-index: 9999999 !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Ensure SVG icon inside the sidebar collapse/expand button is clearly visible */
+div[data-testid="stSidebarCollapsedControl"] svg,
+button[data-testid="stSidebarCollapseButton"] svg {
+  color: var(--text-primary) !important;
+  fill: var(--text-primary) !important;
+  stroke: var(--text-primary) !important;
+  width: 18px !important;
+  height: 18px !important;
 }
 
 div[data-testid="stToolbar"] {
