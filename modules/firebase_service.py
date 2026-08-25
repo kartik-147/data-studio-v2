@@ -66,9 +66,19 @@ def get_firestore_client():
             except Exception:
                 pass
 
+        # Check for optional database identifier in secrets
+        db_id = None
+        try:
+            if hasattr(st, "secrets") and "firebase" in st.secrets:
+                db_id = st.secrets["firebase"].get("database_id") or st.secrets["firebase"].get("database")
+        except Exception:
+            pass
+
         if cred is not None:
-            firebase_admin.initialize_app(cred)
-            return firestore.client()
+            app = firebase_admin.initialize_app(cred)
+            if db_id:
+                return firestore.client(app=app, database=db_id)
+            return firestore.client(app=app)
 
         return None
     except Exception as e:
