@@ -1,0 +1,21 @@
+Customer_ID,Signup_Date,Region,Plan_Tier,MRR,Discount_Pct,Satisfaction_Score,Active_Users,Status,Contract_Type
+CUST-1001,2025-01-15,North America,Enterprise,2450.00,0.10,4.8,142,Active,Annual
+CUST-1002,2025-01-18,Europe,Pro,450.00,0.00,4.2,28,Active,Monthly
+CUST-1003,2025-01-22,Asia Pacific,Starter,99.00,0.05,3.9,8,Active,Monthly
+CUST-1004,2025-02-01,North America,Pro,520.00,0.15,4.5,35,Active,Annual
+CUST-1005,2025-02-10,Latin America,Starter,99.00,0.00,4.0,6,Churned,Monthly
+CUST-1006,2025-02-14,Europe,Enterprise,3100.00,0.20,4.9,210,Active,Annual
+CUST-1007,2025-02-20,North America,Pro,450.00,0.00,3.6,22,Churned,Monthly
+CUST-1008,2025-03-05,Asia Pacific,Pro,480.00,0.10,4.4,31,Active,Annual
+CUST-1009,2025-03-12,Europe,Starter,99.00,0.00,4.1,9,Active,Monthly
+CUST-1010,2025-03-18,North America,Enterprise,4200.00,0.15,4.7,280,Active,Annual
+CUST-1011,2025-03-25,Latin America,Pro,450.00,0.05,3.8,19,Active,Monthly
+CUST-1012,2025-04-02,North America,Starter,99.00,0.00,4.3,12,Active,Monthly
+CUST-1013,2025-04-11,Europe,Pro,490.00,0.10,4.6,34,Active,Annual
+CUST-1014,2025-04-19,Asia Pacific,Enterprise,2800.00,0.12,4.8,165,Active,Annual
+CUST-1015,2025-04-28,North America,Pro,450.00,0.00,3.5,20,Churned,Monthly
+CUST-1016,2025-05-04,Europe,Starter,99.00,0.00,4.0,7,Active,Monthly
+CUST-1017,2025-05-15,North America,Enterprise,3850.00,0.18,4.9,240,Active,Annual
+CUST-1018,2025-05-22,Latin America,Starter,99.00,0.00,3.7,5,Churned,Monthly
+CUST-1019,2025-06-01,Asia Pacific,Pro,460.00,0.05,4.5,29,Active,Annual
+CUST-1020,2025-06-10,Europe,Enterprise,3400.00,0.15,4.8,195,Active,Annual

@@ -1,0 +1,16 @@
+Order_ID,Order_Date,Category,Sub_Category,Sales,Quantity,Discount,Profit,Region,Ship_Mode
+ORD-2025-101,2025-01-04,Technology,Phones,899.99,2,0.1,180.50,East,Second Class
+ORD-2025-102,2025-01-05,Furniture,Chairs,350.00,3,0.2,45.00,West,Standard Class
+ORD-2025-103,2025-01-08,Office Supplies,Storage,120.50,5,0.0,32.40,Central,First Class
+ORD-2025-104,2025-01-11,Technology,Laptops,1499.00,1,0.0,350.00,South,Same Day
+ORD-2025-105,2025-01-14,Furniture,Tables,650.00,2,0.3,-45.00,East,Standard Class
+ORD-2025-106,2025-01-18,Office Supplies,Paper,45.00,8,0.0,18.20,West,Standard Class
+ORD-2025-107,2025-01-22,Technology,Accessories,85.00,4,0.0,26.00,Central,Second Class
+ORD-2025-108,2025-01-25,Furniture,Bookcases,420.00,1,0.15,30.00,East,Standard Class
+ORD-2025-109,2025-02-02,Office Supplies,Binders,28.00,6,0.2,7.50,South,First Class
+ORD-2025-110,2025-02-06,Technology,Phones,649.00,1,0.0,140.00,West,Standard Class
+ORD-2025-111,2025-02-12,Office Supplies,Appliances,210.00,2,0.1,55.00,East,Second Class
+ORD-2025-112,2025-02-19,Furniture,Furnishings,95.00,3,0.0,28.50,Central,Standard Class
+ORD-2025-113,2025-02-25,Technology,Machines,1150.00,1,0.2,160.00,South,Standard Class
+ORD-2025-114,2025-03-01,Office Supplies,Art,34.00,5,0.0,12.00,West,Same Day
+ORD-2025-115,2025-03-08,Technology,Phones,799.00,2,0.05,190.00,East,First Class

@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Data & Exports
+temp_uploads/
+user_data/
+*.csv_backup
+*.parquet
+
+# IDEs & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
