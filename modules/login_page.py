@@ -1,8 +1,14 @@
 """
-DATA STUDIO v2 — Authentication & Login View (Premium UI v2)
+DATA STUDIO v2 — Authentication & Login View (Screenshot Matched UI)
 =============================================================================
-Professional full-screen authentication interface. Visual redesign only.
-All auth business logic (authenticate_user, register_user, etc.) unchanged.
+Centered, clean SaaS layout matching the user design screenshot.
+Features:
+- Top bar with Logo + Brand Name on left, "Dark Mode" pill on right.
+- Centered Hero: "Exploratory Data Analysis Workbench." (with blue dot).
+- Subtitle: "Automated profiling, statistical quality audits, interactive visualization, and targeted analytical workflows."
+- 4 Feature Cards in a clean horizontal row (Dataset Profiling, Quality Scoring, Visual Analytics, Automated Insights).
+- Centered Auth Box: "Welcome to Data Studio", subtitle, Email & Password fields, Sign In, Create Account & Guest Access.
+All backend authentication logic is preserved completely intact.
 """
 from typing import Optional
 import streamlit as st
@@ -21,134 +27,180 @@ from modules.auth import (
 
 
 def render_login_page() -> None:
-    """Render the full-screen premium light-first authentication page."""
+    """Render the exact centered clean layout matching the user screenshot."""
     current_theme = st.session_state.get("theme", "Light")
+    is_dark = current_theme == "Dark"
 
-    # Top bar: version info + theme toggle
+    # =========================================================================
+    # 1. TOP HEADER BAR
+    # =========================================================================
     top_l, top_r = st.columns([8, 2])
     with top_l:
+        # Pulse / Activity logo + Brand Name
         st.markdown(
-            f'<div style="display:flex;align-items:center;gap:10px;padding:6px 0;">'
-            f'<div style="width:24px;height:24px;background:var(--accent);border-radius:5px;'
-            f'display:flex;align-items:center;justify-content:center;color:#fff;'
-            f'font-weight:700;font-size:10px;">DS</div>'
-            f'<span style="font-size:14px;font-weight:700;color:var(--text-primary);'
-            f'letter-spacing:-0.025em;">{APP_NAME}</span>'
-            f'<span style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);">'
-            f'{APP_VERSION}</span>'
-            f'</div>',
+            f"""
+            <div style="display: flex; align-items: center; gap: 8px; padding: 4px 0;">
+                <span style="color: #3b82f6; display: flex; align-items: center;">
+                    {get_icon_svg("activity", 20)}
+                </span>
+                <span style="font-size: 16px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">
+                    {APP_NAME}
+                </span>
+            </div>
+            """,
             unsafe_allow_html=True
         )
     with top_r:
-        is_dark = current_theme == "Dark"
-        icon_svg = get_icon_svg("sun" if is_dark else "moon", 13)
-        toggle_label = f"{'☀️' if is_dark else '🌙'} {'Light' if is_dark else 'Dark'}"
+        # Clean rounded outline toggle button like in screenshot
+        toggle_label = "Light Mode" if is_dark else "Dark Mode"
         if st.button(toggle_label, key="login_theme_toggle_btn", use_container_width=True):
             st.session_state["theme"] = "Light" if is_dark else "Dark"
             st.rerun()
 
-    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
-
-    col_hero, col_auth = st.columns([5.5, 4.5], gap="large")
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
     # =========================================================================
-    # LEFT COLUMN — Brand Showcase & Platform Capabilities
+    # 2. HERO HEADLINE & SUBTITLE (Centered)
     # =========================================================================
-    with col_hero:
-        hero_html = (
-            f'<div class="ds-login-hero">'
-            # Header
-            f'<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">'
-            f'<div class="ds-brand-badge" style="width:42px;height:42px;font-size:16px;">DS</div>'
-            f'<div>'
-            f'<div style="font-size:22px;font-weight:800;color:var(--text-primary);'
-            f'letter-spacing:-0.035em;line-height:1.1;">{APP_NAME}</div>'
-            f'<div style="font-size:11px;font-family:var(--font-mono);color:var(--accent);">'
-            f'{APP_VERSION} · Analytics Platform</div>'
-            f'</div>'
-            f'</div>'
-            # Headline
-            f'<div style="font-size:17px;font-weight:700;color:var(--text-primary);'
-            f'letter-spacing:-0.025em;margin-bottom:6px;">Upload, explore, and understand your data.</div>'
-            f'<div style="font-size:13px;color:var(--text-secondary);line-height:1.55;margin-bottom:20px;">'
-            f'A comprehensive local analytics platform providing data quality profiling, '
-            f'dynamic dashboards, visualization studio, and AI-powered exploration.'
-            f'</div>'
-            # Feature cards
-            f'<div class="ds-login-feature-list">'
-            f'<div class="ds-login-feature">'
-            f'<div class="ds-login-feature-icon">{get_icon_svg("database", 15)}</div>'
-            f'<div>'
-            f'<div class="ds-login-feature-title">Dataset Workspace</div>'
-            f'<div class="ds-login-feature-desc">Multi-format CSV/XLSX loaders with automatic schema profiling and type inference.</div>'
-            f'</div>'
-            f'</div>'
-            f'<div class="ds-login-feature">'
-            f'<div class="ds-login-feature-icon">{get_icon_svg("layout-dashboard", 15)}</div>'
-            f'<div>'
-            f'<div class="ds-login-feature-title">Dynamic Dashboards</div>'
-            f'<div class="ds-login-feature-desc">Automatic feature prioritization, theme-adaptive Plotly charts, and factual insights.</div>'
-            f'</div>'
-            f'</div>'
-            f'<div class="ds-login-feature">'
-            f'<div class="ds-login-feature-icon">{get_icon_svg("shield-check", 15)}</div>'
-            f'<div>'
-            f'<div class="ds-login-feature-title">Data Quality Engine</div>'
-            f'<div class="ds-login-feature-desc">Transparent 0–100 health scoring across completeness, uniqueness, and validity.</div>'
-            f'</div>'
-            f'</div>'
-            f'<div class="ds-login-feature">'
-            f'<div class="ds-login-feature-icon">{get_icon_svg("bar-chart-3", 15)}</div>'
-            f'<div>'
-            f'<div class="ds-login-feature-title">Visualization Studio</div>'
-            f'<div class="ds-login-feature-desc">Point-and-click chart builder with 8+ chart types, no-code configuration.</div>'
-            f'</div>'
-            f'</div>'
-            f'</div>'
-            # Trust badge footer
-            f'<div class="ds-login-trust">'
-            f'{get_icon_svg("shield", 13)}'
-            f'<span>Secure bcrypt password hashing · Isolated session architecture</span>'
-            f'</div>'
-            f'</div>'
-        )
-        st.markdown(hero_html, unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div style="text-align: center; max-width: 820px; margin: 0 auto 24px auto;">
+            <h1 style="font-size: 38px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.035em; margin-bottom: 12px; line-height: 1.15;">
+                Exploratory Data Analysis Workbench<span style="color: #2563eb;">.</span>
+            </h1>
+            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin: 0; font-weight: 450;">
+                Automated profiling, statistical quality audits, interactive visualization, and targeted analytical workflows.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     # =========================================================================
-    # RIGHT COLUMN — Auth Tabs & Guest Access
+    # 3. 4 FEATURE CARDS (Horizontal Row matching screenshot)
     # =========================================================================
-    with col_auth:
-        # Auth panel header
+    f1, f2, f3, f4 = st.columns(4, gap="small")
+    
+    with f1:
         st.markdown(
-            '<div style="margin-bottom:14px;">'
-            '<div style="font-size:18px;font-weight:700;color:var(--text-primary);'
-            'letter-spacing:-0.025em;">Access Workspace</div>'
-            '<div style="font-size:12.5px;color:var(--text-secondary);margin-top:3px;">'
-            'Sign in with your credentials or explore in guest mode.</div>'
-            '</div>',
+            f"""
+            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; gap: 10px; align-items: flex-start; min-height: 96px; box-shadow: var(--shadow-xs);">
+                <div style="color: #2563eb; background: rgba(37,99,235,0.08); border-radius: 6px; padding: 6px; display: flex; align-items: center; justify-content: center;">
+                    {get_icon_svg("database", 16)}
+                </div>
+                <div>
+                    <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px;">Dataset Profiling</div>
+                    <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">Schema inspection, null auditing, and type classification.</div>
+                </div>
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
-        tab_signin, tab_register = st.tabs(["Sign In", "Create Account"])
+    with f2:
+        st.markdown(
+            f"""
+            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; gap: 10px; align-items: flex-start; min-height: 96px; box-shadow: var(--shadow-xs);">
+                <div style="color: #059669; background: rgba(5,150,105,0.08); border-radius: 6px; padding: 6px; display: flex; align-items: center; justify-content: center;">
+                    {get_icon_svg("shield-check", 16)}
+                </div>
+                <div>
+                    <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px;">Quality Scoring</div>
+                    <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">Composite health rating across completeness and uniqueness.</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-        # ── Sign In Tab ────────────────────────────────────────────────────
-        with tab_signin:
+    with f3:
+        st.markdown(
+            f"""
+            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; gap: 10px; align-items: flex-start; min-height: 96px; box-shadow: var(--shadow-xs);">
+                <div style="color: #7c3aed; background: rgba(124,58,237,0.08); border-radius: 6px; padding: 6px; display: flex; align-items: center; justify-content: center;">
+                    {get_icon_svg("bar-chart-3", 16)}
+                </div>
+                <div>
+                    <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px;">Visual Analytics</div>
+                    <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">Correlation heatmaps, distribution grids, and outliers.</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with f4:
+        st.markdown(
+            f"""
+            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; gap: 10px; align-items: flex-start; min-height: 96px; box-shadow: var(--shadow-xs);">
+                <div style="color: #d97706; background: rgba(217,119,6,0.08); border-radius: 6px; padding: 6px; display: flex; align-items: center; justify-content: center;">
+                    {get_icon_svg("cpu", 16)}
+                </div>
+                <div>
+                    <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px;">Automated Insights</div>
+                    <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">Natural language querying and smart analytical summaries.</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.markdown("<div style='height: 36px;'></div>", unsafe_allow_html=True)
+
+    # =========================================================================
+    # 4. CENTERED LOGIN FORM (Clean card like screenshot)
+    # =========================================================================
+    _, col_center, _ = st.columns([1.2, 2.0, 1.2])
+
+    with col_center:
+        st.markdown(
+            """
+            <div style="text-align: center; margin-bottom: 24px;">
+                <h2 style="font-size: 26px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.03em; margin: 0 0 8px 0;">
+                    Welcome to Data Studio
+                </h2>
+                <p style="font-size: 13.5px; color: var(--text-secondary); margin: 0;">
+                    Sign in to access your analytics workspace.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Mode switch state between Sign In and Registration
+        if "auth_view" not in st.session_state:
+            st.session_state["auth_view"] = "signin"
+
+        if st.session_state["auth_view"] == "signin":
             with st.form("signin_form", clear_on_submit=False):
+                st.markdown(
+                    "<span style='font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;'>EMAIL</span>",
+                    unsafe_allow_html=True
+                )
                 email = st.text_input(
-                    "Email Address",
+                    "EMAIL",
+                    value="bendrekartik47@gmail.com",
                     placeholder="name@company.com",
-                    key="signin_email_field"
+                    key="signin_email_field",
+                    label_visibility="collapsed"
+                )
+
+                st.markdown(
+                    "<div style='height: 8px;'></div><span style='font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;'>PASSWORD</span>",
+                    unsafe_allow_html=True
                 )
                 password = st.text_input(
-                    "Password",
+                    "PASSWORD",
                     type="password",
-                    placeholder="••••••••",
-                    key="signin_password_field"
+                    placeholder="Enter your password",
+                    key="signin_password_field",
+                    label_visibility="collapsed"
                 )
-                st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
+
+                st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
                 submit_signin = st.form_submit_button(
-                    "Sign In →",
-                    type="primary",
+                    "Sign In",
+                    type="secondary",
                     use_container_width=True
                 )
 
@@ -166,36 +218,72 @@ def render_login_page() -> None:
                             variant="error"
                         )
 
-        # ── Register Tab ───────────────────────────────────────────────────
-        with tab_register:
+            # Bottom two action buttons in a row: [Create Account] [Guest Access]
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            act_col1, act_col2 = st.columns(2, gap="small")
+            with act_col1:
+                if st.button("Create Account", key="goto_register_btn", use_container_width=True):
+                    st.session_state["auth_view"] = "register"
+                    st.rerun()
+            with act_col2:
+                if st.button("Guest Access", key="guest_access_btn", use_container_width=True):
+                    start_guest_session()
+                    st.toast("Entered Guest Demo mode.")
+                    st.rerun()
+
+        else:
+            # Registration View
             with st.form("register_form", clear_on_submit=False):
+                st.markdown(
+                    "<span style='font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;'>FULL NAME</span>",
+                    unsafe_allow_html=True
+                )
                 reg_name = st.text_input(
-                    "Full Name",
+                    "FULL NAME",
                     placeholder="e.g. Alex Johnson",
-                    key="reg_name_field"
+                    key="reg_name_field",
+                    label_visibility="collapsed"
+                )
+
+                st.markdown(
+                    "<div style='height: 8px;'></div><span style='font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;'>EMAIL</span>",
+                    unsafe_allow_html=True
                 )
                 reg_email = st.text_input(
-                    "Email Address",
+                    "EMAIL",
                     placeholder="name@company.com",
-                    key="reg_email_field"
+                    key="reg_email_field",
+                    label_visibility="collapsed"
+                )
+
+                st.markdown(
+                    "<div style='height: 8px;'></div><span style='font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;'>PASSWORD</span>",
+                    unsafe_allow_html=True
                 )
                 reg_pass = st.text_input(
-                    "Password",
+                    "PASSWORD",
                     type="password",
                     placeholder="Minimum 8 characters",
-                    help="Password must be at least 8 characters long.",
-                    key="reg_pass_field"
+                    key="reg_pass_field",
+                    label_visibility="collapsed"
+                )
+
+                st.markdown(
+                    "<div style='height: 8px;'></div><span style='font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;'>CONFIRM PASSWORD</span>",
+                    unsafe_allow_html=True
                 )
                 reg_confirm = st.text_input(
-                    "Confirm Password",
+                    "CONFIRM PASSWORD",
                     type="password",
                     placeholder="Repeat password",
-                    key="reg_confirm_field"
+                    key="reg_confirm_field",
+                    label_visibility="collapsed"
                 )
-                st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
+
+                st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
                 submit_register = st.form_submit_button(
-                    "Create Account →",
-                    type="primary",
+                    "Create Account",
+                    type="secondary",
                     use_container_width=True
                 )
 
@@ -218,25 +306,7 @@ def render_login_page() -> None:
                             variant="error"
                         )
 
-        # ── Guest Access Divider & Button ──────────────────────────────────
-        divider_html = (
-            '<div style="position:relative;text-align:center;margin:16px 0 12px 0;">'
-            '<hr style="border:none;border-top:1px solid var(--border);margin:0;">'
-            '<span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);'
-            'background:var(--bg-primary);padding:0 10px;font-size:10px;color:var(--text-muted);'
-            'font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">or</span>'
-            '</div>'
-            '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;text-align:center;">'
-            'Explore sample datasets, dashboards, and analytics tools without an account.'
-            '</div>'
-        )
-        st.markdown(divider_html, unsafe_allow_html=True)
-
-        if st.button(
-            "Explore as Guest  →",
-            key="guest_access_btn",
-            use_container_width=True
-        ):
-            start_guest_session()
-            st.toast("Entered Guest Demo mode.")
-            st.rerun()
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            if st.button("← Back to Sign In", key="back_to_signin_btn", use_container_width=True):
+                st.session_state["auth_view"] = "signin"
+                st.rerun()
