@@ -263,6 +263,7 @@ def _render_summary_and_composition_section(
     theme: str
 ) -> None:
     """Render dataset structural summary side-by-side with schema donut chart."""
+    counts = metadata.get("type_counts", {})
     col_summary, col_donut = st.columns([5, 5], gap="large")
 
     with col_summary:
