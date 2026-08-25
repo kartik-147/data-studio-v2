@@ -179,34 +179,26 @@ html, body, [class*="css"] {
 header[data-testid="stHeader"] {
   background: transparent !important;
   color: var(--text-primary) !important;
-  z-index: 999999 !important;
+  z-index: 999 !important;
   display: block !important;
 }
 
-/* Ensure sidebar collapse/expand chevron button remains clearly visible at top left */
-header[data-testid="stHeader"] button,
+/* Sidebar collapse/expand button — only style the BUTTON, not the wrapper div.
+   Styling the wrapper div breaks Streamlit's internal positioning logic. */
 button[data-testid="stSidebarCollapseButton"],
-div[data-testid="stSidebarCollapsedControl"],
 div[data-testid="stSidebarCollapsedControl"] button {
-  display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
   color: var(--text-primary) !important;
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 6px !important;
-  z-index: 9999999 !important;
-  box-shadow: var(--shadow-sm) !important;
 }
 
-/* Ensure SVG icon inside the sidebar collapse/expand button is clearly visible */
+/* Make the collapse button chevron SVG readable */
 div[data-testid="stSidebarCollapsedControl"] svg,
 button[data-testid="stSidebarCollapseButton"] svg {
   color: var(--text-primary) !important;
-  fill: var(--text-primary) !important;
   stroke: var(--text-primary) !important;
-  width: 18px !important;
-  height: 18px !important;
+  width: 16px !important;
+  height: 16px !important;
 }
 
 div[data-testid="stToolbar"] {
@@ -226,17 +218,17 @@ div[data-testid="stDecoration"] {
   display: none !important;
 }
 
-/* Ensure Sidebar is properly sized, visible, and has clean padding */
+/* Sidebar: styling only — do NOT set min-width or width to avoid
+   interfering with Streamlit's built-in collapse/expand width transitions */
 section[data-testid="stSidebar"] {
   background-color: var(--surface) !important;
   border-right: 1px solid var(--border) !important;
-  min-width: 280px !important;
 }
 
 section[data-testid="stSidebar"] > div:first-child {
-  padding-top: 1.5rem !important;
-  padding-left: 1.2rem !important;
-  padding-right: 1.2rem !important;
+  padding-top: 1rem !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
 }
 
 /* ==========================================================================
@@ -340,11 +332,9 @@ p, span, label, li, td, th {
 [data-testid="stSidebar"] {
   background-color: var(--surface) !important;
   border-right: 1px solid var(--border) !important;
-  min-width: 290px !important;
 }
 
 [data-testid="stSidebar"] > div:first-child {
-  padding: 1.5rem 1.2rem !important;
   background-color: var(--surface) !important;
 }
 
@@ -396,63 +386,57 @@ div[data-testid="stSidebarNav"] {
 
 /* ---- Nav Group Labels ---- */
 .ds-nav-group-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   color: var(--text-muted);
-  margin: 18px 0 6px 4px;
+  margin: 20px 0 4px 2px;
   padding: 0;
 }
 
 /* ---- Streamlit Sidebar Buttons (Standard Clean Visible Buttons) ---- */
 [data-testid="stSidebar"] .stButton > button {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  color: var(--text-primary) !important;
-  font-size: 14px !important;
-  font-weight: 550 !important;
-  height: 42px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: var(--text-secondary) !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  height: 40px !important;
   width: 100% !important;
-  margin: 4px 0 !important;
-  padding: 8px 14px !important;
-  border-radius: 8px !important;
+  margin: 2px 0 !important;
+  padding: 8px 12px !important;
+  border-radius: 7px !important;
   text-align: left !important;
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  box-shadow: var(--shadow-xs) !important;
-  transition: all 0.15s ease !important;
+  box-shadow: none !important;
+  transition: all 0.12s ease !important;
 }
 
 [data-testid="stSidebar"] .stButton > button:hover {
   background: var(--surface-hover) !important;
-  border-color: var(--accent) !important;
-  color: var(--accent) !important;
-  transform: translateX(2px) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+  transform: none !important;
 }
 
 /* Primary active navigation button */
 [data-testid="stSidebar"] .stButton > button[kind="primary"],
 [data-testid="stSidebar"] .stButton > button[data-testid="baseButton-primary"] {
-  background: var(--accent) !important;
-  border-color: var(--accent) !important;
-  color: #ffffff !important;
+  background: var(--accent-subtle) !important;
+  border-color: var(--accent-subtle-border) !important;
+  color: var(--accent) !important;
   font-weight: 600 !important;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
+  box-shadow: none !important;
 }
 
 [data-testid="stSidebar"] .stButton > button[kind="primary"]:hover,
 [data-testid="stSidebar"] .stButton > button[data-testid="baseButton-primary"]:hover {
-  background: var(--accent-hover) !important;
-  border-color: var(--accent-hover) !important;
-  color: #ffffff !important;
-}
-
-/* Sidebar action buttons (Sign Out, theme, etc.) */
-.ds-sidebar-action-btn .stButton > button {
-  font-size: 13px !important;
-  height: 38px !important;
+  background: var(--accent-subtle) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
 }
 
 /* ---- Sidebar Bottom User Card ---- */
