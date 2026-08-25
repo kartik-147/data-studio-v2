@@ -168,64 +168,34 @@ html, body, [class*="css"] {
 }
 
 .main .block-container {
-  padding-top: 24px !important;
+  padding-top: 16px !important;
   padding-bottom: 60px !important;
-  padding-left: 28px !important;
-  padding-right: 28px !important;
-  max-width: 1400px !important;
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+  max-width: 1560px !important;
 }
 
-/* Streamlit Header & Sidebar Toggle configuration */
-header[data-testid="stHeader"] {
-  background: transparent !important;
-  color: var(--text-primary) !important;
-  z-index: 99999 !important;
-}
-
-/* Ensure the sidebar collapse / expand toggle button is always crisp, prominent and visible */
+/* ==========================================================================
+   REMOVE / HIDE STREAMLIT SIDEBAR PERMANENTLY (TOP NAVBAR ARCHITECTURE)
+   ========================================================================== */
+section[data-testid="stSidebar"],
+[data-testid="stSidebar"],
+div[data-testid="stSidebarNav"],
 div[data-testid="stSidebarCollapsedControl"],
-div[data-testid="collapsedControl"] {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  z-index: 999999 !important;
-  position: fixed !important;
-  top: 12px !important;
-  left: 12px !important;
+div[data-testid="collapsedControl"],
+button[data-testid="stSidebarCollapseButton"] {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
 }
 
-button[data-testid="stSidebarCollapseButton"],
-div[data-testid="stSidebarCollapsedControl"] button,
-div[data-testid="collapsedControl"] button {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  align-items: center !important;
-  justify-content: center !important;
-  color: var(--text-primary) !important;
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 6px !important;
-  box-shadow: var(--shadow-sm) !important;
-  padding: 4px 6px !important;
-  cursor: pointer !important;
-}
-
-div[data-testid="stSidebarCollapsedControl"] button:hover,
-button[data-testid="stSidebarCollapseButton"]:hover {
-  background: var(--surface-hover) !important;
-  border-color: var(--accent) !important;
-  color: var(--accent) !important;
-}
-
-/* Make the collapse button chevron SVG readable */
-div[data-testid="stSidebarCollapsedControl"] svg,
-button[data-testid="stSidebarCollapseButton"] svg,
-div[data-testid="collapsedControl"] svg {
-  color: var(--text-primary) !important;
-  stroke: var(--text-primary) !important;
-  width: 18px !important;
-  height: 18px !important;
+header[data-testid="stHeader"] {
+  display: none !important;
+  height: 0 !important;
 }
 
 div[data-testid="stToolbar"] {
@@ -243,19 +213,6 @@ footer {
 /* Hide default Streamlit decorations */
 div[data-testid="stDecoration"] {
   display: none !important;
-}
-
-/* Sidebar: styling only — do NOT set min-width or width to avoid
-   interfering with Streamlit's built-in collapse/expand width transitions */
-section[data-testid="stSidebar"] {
-  background-color: var(--surface) !important;
-  border-right: 1px solid var(--border) !important;
-}
-
-section[data-testid="stSidebar"] > div:first-child {
-  padding-top: 1rem !important;
-  padding-left: 1rem !important;
-  padding-right: 1rem !important;
 }
 
 /* ==========================================================================
@@ -354,215 +311,54 @@ p, span, label, li, td, th {
 }
 
 /* ==========================================================================
-   SIDEBAR — CLEAN NAVIGATION CONTAINER
+   TOP NAVIGATION BAR SYSTEM (Option 1)
    ========================================================================== */
-[data-testid="stSidebar"] {
-  background-color: var(--surface) !important;
-  border-right: 1px solid var(--border) !important;
-}
-
-[data-testid="stSidebar"] > div:first-child {
-  background-color: var(--surface) !important;
-}
-
-/* Hide Streamlit's default sidebar nav */
-div[data-testid="stSidebarNav"] {
-  display: none !important;
-}
-
-/* ---- Brand Header ---- */
-.ds-sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 18px 16px 14px 16px;
+.ds-topnav-wrap {
+  padding: 8px 0 14px 0;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 6px;
+  margin-bottom: 20px;
 }
 
-.ds-brand-badge {
-  width: 30px;
-  height: 30px;
-  background: var(--accent);
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Global button styling */
+.stButton > button {
+  font-family: var(--font-sans) !important;
+  font-size: 13.5px !important;
+  font-weight: 550 !important;
+  border-radius: 7px !important;
+  padding: 6px 12px !important;
+  transition: all 0.15s ease !important;
+  box-shadow: var(--shadow-xs) !important;
+  white-space: nowrap !important;
+}
+
+.stButton > button[kind="primary"],
+.stButton > button[data-testid="baseButton-primary"] {
+  background: var(--accent) !important;
+  border: 1px solid var(--accent) !important;
   color: #ffffff !important;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: -0.02em;
-  flex-shrink: 0;
+  font-weight: 650 !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
 }
 
-.ds-brand-name {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  color: var(--text-primary);
-  line-height: 1.1;
+.stButton > button[kind="primary"]:hover,
+.stButton > button[data-testid="baseButton-primary"]:hover {
+  background: var(--accent-hover) !important;
+  border-color: var(--accent-hover) !important;
+  color: #ffffff !important;
 }
 
-.ds-brand-version {
-  font-size: 10px;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  margin-top: 1px;
-  letter-spacing: 0.02em;
+.stButton > button[kind="secondary"],
+.stButton > button[data-testid="baseButton-secondary"] {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-secondary) !important;
 }
 
-/* ---- Nav Group Labels ---- */
-.ds-nav-group-title {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-muted);
-  margin: 20px 0 4px 2px;
-  padding: 0;
-}
-
-/* ---- Streamlit Sidebar Buttons (Standard Clean Visible Buttons) ---- */
-[data-testid="stSidebar"] .stButton > button {
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  color: var(--text-primary) !important;
-  font-size: 15px !important;
-  font-weight: 600 !important;
-  height: 42px !important;
-  width: 100% !important;
-  margin: 3px 0 !important;
-  padding: 8px 14px !important;
-  border-radius: 8px !important;
-  text-align: left !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  box-shadow: none !important;
-  transition: all 0.12s ease !important;
-}
-
-[data-testid="stSidebar"] .stButton > button:hover {
+.stButton > button[kind="secondary"]:hover,
+.stButton > button[data-testid="baseButton-secondary"]:hover {
   background: var(--surface-hover) !important;
-  border-color: var(--border) !important;
-  color: var(--accent) !important;
-  transform: none !important;
-}
-
-/* Primary active navigation button */
-[data-testid="stSidebar"] .stButton > button[kind="primary"],
-[data-testid="stSidebar"] .stButton > button[data-testid="baseButton-primary"] {
-  background: var(--accent-subtle) !important;
-  border: 1px solid var(--accent-subtle-border) !important;
-  color: var(--accent) !important;
-  font-weight: 700 !important;
-  box-shadow: none !important;
-}
-
-[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover,
-[data-testid="stSidebar"] .stButton > button[data-testid="baseButton-primary"]:hover {
-  background: var(--accent-subtle) !important;
   border-color: var(--accent) !important;
   color: var(--accent) !important;
-}
-
-/* ---- Sidebar Bottom User Card ---- */
-.ds-sidebar-footer {
-  position: sticky;
-  bottom: 0;
-  background: var(--nav-bg);
-  border-top: 1px solid var(--border);
-  padding: 12px 10px;
-  margin-top: auto;
-}
-
-.ds-sidebar-user-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  margin-bottom: 8px;
-  box-shadow: var(--shadow-xs);
-}
-
-.ds-user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  background: var(--accent);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  flex-shrink: 0;
-}
-
-.ds-user-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.ds-sidebar-user-name {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: -0.01em;
-}
-
-.ds-sidebar-user-email {
-  font-size: 10.5px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 1px;
-  font-family: var(--font-mono);
-}
-
-.ds-sidebar-user-badge {
-  display: inline-block;
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 2px 6px;
-  border-radius: var(--radius-xs);
-  margin-top: 3px;
-}
-
-.ds-user-badge-registered {
-  background: var(--accent-subtle);
-  color: var(--accent);
-  border: 1px solid var(--accent-subtle-border);
-}
-
-.ds-user-badge-guest {
-  background: var(--color-warning-bg);
-  color: var(--color-warning);
-  border: 1px solid var(--color-warning-border);
-}
-
-.ds-sidebar-theme-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 2px;
-  margin-bottom: 6px;
-}
-
-.ds-sidebar-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 6px 0;
 }
 
 /* ==========================================================================
