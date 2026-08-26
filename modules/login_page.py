@@ -59,16 +59,28 @@ def _get_login_page_css(is_dark: bool) -> str:
 /* =========================================================================
    LOGIN PAGE SCOPED STYLING — FULL-SCREEN NON-SCROLLABLE VIEWPORT (100dvh)
    ========================================================================= */
-html, body, .stApp {{
+html, body,
+.stApp,
+div[data-testid="stAppViewContainer"],
+div[data-testid="stAppViewBlockContainer"],
+section[data-testid="stMain"],
+section.main,
+.main,
+.main > div,
+.main .block-container,
+div[data-testid="stMainBlockContainer"] {{
     min-height: 100vh !important;
     height: 100vh !important;
+    max-height: 100vh !important;
     min-height: 100dvh !important;
     height: 100dvh !important;
     max-height: 100dvh !important;
     overflow: hidden !important;
+    overflow-y: hidden !important;
+    overflow-x: hidden !important;
     background-color: {bg_page} !important;
     margin: 0 !important;
-    padding: 0 !important;
+    box-sizing: border-box !important;
 }}
 
 /* Hide unnecessary Streamlit chrome on Login */
@@ -95,8 +107,9 @@ div[data-testid="stDecoration"] {{
     padding: 0 !important;
 }}
 
-.main .block-container {{
-    max-width: 1360px !important;
+.main .block-container,
+div[data-testid="stMainBlockContainer"] {{
+    max-width: 1300px !important;
     width: 100% !important;
     height: 100vh !important;
     height: 100dvh !important;
@@ -133,7 +146,7 @@ div[data-testid="stDecoration"] {{
     display: grid;
     grid-template-columns: repeat(6, 5px);
     gap: 7px;
-    margin-bottom: clamp(4px, 1vh, 14px);
+    margin-bottom: clamp(4px, 1vh, 12px);
     opacity: {("0.25" if is_dark else "0.35")};
 }}
 
@@ -165,7 +178,7 @@ div[data-testid="stDecoration"] {{
     color: {text_secondary} !important;
     line-height: 1.45 !important;
     max-width: 480px !important;
-    margin: 0 0 clamp(6px, 1.2vh, 18px) 0 !important;
+    margin: 0 0 clamp(6px, 1.2vh, 16px) 0 !important;
     font-weight: 450 !important;
 }}
 
@@ -181,7 +194,7 @@ div[data-testid="stDecoration"] {{
     background: {bg_card};
     border: 1px solid {border_color};
     border-radius: 12px;
-    padding: clamp(8px, 1.2vh, 14px) clamp(8px, 0.8vw, 12px);
+    padding: clamp(8px, 1.2vh, 12px) clamp(8px, 0.8vw, 12px);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -227,7 +240,7 @@ div[data-testid="stDecoration"] {{
 
 /* Ambient Wave Graphic at Bottom Left */
 .ds-bottom-wave-wrap {{
-    margin-top: clamp(6px, 1.2vh, 16px);
+    margin-top: clamp(6px, 1.2vh, 14px);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -248,22 +261,28 @@ div[data-testid="stDecoration"] {{
     background: linear-gradient(90deg, #3b82f6, transparent);
 }}
 
-/* Right Auth Column Container Styling */
-div[data-testid="column"]:nth-of-type(2) > div,
-div[data-testid="stColumn"]:nth-of-type(2) > div {{
+/* =========================================================================
+   RIGHT AUTH CARD CONTAINER STYLING (Targeted via Streamlit Border Container)
+   ========================================================================= */
+div[data-testid="stVerticalBlockBorderWrapper"] {{
     background: {bg_card} !important;
     border: 1px solid {border_card} !important;
     border-radius: clamp(14px, 1.6vw, 20px) !important;
-    padding: clamp(14px, 2vh, 22px) clamp(16px, 2vw, 26px) !important;
+    padding: clamp(12px, 1.8vh, 20px) clamp(16px, 2vw, 24px) !important;
     box-shadow: {shadow_card} !important;
-    margin: auto 0 !important;
-    max-height: calc(100dvh - clamp(16px, 3vh, 40px)) !important;
     box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 440px !important;
+    margin: 0 auto !important;
+}}
+
+div[data-testid="stVerticalBlockBorderWrapper"] > div[data-testid="stVerticalBlock"] {{
+    gap: clamp(4px, 0.8vh, 8px) !important;
 }}
 
 .ds-auth-header {{
     text-align: center;
-    margin-bottom: clamp(6px, 1.2vh, 14px);
+    margin-bottom: clamp(4px, 1vh, 10px);
 }}
 
 .ds-auth-title {{
@@ -294,6 +313,10 @@ div[data-testid="stForm"] {{
     border: none !important;
     padding: 0 !important;
     background: transparent !important;
+}}
+
+div[data-testid="stForm"] > div[data-testid="stVerticalBlock"] {{
+    gap: clamp(4px, 0.8vh, 8px) !important;
 }}
 
 div[data-testid="stTextInput"] input {{
@@ -340,7 +363,7 @@ div[data-testid="stFormSubmitButton"] button {{
     letter-spacing: -0.01em !important;
     box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25) !important;
     transition: all 0.2s ease !important;
-    margin-top: 4px !important;
+    margin-top: 2px !important;
 }}
 
 div[data-testid="stFormSubmitButton"] button:hover {{
@@ -436,42 +459,29 @@ div[data-testid="stFormSubmitButton"] button:hover {{
 
 /* Responsive adjustments for Mobile and Tablets */
 @media (max-width: 840px) {{
-    div[data-testid="column"]:nth-of-type(1),
-    div[data-testid="stColumn"]:nth-of-type(1) {{
+    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stVerticalBlockBorderWrapper"]) > div[data-testid="column"]:nth-of-type(1),
+    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stVerticalBlockBorderWrapper"]) > div[data-testid="stColumn"]:nth-of-type(1) {{
         display: none !important;
     }}
 
-    div[data-testid="column"]:nth-of-type(2),
-    div[data-testid="stColumn"]:nth-of-type(2) {{
+    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stVerticalBlockBorderWrapper"]) > div[data-testid="column"]:nth-of-type(2),
+    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stVerticalBlockBorderWrapper"]) > div[data-testid="stColumn"]:nth-of-type(2) {{
         width: 100% !important;
-        max-width: 420px !important;
+        max-width: 440px !important;
         margin: 0 auto !important;
         flex: 1 1 100% !important;
     }}
 
-    div[data-testid="column"]:nth-of-type(2) > div,
-    div[data-testid="stColumn"]:nth-of-type(2) > div {{
-        padding: 16px 18px !important;
-        border-radius: 16px !important;
-        max-height: calc(100dvh - 50px) !important;
-    }}
-
-    .main .block-container {{
+    .main .block-container,
+    div[data-testid="stMainBlockContainer"] {{
         padding: 8px 12px !important;
-        justify-content: center !important;
-    }}
-
-    .ds-google-btn-wrap div[data-testid="stButton"] button,
-    .ds-google-btn-wrap a[data-testid="stLinkButton"],
-    .ds-google-btn-wrap div[data-testid="stLinkButton"] a {{
-        background-position: 24px center !important;
     }}
 }}
 </style>"""
 
 
 def render_login_page() -> None:
-    """Render the exact high-precision split layout matching the user design mockup."""
+    """Render the full-screen non-scrollable modern split login screen."""
     # Check for Google OAuth callback parameters on page load
     cb_ok, cb_msg, cb_user = handle_google_oauth_callback()
     if cb_ok and cb_user:
@@ -585,189 +595,190 @@ def render_login_page() -> None:
         st.markdown(cards_html, unsafe_allow_html=True)
 
     # ─────────────────────────────────────────────────────────────────────────
-    # RIGHT COLUMN: Floating Auth Card (Welcome to Data Studio)
+    # RIGHT COLUMN: Floating Auth Card in Clean Border Container
     # ─────────────────────────────────────────────────────────────────────────
     with right_col:
-        # Auth View state (Sign In vs Registration vs Forgot Password modal)
-        if "auth_view" not in st.session_state:
-            st.session_state["auth_view"] = "signin"
+        with st.container(border=True):
+            # Auth View state (Sign In vs Registration vs Forgot Password modal)
+            if "auth_view" not in st.session_state:
+                st.session_state["auth_view"] = "signin"
 
-        if st.session_state["auth_view"] == "signin":
-            # Header
-            header_html = """<div class="ds-auth-header">
+            if st.session_state["auth_view"] == "signin":
+                # Header
+                header_html = """<div class="ds-auth-header">
 <h2 class="ds-auth-title">Welcome to Data Studio</h2>
 <p class="ds-auth-subtitle">Sign in to access your analytics workspace.</p>
 </div>"""
-            st.markdown(header_html, unsafe_allow_html=True)
+                st.markdown(header_html, unsafe_allow_html=True)
 
-            # Main Sign In Form
-            with st.form("signin_form", clear_on_submit=False):
-                # Email Input Field
-                st.markdown('<span class="ds-input-label">Email</span>', unsafe_allow_html=True)
-                email = st.text_input(
-                    "Email",
-                    value="",
-                    placeholder="name@company.com",
-                    key="signin_email_field",
-                    label_visibility="collapsed"
-                )
+                # Main Sign In Form
+                with st.form("signin_form", clear_on_submit=False):
+                    # Email Input Field
+                    st.markdown('<span class="ds-input-label">Email</span>', unsafe_allow_html=True)
+                    email = st.text_input(
+                        "Email",
+                        value="",
+                        placeholder="name@company.com",
+                        key="signin_email_field",
+                        label_visibility="collapsed"
+                    )
 
-                # Password Input Field
-                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
-                st.markdown('<span class="ds-input-label">Password</span>', unsafe_allow_html=True)
-                password = st.text_input(
-                    "Password",
-                    type="password",
-                    placeholder="Enter your password",
-                    key="signin_password_field",
-                    label_visibility="collapsed"
-                )
+                    # Password Input Field
+                    st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
+                    st.markdown('<span class="ds-input-label">Password</span>', unsafe_allow_html=True)
+                    password = st.text_input(
+                        "Password",
+                        type="password",
+                        placeholder="Enter your password",
+                        key="signin_password_field",
+                        label_visibility="collapsed"
+                    )
 
-                # Remember Me & Forgot Password Row
-                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
-                col_rem, col_forgot = st.columns([1.1, 1.1])
-                with col_rem:
-                    remember_me = st.checkbox("Remember me", value=True, key="signin_remember_me")
-                with col_forgot:
-                    forgot_html = """<div style="text-align: right; padding-top: 4px;">
+                    # Remember Me & Forgot Password Row
+                    st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
+                    col_rem, col_forgot = st.columns([1.1, 1.1])
+                    with col_rem:
+                        remember_me = st.checkbox("Remember me", value=True, key="signin_remember_me")
+                    with col_forgot:
+                        forgot_html = """<div style="text-align: right; padding-top: 4px;">
 <a href="#forgot" style="color: #2563eb; font-size: 12px; font-weight: 500; text-decoration: none;">Forgot password?</a>
 </div>"""
-                    st.markdown(forgot_html, unsafe_allow_html=True)
+                        st.markdown(forgot_html, unsafe_allow_html=True)
 
-                # Primary Sign In Action
-                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
-                submit_signin = st.form_submit_button(
-                    "Sign In",
-                    use_container_width=True
-                )
+                    # Primary Sign In Action
+                    st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
+                    submit_signin = st.form_submit_button(
+                        "Sign In",
+                        use_container_width=True
+                    )
 
-            # Form submission handler
-            if submit_signin:
-                with st.spinner("Authenticating credentials…"):
-                    success, msg, user_info = authenticate_user(email, password)
-                    if success and user_info:
-                        login_user_session(user_info)
-                        st.toast(f"Welcome back, {user_info['full_name']}! ✓")
-                        st.rerun()
-                    else:
-                        render_notification(
-                            title="Sign In Failed",
-                            message=msg,
-                            variant="error"
-                        )
+                # Form submission handler
+                if submit_signin:
+                    with st.spinner("Authenticating credentials…"):
+                        success, msg, user_info = authenticate_user(email, password)
+                        if success and user_info:
+                            login_user_session(user_info)
+                            st.toast(f"Welcome back, {user_info['full_name']}! ✓")
+                            st.rerun()
+                        else:
+                            render_notification(
+                                title="Sign In Failed",
+                                message=msg,
+                                variant="error"
+                            )
 
-            # "or" Divider
-            divider_html = f"""<div style="display: flex; align-items: center; margin: 8px 0 6px 0; gap: 8px;">
+                # "or" Divider
+                divider_html = f"""<div style="display: flex; align-items: center; margin: 8px 0 6px 0; gap: 8px;">
 <div style="flex: 1; height: 1px; background: {('rgba(30, 45, 69, 0.9)' if is_dark else '#e2e8f0')};"></div>
 <span style="font-size: 11.5px; color: {('#94a3b8' if is_dark else '#94a3b8')}; font-weight: 500;">or</span>
 <div style="flex: 1; height: 1px; background: {('rgba(30, 45, 69, 0.9)' if is_dark else '#e2e8f0')};"></div>
 </div>"""
-            st.markdown(divider_html, unsafe_allow_html=True)
+                st.markdown(divider_html, unsafe_allow_html=True)
 
-            # Google Sign In Button with Official Multi-Color Google G SVG Icon
-            st.markdown('<div class="ds-google-btn-wrap">', unsafe_allow_html=True)
-            google_auth_url = get_google_auth_url()
-            if google_auth_url:
-                st.link_button("Sign in with Google", url=google_auth_url, use_container_width=True)
+                # Google Sign In Button with Official Multi-Color Google G SVG Icon
+                st.markdown('<div class="ds-google-btn-wrap">', unsafe_allow_html=True)
+                google_auth_url = get_google_auth_url()
+                if google_auth_url:
+                    st.link_button("Sign in with Google", url=google_auth_url, use_container_width=True)
+                else:
+                    if st.button("Sign in with Google", key="google_signin_action_btn", use_container_width=True):
+                        render_google_setup_dialog(is_dark=is_dark)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                # Guest / Demo Access & Registration switch
+                st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
+                st.markdown('<div class="ds-guest-btn-wrap" style="text-align: center;">', unsafe_allow_html=True)
+                if st.button("👤 Guest / Demo Access", key="guest_access_direct_btn", use_container_width=True):
+                    start_guest_session()
+                    st.toast("Entered Guest Demo mode.")
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                # Account creation switch link
+                switch_html = """<div style="text-align: center; margin-top: 6px; font-size: 12px; color: #64748b;">Don't have an account?</div>"""
+                st.markdown(switch_html, unsafe_allow_html=True)
+                st.markdown('<div class="ds-switch-btn-wrap">', unsafe_allow_html=True)
+                if st.button("Create an account", key="switch_to_create_account_btn", use_container_width=True):
+                    st.session_state["auth_view"] = "register"
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+
             else:
-                if st.button("Sign in with Google", key="google_signin_action_btn", use_container_width=True):
-                    render_google_setup_dialog(is_dark=is_dark)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            # Guest / Demo Access & Registration switch
-            st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
-            st.markdown('<div class="ds-guest-btn-wrap" style="text-align: center;">', unsafe_allow_html=True)
-            if st.button("👤 Guest / Demo Access", key="guest_access_direct_btn", use_container_width=True):
-                start_guest_session()
-                st.toast("Entered Guest Demo mode.")
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            # Account creation switch link
-            switch_html = """<div style="text-align: center; margin-top: 6px; font-size: 12px; color: #64748b;">Don't have an account?</div>"""
-            st.markdown(switch_html, unsafe_allow_html=True)
-            st.markdown('<div class="ds-switch-btn-wrap">', unsafe_allow_html=True)
-            if st.button("Create an account", key="switch_to_create_account_btn", use_container_width=True):
-                st.session_state["auth_view"] = "register"
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        else:
-            # ─────────────────────────────────────────────────────────────────
-            # REGISTRATION VIEW
-            # ─────────────────────────────────────────────────────────────────
-            reg_header_html = """<div class="ds-auth-header">
+                # ─────────────────────────────────────────────────────────────────
+                # REGISTRATION VIEW
+                # ─────────────────────────────────────────────────────────────────
+                reg_header_html = """<div class="ds-auth-header">
 <h2 class="ds-auth-title">Create Account</h2>
 <p class="ds-auth-subtitle">Join Data Studio to unlock full analytics power.</p>
 </div>"""
-            st.markdown(reg_header_html, unsafe_allow_html=True)
+                st.markdown(reg_header_html, unsafe_allow_html=True)
 
-            with st.form("register_form", clear_on_submit=False):
-                st.markdown('<span class="ds-input-label">Full Name</span>', unsafe_allow_html=True)
-                reg_name = st.text_input(
-                    "Full Name",
-                    placeholder="e.g. Alex Johnson",
-                    key="reg_name_field",
-                    label_visibility="collapsed"
-                )
+                with st.form("register_form", clear_on_submit=False):
+                    st.markdown('<span class="ds-input-label">Full Name</span>', unsafe_allow_html=True)
+                    reg_name = st.text_input(
+                        "Full Name",
+                        placeholder="e.g. Alex Johnson",
+                        key="reg_name_field",
+                        label_visibility="collapsed"
+                    )
 
-                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
-                st.markdown('<span class="ds-input-label">Email</span>', unsafe_allow_html=True)
-                reg_email = st.text_input(
-                    "Email",
-                    placeholder="name@company.com",
-                    key="reg_email_field",
-                    label_visibility="collapsed"
-                )
+                    st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
+                    st.markdown('<span class="ds-input-label">Email</span>', unsafe_allow_html=True)
+                    reg_email = st.text_input(
+                        "Email",
+                        placeholder="name@company.com",
+                        key="reg_email_field",
+                        label_visibility="collapsed"
+                    )
 
-                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
-                st.markdown('<span class="ds-input-label">Password</span>', unsafe_allow_html=True)
-                reg_pass = st.text_input(
-                    "Password",
-                    type="password",
-                    placeholder="Minimum 8 characters",
-                    key="reg_pass_field",
-                    label_visibility="collapsed"
-                )
+                    st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
+                    st.markdown('<span class="ds-input-label">Password</span>', unsafe_allow_html=True)
+                    reg_pass = st.text_input(
+                        "Password",
+                        type="password",
+                        placeholder="Minimum 8 characters",
+                        key="reg_pass_field",
+                        label_visibility="collapsed"
+                    )
 
-                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
-                st.markdown('<span class="ds-input-label">Confirm Password</span>', unsafe_allow_html=True)
-                reg_confirm = st.text_input(
-                    "Confirm Password",
-                    type="password",
-                    placeholder="Repeat password",
-                    key="reg_confirm_field",
-                    label_visibility="collapsed"
-                )
+                    st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
+                    st.markdown('<span class="ds-input-label">Confirm Password</span>', unsafe_allow_html=True)
+                    reg_confirm = st.text_input(
+                        "Confirm Password",
+                        type="password",
+                        placeholder="Repeat password",
+                        key="reg_confirm_field",
+                        label_visibility="collapsed"
+                    )
+
+                    st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
+                    submit_register = st.form_submit_button(
+                        "Create Account",
+                        use_container_width=True
+                    )
+
+                if submit_register:
+                    with st.spinner("Creating and securing your account…"):
+                        success, msg, user_info = register_user(
+                            full_name=reg_name,
+                            email=reg_email,
+                            password=reg_pass,
+                            confirm_password=reg_confirm
+                        )
+                        if success and user_info:
+                            login_user_session(user_info)
+                            st.toast("Account created successfully! Welcome aboard. ✓")
+                            st.rerun()
+                        else:
+                            render_notification(
+                                title="Registration Failed",
+                                message=msg,
+                                variant="error"
+                            )
 
                 st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
-                submit_register = st.form_submit_button(
-                    "Create Account",
-                    use_container_width=True
-                )
-
-            if submit_register:
-                with st.spinner("Creating and securing your account…"):
-                    success, msg, user_info = register_user(
-                        full_name=reg_name,
-                        email=reg_email,
-                        password=reg_pass,
-                        confirm_password=reg_confirm
-                    )
-                    if success and user_info:
-                        login_user_session(user_info)
-                        st.toast("Account created successfully! Welcome aboard. ✓")
-                        st.rerun()
-                    else:
-                        render_notification(
-                            title="Registration Failed",
-                            message=msg,
-                            variant="error"
-                        )
-
-            st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
-            st.markdown('<div class="ds-switch-btn-wrap">', unsafe_allow_html=True)
-            if st.button("← Back to Sign In", key="back_to_signin_btn", use_container_width=True):
-                st.session_state["auth_view"] = "signin"
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown('<div class="ds-switch-btn-wrap">', unsafe_allow_html=True)
+                if st.button("← Back to Sign In", key="back_to_signin_btn", use_container_width=True):
+                    st.session_state["auth_view"] = "signin"
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
