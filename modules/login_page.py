@@ -557,6 +557,7 @@ def render_login_page() -> None:
     # LEFT COLUMN: Value Proposition & Subtle Analytics Chart Graphic
     # ─────────────────────────────────────────────────────────────────────────
     with left_col:
+        bg_card_val = "#141c2e" if is_dark else "#ffffff"
         chart_accent = "#38bdf8" if is_dark else "#2563eb"
         chart_fill = "rgba(56, 189, 248, 0.12)" if is_dark else "rgba(37, 99, 235, 0.08)"
         grid_color = "rgba(51, 65, 85, 0.4)" if is_dark else "rgba(203, 213, 225, 0.7)"
@@ -585,9 +586,9 @@ Data Quality & Profiling Index
 <line x1="10" y1="90" x2="390" y2="90" stroke="{grid_color}" stroke-width="0.75"/>
 <path d="M 15 80 Q 70 30, 130 50 T 250 25 T 385 15 L 385 90 L 15 90 Z" fill="url(#chartGrad)"/>
 <path d="M 15 80 Q 70 30, 130 50 T 250 25 T 385 15" stroke="{chart_accent}" stroke-width="2" stroke-linecap="round"/>
-<circle cx="130" cy="50" r="3.5" fill="{bg_card}" stroke="{chart_accent}" stroke-width="2"/>
-<circle cx="250" cy="25" r="3.5" fill="{bg_card}" stroke="{chart_accent}" stroke-width="2"/>
-<circle cx="385" cy="15" r="3.5" fill="{bg_card}" stroke="{chart_accent}" stroke-width="2"/>
+<circle cx="130" cy="50" r="3.5" fill="{bg_card_val}" stroke="{chart_accent}" stroke-width="2"/>
+<circle cx="250" cy="25" r="3.5" fill="{bg_card_val}" stroke="{chart_accent}" stroke-width="2"/>
+<circle cx="385" cy="15" r="3.5" fill="{bg_card_val}" stroke="{chart_accent}" stroke-width="2"/>
 </svg>
 </div>
 </div>"""
