@@ -343,55 +343,55 @@ div[data-testid="stMainBlockContainer"] {{
 }}
 
 /* =========================================================================
-   RIGHT AUTH CARD CONTAINER (Elevated, 18px Radius, Soft Shadow)
+   RIGHT AUTH CARD CONTAINER (Compact, 18px Radius, Soft Shadow)
    ========================================================================= */
 div[data-testid="stVerticalBlockBorderWrapper"] {{
     background: {bg_card} !important;
     border: 1px solid {border_card} !important;
     border-radius: 18px !important;
-    padding: clamp(22px, 2.8vh, 32px) clamp(22px, 2.5vw, 34px) !important;
+    padding: clamp(16px, 2vh, 22px) clamp(18px, 2vw, 26px) !important;
     box-shadow: {shadow_card} !important;
     box-sizing: border-box !important;
     width: 100% !important;
-    max-width: 440px !important;
+    max-width: 410px !important;
     margin: 0 auto !important;
 }}
 
 div[data-testid="stVerticalBlockBorderWrapper"] > div[data-testid="stVerticalBlock"] {{
-    gap: 6px !important;
+    gap: 3px !important;
 }}
 
 div[data-testid="stForm"] > div[data-testid="stVerticalBlock"] {{
-    gap: 4px !important;
+    gap: 2px !important;
 }}
 
 .ds-mock-auth-header {{
     text-align: center;
-    margin-bottom: 12px;
+    margin-bottom: 6px;
 }}
 
 .ds-mock-auth-title {{
-    font-size: 24px !important;
+    font-size: 21px !important;
     font-weight: 750 !important;
     color: {text_primary} !important;
     letter-spacing: -0.025em !important;
-    margin: 0 0 4px 0 !important;
+    margin: 0 0 2px 0 !important;
     line-height: 1.2 !important;
 }}
 
 .ds-mock-auth-subtitle {{
-    font-size: 13.5px !important;
+    font-size: 12.5px !important;
     color: {text_secondary} !important;
     margin: 0 !important;
     font-weight: 400 !important;
-    line-height: 1.4 !important;
+    line-height: 1.35 !important;
 }}
 
 .ds-input-label {{
-    font-size: 13.5px;
+    font-size: 12.5px;
     font-weight: 600;
     color: {text_primary};
-    margin: 4px 0 2px 1px;
+    margin: 2px 0 1px 1px;
     display: block;
 }}
 
@@ -411,22 +411,22 @@ div[data-testid="stTextInput"] input {{
     border: 1px solid {border_color} !important;
     border-radius: 8px !important;
     color: {text_primary} !important;
-    font-size: 14.5px !important;
-    height: 40px !important;
-    padding: 8px 12px !important;
+    font-size: 14px !important;
+    height: 36px !important;
+    padding: 6px 10px !important;
     box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02) !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }}
 
 div[data-testid="stTextInput"] input:focus {{
     border-color: #2563eb !important;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
     outline: none !important;
 }}
 
 div[data-testid="stTextInput"] input::placeholder {{
     color: {text_muted} !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
 }}
 
 /* Form Submit Button */
@@ -435,12 +435,12 @@ div[data-testid="stFormSubmitButton"] button {{
     color: #ffffff !important;
     border: 1px solid #1d4ed8 !important;
     font-weight: 600 !important;
-    font-size: 15px !important;
+    font-size: 14.5px !important;
     border-radius: 8px !important;
-    height: 42px !important;
+    height: 38px !important;
     box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
     transition: all 0.15s ease !important;
-    margin-top: 6px !important;
+    margin-top: 4px !important;
 }}
 
 div[data-testid="stFormSubmitButton"] button:hover {{
@@ -461,19 +461,19 @@ div[data-testid="stFormSubmitButton"] button:active {{
     border: 1px solid {border_color} !important;
     color: {text_primary} !important;
     font-weight: 600 !important;
-    font-size: 14.5px !important;
+    font-size: 13.5px !important;
     border-radius: 8px !important;
-    height: 42px !important;
+    height: 36px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     text-decoration: none !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
     transition: all 0.15s ease !important;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="%234285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/><path fill="%2334A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z"/><path fill="%23FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15Z"/><path fill="%23EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/></svg>') !important;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="%234285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/><path fill="%2334A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z"/><path fill="%23FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15Z"/><path fill="%23EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/></svg>') !important;
     background-repeat: no-repeat !important;
-    background-position: 18px center !important;
-    padding-left: 28px !important;
+    background-position: 16px center !important;
+    padding-left: 24px !important;
 }}
 
 .ds-google-btn-wrap div[data-testid="stLinkButton"] a:hover,
@@ -490,9 +490,9 @@ div[data-testid="stFormSubmitButton"] button:active {{
     border: 1px solid {border_color} !important;
     color: {text_primary} !important;
     font-weight: 600 !important;
-    font-size: 14px !important;
+    font-size: 13.5px !important;
     border-radius: 8px !important;
-    height: 40px !important;
+    height: 34px !important;
     transition: all 0.15s ease !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
 }}
@@ -783,9 +783,9 @@ Your data is secure and private.
                 st.markdown('</div>', unsafe_allow_html=True)
 
                 # Centered "OR" Divider
-                divider_html = f"""<div style="display: flex; align-items: center; margin: 12px 0 8px 0; gap: 10px;">
+                divider_html = f"""<div style="display: flex; align-items: center; margin: 6px 0 4px 0; gap: 8px;">
 <div style="flex: 1; height: 1px; background: {('rgba(51, 65, 85, 0.6)' if is_dark else '#e2e8f0')};"></div>
-<span style="font-size: 11px; color: {('#94a3b8' if is_dark else '#94a3b8')}; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">OR</span>
+<span style="font-size: 10.5px; color: {('#94a3b8' if is_dark else '#94a3b8')}; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">OR</span>
 <div style="flex: 1; height: 1px; background: {('rgba(51, 65, 85, 0.6)' if is_dark else '#e2e8f0')};"></div>
 </div>"""
                 st.markdown(divider_html, unsafe_allow_html=True)
@@ -814,8 +814,8 @@ Your data is secure and private.
                     with col_rem:
                         remember_me = st.checkbox("Remember me", value=True, key="signin_remember_me")
                     with col_forgot:
-                        forgot_html = """<div style="text-align: right; padding-top: 4px;">
-<a href="#forgot" style="color: #2563eb; font-size: 12.5px; font-weight: 500; text-decoration: none;">Forgot password?</a>
+                        forgot_html = """<div style="text-align: right; padding-top: 3px;">
+<a href="#forgot" style="color: #2563eb; font-size: 12px; font-weight: 500; text-decoration: none;">Forgot password?</a>
 </div>"""
                         st.markdown(forgot_html, unsafe_allow_html=True)
 
@@ -840,9 +840,9 @@ Your data is secure and private.
                             )
 
                 # Second "OR" Divider
-                divider_or2_html = f"""<div style="display: flex; align-items: center; margin: 8px 0 8px 0; gap: 10px;">
+                divider_or2_html = f"""<div style="display: flex; align-items: center; margin: 4px 0 4px 0; gap: 8px;">
 <div style="flex: 1; height: 1px; background: {('rgba(51, 65, 85, 0.6)' if is_dark else '#e2e8f0')};"></div>
-<span style="font-size: 11px; color: {('#94a3b8' if is_dark else '#94a3b8')}; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">OR</span>
+<span style="font-size: 10.5px; color: {('#94a3b8' if is_dark else '#94a3b8')}; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">OR</span>
 <div style="flex: 1; height: 1px; background: {('rgba(51, 65, 85, 0.6)' if is_dark else '#e2e8f0')};"></div>
 </div>"""
                 st.markdown(divider_or2_html, unsafe_allow_html=True)
@@ -856,7 +856,7 @@ Your data is secure and private.
                 st.markdown('</div>', unsafe_allow_html=True)
 
                 # Account creation switch link
-                st.markdown('<div class="ds-switch-btn-wrap" style="text-align: center; margin-top: 8px;">', unsafe_allow_html=True)
+                st.markdown('<div class="ds-switch-btn-wrap" style="text-align: center; margin-top: 4px;">', unsafe_allow_html=True)
                 if st.button("Don't have an account? Create an account", key="switch_to_create_account_btn", use_container_width=True):
                     st.session_state["auth_view"] = "register"
                     st.rerun()
