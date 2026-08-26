@@ -85,15 +85,18 @@ def load_css(theme: str = "Light") -> None:
     if theme.lower() == "dark":
         theme_class_block = """
         :root {
+            --app-bg: #0b0f19;
             --bg-primary: #0b0f19;
             --bg-secondary: #0f1624;
             --surface: #141c2e;
+            --surface-secondary: #0f1624;
             --surface-hover: #182234;
             --surface-active: #1f2d4d;
             --surface-container-low: #182234;
             --surface-container: #1e293b;
             --surface-container-high: #243048;
             --border: #1e2d45;
+            --border-light: #1e2d45;
             --border-subtle: #172038;
             --border-dashed: #334155;
             --border-focus: #38bdf8;
@@ -101,8 +104,10 @@ def load_css(theme: str = "Light") -> None:
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
             --text-inverted: #0b0f19;
-            --primary-action: #ffffff;
-            --primary-action-text: #0b0f19;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-action: #2563eb;
+            --primary-action-text: #ffffff;
             --accent: #38bdf8;
             --accent-hover: #0ea5e9;
             --accent-subtle: rgba(56, 189, 248, 0.12);

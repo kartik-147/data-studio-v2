@@ -344,17 +344,38 @@ div[data-testid="stFormSubmitButton"] button:hover {{
 
 /* Guest Button Styling */
 .ds-guest-btn-wrap div[data-testid="stButton"] button {{
-    background: transparent !important;
-    border: none !important;
-    color: #2563eb !important;
+    background: {bg_card_subtle} !important;
+    border: 1px solid {border_card} !important;
+    color: {text_primary} !important;
     font-weight: 600 !important;
     font-size: 13.5px !important;
-    box-shadow: none !important;
+    border-radius: 10px !important;
+    height: 40px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
 }}
 
 .ds-guest-btn-wrap div[data-testid="stButton"] button:hover {{
-    color: #1d4ed8 !important;
-    background: rgba(37, 99, 235, 0.06) !important;
+    color: #2563eb !important;
+    border-color: #2563eb !important;
+    background: {bg_card} !important;
+    transform: translateY(-1px) !important;
+}}
+
+/* Switch View Buttons */
+.ds-switch-btn-wrap div[data-testid="stButton"] button {{
+    background: transparent !important;
+    border: 1px solid {border_card} !important;
+    color: {text_primary} !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+    height: 38px !important;
+}}
+
+.ds-switch-btn-wrap div[data-testid="stButton"] button:hover {{
+    background: {bg_card_subtle} !important;
+    border-color: #2563eb !important;
+    color: #2563eb !important;
 }}
 
 /* Theme Toggle Pill in Header */
@@ -606,9 +627,11 @@ def render_login_page() -> None:
             # Account creation switch link
             switch_html = """<div style="text-align: center; margin-top: 14px; font-size: 12.5px; color: #64748b;">Don't have an account?</div>"""
             st.markdown(switch_html, unsafe_allow_html=True)
+            st.markdown('<div class="ds-switch-btn-wrap">', unsafe_allow_html=True)
             if st.button("Create an account", key="switch_to_create_account_btn", use_container_width=True):
                 st.session_state["auth_view"] = "register"
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
         else:
             # ─────────────────────────────────────────────────────────────────
@@ -684,6 +707,8 @@ def render_login_page() -> None:
                         )
 
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            st.markdown('<div class="ds-switch-btn-wrap">', unsafe_allow_html=True)
             if st.button("← Back to Sign In", key="back_to_signin_btn", use_container_width=True):
                 st.session_state["auth_view"] = "signin"
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
