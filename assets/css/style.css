@@ -232,35 +232,77 @@ div[data-testid="stDecoration"] {
 }
 
 /* ==========================================================================
-   TYPOGRAPHY HIERARCHY
+   TYPOGRAPHY HIERARCHY — NORMALIZED PRODUCTION SAAS SCALE (Source Sans 3)
    ========================================================================== */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1 {
   font-family: var(--font-sans) !important;
+  font-size: 30px !important;
+  font-weight: 600 !important;
   color: var(--text-primary) !important;
   letter-spacing: -0.025em;
   margin: 0;
   line-height: 1.25;
 }
 
+h2 {
+  font-family: var(--font-sans) !important;
+  font-size: 23px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.3;
+}
+
+h3 {
+  font-family: var(--font-sans) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  letter-spacing: -0.015em;
+  margin: 0;
+  line-height: 1.35;
+}
+
+h4,
+h5,
+h6 {
+  font-family: var(--font-sans) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.4;
+}
+
 p,
 span,
-label,
 li,
 td,
 th {
   color: var(--text-primary);
   font-family: var(--font-sans);
+  font-size: 15.5px;
+  font-weight: 400;
   line-height: 1.55;
 }
 
+label {
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.4;
+}
+
 .stMarkdown,
-.stText {
+.stText,
+div[data-testid="stMarkdownContainer"] p {
   color: var(--text-primary) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 15.5px !important;
+  line-height: 1.55 !important;
 }
 
 /* Page Header Component */
@@ -289,8 +331,8 @@ th {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-md);
   background: var(--accent-subtle);
   color: var(--accent);
@@ -298,21 +340,21 @@ th {
 }
 
 .ds-page-title {
-  font-size: 26px !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.03em !important;
+  font-size: 30px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.025em !important;
   color: var(--text-primary) !important;
   margin: 0 !important;
   line-height: 1.2 !important;
 }
 
 .ds-page-subtitle {
-  font-size: 14px !important;
+  font-size: 15.5px !important;
   color: var(--text-secondary) !important;
   margin: 4px 0 0 0 !important;
   line-height: 1.5 !important;
   font-weight: 400 !important;
-  padding-left: 48px;
+  padding-left: 52px;
 }
 
 /* Section Headers */
@@ -322,19 +364,19 @@ th {
 }
 
 .ds-section-title {
-  font-size: 17px !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.015em !important;
+  font-size: 23px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
   color: var(--text-primary) !important;
   margin: 0 0 4px 0 !important;
   line-height: 1.3 !important;
 }
 
 .ds-section-subtitle {
-  font-size: 13px !important;
+  font-size: 15px !important;
   color: var(--text-secondary) !important;
   margin: 0 !important;
-  line-height: 1.45 !important;
+  line-height: 1.5 !important;
 }
 
 /* ==========================================================================
@@ -349,10 +391,10 @@ th {
 /* Global button styling */
 .stButton>button {
   font-family: var(--font-sans) !important;
-  font-size: 13.5px !important;
+  font-size: 15px !important;
   font-weight: 550 !important;
   border-radius: 7px !important;
-  padding: 6px 12px !important;
+  padding: 7px 15px !important;
   transition: all 0.15s ease !important;
   box-shadow: var(--shadow-xs) !important;
   white-space: nowrap !important;
@@ -363,7 +405,7 @@ th {
   background: var(--accent, #2563eb) !important;
   border: 1px solid var(--accent-hover, #1d4ed8) !important;
   color: #ffffff !important;
-  font-weight: 650 !important;
+  font-weight: 600 !important;
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
 }
 
@@ -1181,6 +1223,261 @@ th {
   line-height: 1.55;
 }
 
+.ds-metric-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ds-metric-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ds-metric-value {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-metric-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.ds-metric-change-success,
+.ds-metric-change-positive {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.ds-metric-change-warning {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.ds-metric-change-negative {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+.ds-metric-change-neutral {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.ds-metric-desc {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   QUICK ACTION CARDS GRID
+   ========================================================================== */
+.ds-action-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin: 6px 0;
+}
+
+.ds-action-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-md);
+  text-decoration: none;
+}
+
+.ds-action-card:hover {
+  border-color: var(--accent-subtle-border);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.ds-action-card:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.ds-action-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ds-action-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.ds-action-desc {
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   INSIGHT CARD SYSTEM
+   ========================================================================== */
+.ds-insight-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+  box-shadow: var(--shadow-md);
+}
+
+.ds-insight-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.ds-insight-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ds-insight-icon-info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border: 1px solid var(--color-info-border);
+}
+
+.ds-insight-icon-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
+}
+
+.ds-insight-icon-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning-border);
+}
+
+.ds-insight-icon-error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid var(--color-error-border);
+}
+
+.ds-insight-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ds-insight-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: 3px;
+}
+
+.ds-insight-description {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.ds-insight-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.ds-insight-action-btn {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.ds-insight-action-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ds-insight-priority {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+}
+
+.ds-priority-critical {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid var(--color-error-border);
+}
+
+.ds-priority-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning-border);
+}
+
+.ds-priority-info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border: 1px solid var(--color-info-border);
+}
+
+.ds-priority-healthy {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
+}
+
 /* ==========================================================================
    BUTTONS (Main Content Area)
    ========================================================================== */
@@ -1193,7 +1490,7 @@ th {
 .main .stButton>button {
   border-radius: var(--radius-md) !important;
   font-weight: 600 !important;
-  font-size: 14px !important;
+  font-size: 15px !important;
   padding: 8px 18px !important;
   transition: all var(--transition-fast) !important;
   border: 1px solid var(--border) !important;
@@ -1206,7 +1503,7 @@ th {
 .main .stButton>button p,
 .main .stButton>button span {
   color: var(--text-primary) !important;
-  font-size: 14px !important;
+  font-size: 15px !important;
   font-weight: 600 !important;
 }
 
@@ -1240,6 +1537,7 @@ th {
 .main .stButton>button[kind="primary"] p,
 .main .stButton>button[kind="primary"] span {
   color: #ffffff !important;
+  font-size: 15px !important;
 }
 
 .main .stButton>button[kind="primary"]:hover {
@@ -1261,25 +1559,28 @@ th {
 }
 
 /* ==========================================================================
-   FORM INPUTS, TEXTAREAS, SELECTBOXES
+   FORM INPUTS, TEXTAREAS, SELECTBOXES (16px minimum for standard readability)
    ========================================================================== */
 .stTextInput>div>div>input,
 .stTextArea>div>div>textarea,
 .stNumberInput>div>div>input,
-div[data-baseweb="select"]>div {
+div[data-baseweb="select"]>div,
+div[data-baseweb="input"] input {
   background-color: var(--surface) !important;
   color: var(--text-primary) !important;
   border: 1px solid var(--border) !important;
   border-radius: var(--radius-md) !important;
-  font-size: 13px !important;
+  font-size: 16px !important;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast) !important;
   font-family: var(--font-sans) !important;
+  padding: 8px 12px !important;
 }
 
 .stTextInput>div>div>input:focus,
 .stTextArea>div>div>textarea:focus,
 .stNumberInput>div>div>input:focus,
-div[data-baseweb="select"]>div:focus-within {
+div[data-baseweb="select"]>div:focus-within,
+div[data-baseweb="input"]:focus-within {
   border-color: var(--border-focus) !important;
   box-shadow: 0 0 0 3px var(--accent-subtle) !important;
   outline: none !important;
@@ -1292,11 +1593,12 @@ div[data-baseweb="select"]>div:focus-within {
 .stMultiselect label,
 .stRadio label,
 .stSlider label,
-.stCheckbox label {
-  font-size: 12px !important;
+.stCheckbox label,
+div[data-testid="stWidgetLabel"] label p {
+  font-size: 14px !important;
   font-weight: 500 !important;
   color: var(--text-secondary) !important;
-  margin-bottom: 3px !important;
+  margin-bottom: 4px !important;
   font-family: var(--font-sans) !important;
   letter-spacing: -0.005em !important;
 }
@@ -1312,7 +1614,7 @@ div[data-baseweb="popover"] [role="listbox"] {
 div[data-baseweb="option"] {
   background: transparent !important;
   color: var(--text-primary) !important;
-  font-size: 13px !important;
+  font-size: 15px !important;
 }
 
 div[data-baseweb="option"]:hover {
@@ -1322,6 +1624,7 @@ div[data-baseweb="option"]:hover {
 div[data-baseweb="option"][aria-selected="true"] {
   background: var(--accent-subtle) !important;
   color: var(--accent) !important;
+  font-weight: 600 !important;
 }
 
 /* ==========================================================================
@@ -1330,16 +1633,16 @@ div[data-baseweb="option"][aria-selected="true"] {
 .stTabs [data-baseweb="tab-list"] {
   background-color: transparent !important;
   border-bottom: 1px solid var(--border) !important;
-  gap: var(--space-1) !important;
+  gap: var(--space-2) !important;
   padding: 0 !important;
 }
 
 .stTabs [data-baseweb="tab"] {
   color: var(--text-secondary, #475569) !important;
-  font-weight: 600 !important;
-  font-size: 13px !important;
+  font-weight: 500 !important;
+  font-size: 15px !important;
   border: none !important;
-  padding: 8px 16px !important;
+  padding: 10px 18px !important;
   background: transparent !important;
   transition: all var(--transition-fast) !important;
   letter-spacing: -0.005em !important;
@@ -1353,8 +1656,8 @@ div[data-baseweb="option"][aria-selected="true"] {
 
 .stTabs [data-baseweb="tab"][aria-selected="true"] {
   color: var(--accent, #2563eb) !important;
-  font-weight: 700 !important;
-  border-bottom: 2px solid var(--accent, #2563eb) !important;
+  font-weight: 600 !important;
+  border-bottom: 2.5px solid var(--accent, #2563eb) !important;
 }
 
 .stTabs [data-baseweb="tab-panel"] {
@@ -2728,9 +3031,9 @@ div[data-testid="stButton"] button[kind="primary"],
   border: 1px solid var(--primary-hover, #1d4ed8) !important;
   border-radius: 6px !important;
   font-family: 'Source Sans 3', sans-serif !important;
-  font-size: 13px !important;
-  font-weight: 650 !important;
-  padding: 7px 18px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  padding: 8px 18px !important;
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
   transition: all 0.15s ease !important;
 }
@@ -2751,9 +3054,9 @@ div[data-testid="stButton"] button[kind="secondary"],
   border: 1px solid var(--border) !important;
   border-radius: 6px !important;
   font-family: 'Source Sans 3', sans-serif !important;
-  font-size: 13px !important;
+  font-size: 15px !important;
   font-weight: 600 !important;
-  padding: 7px 16px !important;
+  padding: 8px 16px !important;
   box-shadow: var(--shadow-xs) !important;
   transition: all 0.15s ease !important;
 }
@@ -2774,9 +3077,9 @@ div[data-testid="stTextArea"] textarea {
   border: 1px solid var(--border) !important;
   border-radius: 6px !important;
   font-family: 'Source Sans 3', sans-serif !important;
-  font-size: 13.5px !important;
+  font-size: 16px !important;
   color: var(--text-primary) !important;
-  padding: 7px 12px !important;
+  padding: 8px 12px !important;
   box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
 }
 
@@ -2795,7 +3098,7 @@ div[data-testid="stMultiSelect"] div[data-baseweb="select"] > div {
   border: 1px solid var(--border) !important;
   border-radius: 6px !important;
   font-family: 'Source Sans 3', sans-serif !important;
-  font-size: 13.5px !important;
+  font-size: 16px !important;
   color: var(--text-primary) !important;
 }
 
@@ -2829,9 +3132,9 @@ div[data-testid="stFileUploader"] section button {
   color: var(--text-primary) !important;
   border: 1px solid var(--border) !important;
   border-radius: 6px !important;
-  font-size: 12px !important;
+  font-size: 14px !important;
   font-weight: 600 !important;
-  padding: 6px 14px !important;
+  padding: 7px 16px !important;
 }
 
 div[data-testid="stFileUploader"] section button:hover {
