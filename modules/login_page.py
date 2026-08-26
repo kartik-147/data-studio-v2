@@ -2,20 +2,15 @@
 DATA STUDIO v2 — Production SaaS Authentication & Login View
 =============================================================================
 Professional, minimal, production-ready enterprise SaaS login interface:
+- Clean Top Bar: Brand logo & name (left) | Theme toggle (right)
 - Left Column:
-  - Clean Brand Logo & Product Name ("Data Studio")
-  - Professional Headline: "Your data. Clearer decisions."
-  - Value Proposition: "Explore, prepare, visualize, and understand your data from one professional analytics workspace."
-  - Subtle Minimal Analytics Data Visualization Chart Pattern
+  - Brand headline: "Your data. Clearer decisions."
+  - Value proposition: "Explore, prepare, visualize, and understand your data from one professional analytics workspace."
+  - Compact Live Data Quality Index SVG Chart
 - Right Column:
-  - Enterprise Authentication Card (White/Dark surface, subtle 8px border-radius, crisp borders, minimal elevation)
-  - Clear Heading: "Sign in to Data Studio"
-  - Google Sign-In with Official Google 'G' Icon
-  - Email / Password Login Form with Remember Me & Forgot Password
-  - Guest / Demo Access
-  - Account Registration Flow
-All underlying authentication logic, Bcrypt verification, Google OAuth, Firebase logging,
-and session management are preserved 100% intact.
+  - Compact Enterprise Auth Card (8px border radius, subtle elevation)
+  - Google Sign-In, Email/Password, Remember Me, Guest Access, Registration
+- Flawless viewport fitting without top or bottom clipping on all screen sizes.
 """
 from typing import Optional
 import streamlit as st
@@ -40,7 +35,7 @@ from modules.google_auth import (
 
 
 def _get_login_page_css(is_dark: bool) -> str:
-    """Generate scoped CSS for a mature, enterprise-grade SaaS login page."""
+    """Generate scoped CSS for a perfectly fitted, enterprise-grade SaaS login page."""
     bg_page = "#0b0f19" if is_dark else "#f8fafc"
     bg_card = "#141c2e" if is_dark else "#ffffff"
     bg_card_subtle = "#0f1624" if is_dark else "#f1f5f9"
@@ -54,7 +49,7 @@ def _get_login_page_css(is_dark: bool) -> str:
 
     return f"""<style>
 /* =========================================================================
-   LOGIN PAGE SCOPED STYLING — MATURE PRODUCTION SAAS (Source Sans 3)
+   LOGIN PAGE SCOPED STYLING — PERFECT VIEWPORT FIT
    ========================================================================= */
 html, body,
 .stApp,
@@ -66,28 +61,16 @@ section.main,
 .main > div,
 .main .block-container,
 div[data-testid="stMainBlockContainer"] {{
-    min-height: 100vh !important;
-    min-height: 100dvh !important;
     background-color: {bg_page} !important;
     margin: 0 !important;
     box-sizing: border-box !important;
     font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }}
 
-@media (min-height: 580px) {{
-    html, body,
-    .stApp,
-    div[data-testid="stAppViewContainer"],
-    section[data-testid="stMain"],
-    section.main,
-    .main {{
-        height: 100vh !important;
-        height: 100dvh !important;
-        max-height: 100dvh !important;
-        overflow: hidden !important;
-        overflow-y: hidden !important;
-        overflow-x: hidden !important;
-    }}
+/* Ensure smooth scrolling if screen is very short without clipping */
+html, body, .stApp, section[data-testid="stMain"] {{
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
 }}
 
 /* Hide unnecessary Streamlit chrome on Login */
@@ -102,24 +85,16 @@ div[data-testid="stDecoration"] {{
     padding: 0 !important;
 }}
 
-.main {{
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    align-items: center !important;
-    padding: 0 !important;
-}}
-
 .main .block-container,
 div[data-testid="stMainBlockContainer"] {{
-    max-width: 1140px !important;
+    max-width: 1060px !important;
     width: 100% !important;
     margin: 0 auto !important;
-    padding: clamp(16px, 2.5vh, 28px) clamp(20px, 3vw, 36px) !important;
+    padding-top: clamp(10px, 1.8vh, 20px) !important;
+    padding-bottom: clamp(12px, 2vh, 24px) !important;
+    padding-left: clamp(16px, 2.5vw, 32px) !important;
+    padding-right: clamp(16px, 2.5vw, 32px) !important;
     box-sizing: border-box !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
 }}
 
 /* Top Navigation Bar in Login */
@@ -128,18 +103,18 @@ div[data-testid="stMainBlockContainer"] {{
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    margin-bottom: clamp(12px, 2vh, 24px);
+    margin-bottom: 8px;
 }}
 
 .ds-brand-logo-wrap {{
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
 }}
 
 .ds-brand-icon-box {{
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 6px;
     background: #2563eb;
     display: flex;
@@ -149,7 +124,7 @@ div[data-testid="stMainBlockContainer"] {{
 }}
 
 .ds-brand-title {{
-    font-size: 19px;
+    font-size: 18px;
     font-weight: 700;
     color: {text_primary};
     letter-spacing: -0.02em;
@@ -162,43 +137,43 @@ div[data-testid="stMainBlockContainer"] {{
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-right: clamp(16px, 2vw, 36px);
-    height: 100%;
+    padding-right: clamp(12px, 1.5vw, 28px);
+    padding-top: 4px;
 }}
 
 .ds-saas-tag {{
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12.5px;
+    gap: 5px;
+    font-size: 11.5px;
     font-weight: 600;
     color: #2563eb;
     background: rgba(37, 99, 235, 0.08);
     border: 1px solid rgba(37, 99, 235, 0.2);
     border-radius: 4px;
-    padding: 3px 10px;
+    padding: 2px 8px;
     width: fit-content;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     letter-spacing: 0.02em;
     text-transform: uppercase;
 }}
 
 .ds-saas-headline {{
-    font-size: clamp(28px, 2.8vw, 36px);
-    font-weight: 600;
+    font-size: clamp(24px, 2.4vw, 30px);
+    font-weight: 700;
     color: {text_primary};
-    line-height: 1.2;
+    line-height: 1.18;
     letter-spacing: -0.025em;
-    margin: 0 0 12px 0;
+    margin: 0 0 8px 0;
 }}
 
 .ds-saas-description {{
-    font-size: 15.5px;
+    font-size: 14px;
     font-weight: 400;
     color: {text_secondary};
-    line-height: 1.55;
-    margin: 0 0 clamp(16px, 2vh, 24px) 0;
-    max-width: 480px;
+    line-height: 1.45;
+    margin: 0 0 12px 0;
+    max-width: 440px;
 }}
 
 /* Subtle Data Visualization SVG Graphic */
@@ -206,32 +181,32 @@ div[data-testid="stMainBlockContainer"] {{
     background: {bg_card};
     border: 1px solid {border_color};
     border-radius: 8px;
-    padding: 16px 20px;
+    padding: 10px 14px;
     box-shadow: {shadow_card};
-    max-width: 480px;
+    max-width: 440px;
 }}
 
 .ds-chart-box-header {{
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
     border-bottom: 1px solid {('rgba(51,65,85,0.4)' if is_dark else '#f1f5f9')};
 }}
 
 .ds-chart-box-title {{
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: {text_primary};
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 }}
 
 .ds-chart-box-meta {{
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 11px;
+    font-weight: 600;
     color: #10b981;
     display: flex;
     align-items: center;
@@ -240,61 +215,61 @@ div[data-testid="stMainBlockContainer"] {{
 
 .ds-saas-chart-svg {{
     width: 100%;
-    height: 110px;
+    height: 75px;
     display: block;
 }}
 
 /* =========================================================================
-   RIGHT AUTH CARD CONTAINER (8px Border Radius, Clean Enterprise Layout)
+   RIGHT AUTH CARD CONTAINER (Compact, 8px Radius, Fits Viewport)
    ========================================================================= */
 div[data-testid="stVerticalBlockBorderWrapper"] {{
     background: {bg_card} !important;
     border: 1px solid {border_card} !important;
     border-radius: 8px !important;
-    padding: clamp(20px, 2.4vh, 26px) clamp(22px, 2.2vw, 30px) !important;
+    padding: clamp(14px, 1.8vh, 20px) clamp(16px, 1.8vw, 24px) !important;
     box-shadow: {shadow_card} !important;
     box-sizing: border-box !important;
     width: 100% !important;
-    max-width: 430px !important;
+    max-width: 400px !important;
     margin: 0 auto !important;
 }}
 
 div[data-testid="stVerticalBlockBorderWrapper"] > div[data-testid="stVerticalBlock"] {{
-    gap: clamp(4px, 0.6vh, 8px) !important;
+    gap: 4px !important;
 }}
 
 /* Form inner vertical block */
 div[data-testid="stForm"] > div[data-testid="stVerticalBlock"] {{
-    gap: clamp(4px, 0.6vh, 8px) !important;
+    gap: 3px !important;
 }}
 
 .ds-auth-header {{
     text-align: left;
-    margin-bottom: clamp(8px, 1.2vh, 14px);
+    margin-bottom: 6px;
 }}
 
 .ds-auth-title {{
-    font-size: 23px !important;
-    font-weight: 600 !important;
+    font-size: 20px !important;
+    font-weight: 700 !important;
     color: {text_primary} !important;
     letter-spacing: -0.02em !important;
-    margin: 0 0 4px 0 !important;
-    line-height: 1.25 !important;
+    margin: 0 0 2px 0 !important;
+    line-height: 1.2 !important;
 }}
 
 .ds-auth-subtitle {{
-    font-size: 14.5px !important;
+    font-size: 13px !important;
     color: {text_secondary} !important;
     margin: 0 !important;
     font-weight: 400 !important;
-    line-height: 1.45 !important;
+    line-height: 1.35 !important;
 }}
 
 .ds-input-label {{
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 12.5px;
+    font-weight: 600;
     color: {text_primary};
-    margin: 4px 0 2px 1px;
+    margin: 2px 0 1px 1px;
     display: block;
 }}
 
@@ -314,22 +289,22 @@ div[data-testid="stTextInput"] input {{
     border: 1px solid {border_color} !important;
     border-radius: 6px !important;
     color: {text_primary} !important;
-    font-size: 16px !important;
-    height: 40px !important;
-    padding: 8px 12px !important;
+    font-size: 14.5px !important;
+    height: 36px !important;
+    padding: 6px 10px !important;
     box-shadow: none !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }}
 
 div[data-testid="stTextInput"] input:focus {{
     border-color: #2563eb !important;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
     outline: none !important;
 }}
 
 div[data-testid="stTextInput"] input::placeholder {{
     color: {text_muted} !important;
-    font-size: 14.5px !important;
+    font-size: 13.5px !important;
 }}
 
 /* Form Submit Button */
@@ -338,12 +313,12 @@ div[data-testid="stFormSubmitButton"] button {{
     color: #ffffff !important;
     border: 1px solid #1d4ed8 !important;
     font-weight: 600 !important;
-    font-size: 15.5px !important;
+    font-size: 14.5px !important;
     border-radius: 6px !important;
-    height: 42px !important;
+    height: 38px !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
     transition: all 0.15s ease !important;
-    margin-top: 4px !important;
+    margin-top: 3px !important;
 }}
 
 div[data-testid="stFormSubmitButton"] button:hover {{
@@ -364,19 +339,19 @@ div[data-testid="stFormSubmitButton"] button:active {{
     border: 1px solid {border_color} !important;
     color: {text_primary} !important;
     font-weight: 500 !important;
-    font-size: 15px !important;
+    font-size: 14px !important;
     border-radius: 6px !important;
-    height: 40px !important;
+    height: 36px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     text-decoration: none !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
     transition: all 0.15s ease !important;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="%234285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/><path fill="%2334A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z"/><path fill="%23FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15Z"/><path fill="%23EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/></svg>') !important;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="%234285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/><path fill="%2334A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z"/><path fill="%23FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15Z"/><path fill="%23EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/></svg>') !important;
     background-repeat: no-repeat !important;
-    background-position: 14px center !important;
-    padding-left: 28px !important;
+    background-position: 12px center !important;
+    padding-left: 24px !important;
 }}
 
 .ds-google-btn-wrap div[data-testid="stLinkButton"] a:hover,
@@ -392,9 +367,9 @@ div[data-testid="stFormSubmitButton"] button:active {{
     border: 1px solid {border_color} !important;
     color: {text_secondary} !important;
     font-weight: 500 !important;
-    font-size: 14.5px !important;
+    font-size: 13.5px !important;
     border-radius: 6px !important;
-    height: 38px !important;
+    height: 34px !important;
     transition: all 0.15s ease !important;
 }}
 
@@ -410,8 +385,8 @@ div[data-testid="stFormSubmitButton"] button:active {{
     border: none !important;
     color: #2563eb !important;
     font-weight: 600 !important;
-    font-size: 14px !important;
-    padding: 4px 8px !important;
+    font-size: 13px !important;
+    padding: 2px 6px !important;
     height: auto !important;
     box-shadow: none !important;
 }}
@@ -427,12 +402,12 @@ div[data-testid="stFormSubmitButton"] button:active {{
     background: {bg_card} !important;
     border: 1px solid {border_color} !important;
     border-radius: 6px !important;
-    padding: 5px 12px !important;
-    font-size: 13.5px !important;
+    padding: 4px 10px !important;
+    font-size: 13px !important;
     font-weight: 500 !important;
     color: {text_secondary} !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
-    height: 34px !important;
+    height: 32px !important;
 }}
 
 .ds-theme-pill-btn div[data-testid="stButton"] button:hover {{
@@ -442,29 +417,8 @@ div[data-testid="stFormSubmitButton"] button:active {{
 
 /* Checkbox label */
 div[data-testid="stCheckbox"] label span {{
-    font-size: 14px !important;
+    font-size: 13px !important;
     color: {text_secondary} !important;
-}}
-
-/* Short-screen optimizations (Laptops 768p / 720p) */
-@media (max-height: 760px) {{
-    .ds-saas-chart-box {{
-        padding: 10px 14px !important;
-    }}
-    .ds-saas-chart-svg {{
-        height: 80px !important;
-    }}
-    .ds-saas-headline {{
-        font-size: 26px !important;
-        margin-bottom: 8px !important;
-    }}
-    .ds-saas-description {{
-        font-size: 14.5px !important;
-        margin-bottom: 12px !important;
-    }}
-    div[data-testid="stVerticalBlockBorderWrapper"] {{
-        padding: 18px 22px !important;
-    }}
 }}
 
 /* Responsive adjustments for Mobile and Tablets */
@@ -477,14 +431,14 @@ div[data-testid="stCheckbox"] label span {{
     div[data-testid="stHorizontalBlock"]:has(div[data-testid="stVerticalBlockBorderWrapper"]) > div[data-testid="column"]:nth-of-type(2),
     div[data-testid="stHorizontalBlock"]:has(div[data-testid="stVerticalBlockBorderWrapper"]) > div[data-testid="stColumn"]:nth-of-type(2) {{
         width: 100% !important;
-        max-width: 440px !important;
+        max-width: 400px !important;
         margin: 0 auto !important;
         flex: 1 1 100% !important;
     }}
 
     .main .block-container,
     div[data-testid="stMainBlockContainer"] {{
-        padding: 16px 14px !important;
+        padding: 12px 14px !important;
     }}
 }}
 </style>"""
@@ -533,7 +487,7 @@ def render_login_page() -> None:
     with top_col_left:
         brand_html = f"""<div class="ds-brand-logo-wrap">
 <div class="ds-brand-icon-box">
-<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
 <rect width="18" height="18" x="3" y="3" rx="2"></rect>
 <line x1="3" y1="9" x2="21" y2="9"></line>
 <line x1="9" y1="21" x2="9" y2="9"></line>
@@ -551,18 +505,15 @@ def render_login_page() -> None:
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='height: clamp(8px, 1.5vh, 16px);'></div>", unsafe_allow_html=True)
-
     # =========================================================================
     # 2. MAIN 2-COLUMN SPLIT SCREEN
     # =========================================================================
-    left_col, right_col = st.columns([1.25, 1.0], gap="large")
+    left_col, right_col = st.columns([1.2, 1.0], gap="large")
 
     # ─────────────────────────────────────────────────────────────────────────
     # LEFT COLUMN: Value Proposition & Subtle Analytics Chart Graphic
     # ─────────────────────────────────────────────────────────────────────────
     with left_col:
-        bg_card_val = "#141c2e" if is_dark else "#ffffff"
         chart_accent = "#38bdf8" if is_dark else "#2563eb"
         chart_fill = "rgba(56, 189, 248, 0.12)" if is_dark else "rgba(37, 99, 235, 0.08)"
         grid_color = "rgba(51, 65, 85, 0.4)" if is_dark else "rgba(203, 213, 225, 0.7)"
@@ -574,26 +525,26 @@ def render_login_page() -> None:
 <div class="ds-saas-chart-box">
 <div class="ds-chart-box-header">
 <div class="ds-chart-box-title">
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{chart_accent}" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{chart_accent}" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
 Data Quality & Profiling Index
 </div>
 <div class="ds-chart-box-meta">● Live Audit</div>
 </div>
-<svg class="ds-saas-chart-svg" viewBox="0 0 400 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg class="ds-saas-chart-svg" viewBox="0 0 400 95" fill="none" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
 <stop offset="0%" stop-color="{chart_accent}" stop-opacity="0.25"/>
 <stop offset="100%" stop-color="{chart_accent}" stop-opacity="0.0"/>
 </linearGradient>
 </defs>
-<line x1="10" y1="20" x2="390" y2="20" stroke="{grid_color}" stroke-dasharray="3 3" stroke-width="0.75"/>
-<line x1="10" y1="55" x2="390" y2="55" stroke="{grid_color}" stroke-dasharray="3 3" stroke-width="0.75"/>
-<line x1="10" y1="90" x2="390" y2="90" stroke="{grid_color}" stroke-width="0.75"/>
-<path d="M 15 80 Q 70 30, 130 50 T 250 25 T 385 15 L 385 90 L 15 90 Z" fill="url(#chartGrad)"/>
-<path d="M 15 80 Q 70 30, 130 50 T 250 25 T 385 15" stroke="{chart_accent}" stroke-width="2" stroke-linecap="round"/>
-<circle cx="130" cy="50" r="3.5" fill="{bg_card_val}" stroke="{chart_accent}" stroke-width="2"/>
-<circle cx="250" cy="25" r="3.5" fill="{bg_card_val}" stroke="{chart_accent}" stroke-width="2"/>
-<circle cx="385" cy="15" r="3.5" fill="{bg_card_val}" stroke="{chart_accent}" stroke-width="2"/>
+<line x1="10" y1="18" x2="390" y2="18" stroke="{grid_color}" stroke-dasharray="3 3" stroke-width="0.75"/>
+<line x1="10" y1="48" x2="390" y2="48" stroke="{grid_color}" stroke-dasharray="3 3" stroke-width="0.75"/>
+<line x1="10" y1="78" x2="390" y2="78" stroke="{grid_color}" stroke-width="0.75"/>
+<path d="M 15 70 Q 70 25, 130 42 T 250 20 T 385 12 L 385 78 L 15 78 Z" fill="url(#chartGrad)"/>
+<path d="M 15 70 Q 70 25, 130 42 T 250 20 T 385 12" stroke="{chart_accent}" stroke-width="2" stroke-linecap="round"/>
+<circle cx="130" cy="42" r="3" fill="{bg_card_val}" stroke="{chart_accent}" stroke-width="2"/>
+<circle cx="250" cy="20" r="3" fill="{bg_card_val}" stroke="{chart_accent}" stroke-width="2"/>
+<circle cx="385" cy="12" r="3" fill="{bg_card_val}" stroke="{chart_accent}" stroke-width="2"/>
 </svg>
 </div>
 </div>"""
@@ -626,9 +577,9 @@ Data Quality & Profiling Index
                 st.markdown('</div>', unsafe_allow_html=True)
 
                 # Subtle Divider
-                divider_html = f"""<div style="display: flex; align-items: center; margin: 10px 0 8px 0; gap: 10px;">
+                divider_html = f"""<div style="display: flex; align-items: center; margin: 5px 0 3px 0; gap: 8px;">
 <div style="flex: 1; height: 1px; background: {('rgba(51, 65, 85, 0.6)' if is_dark else '#e2e8f0')};"></div>
-<span style="font-size: 12.5px; color: {('#94a3b8' if is_dark else '#64748b')}; font-weight: 500;">or</span>
+<span style="font-size: 11.5px; color: {('#94a3b8' if is_dark else '#64748b')}; font-weight: 500;">or</span>
 <div style="flex: 1; height: 1px; background: {('rgba(51, 65, 85, 0.6)' if is_dark else '#e2e8f0')};"></div>
 </div>"""
                 st.markdown(divider_html, unsafe_allow_html=True)
@@ -657,8 +608,8 @@ Data Quality & Profiling Index
                     with col_rem:
                         remember_me = st.checkbox("Remember me", value=True, key="signin_remember_me")
                     with col_forgot:
-                        forgot_html = """<div style="text-align: right; padding-top: 5px;">
-<a href="#forgot" style="color: #2563eb; font-size: 13px; font-weight: 500; text-decoration: none;">Forgot password?</a>
+                        forgot_html = """<div style="text-align: right; padding-top: 4px;">
+<a href="#forgot" style="color: #2563eb; font-size: 12.5px; font-weight: 500; text-decoration: none;">Forgot password?</a>
 </div>"""
                         st.markdown(forgot_html, unsafe_allow_html=True)
 
@@ -683,7 +634,7 @@ Data Quality & Profiling Index
                             )
 
                 # Guest / Demo Access
-                st.markdown('<div class="ds-guest-btn-wrap" style="text-align: center; margin-top: 6px;">', unsafe_allow_html=True)
+                st.markdown('<div class="ds-guest-btn-wrap" style="text-align: center; margin-top: 4px;">', unsafe_allow_html=True)
                 if st.button("👤 Try Guest Demo Workspace", key="guest_access_direct_btn", use_container_width=True):
                     start_guest_session()
                     st.toast("Entered Guest Demo mode.")
@@ -691,12 +642,8 @@ Data Quality & Profiling Index
                 st.markdown('</div>', unsafe_allow_html=True)
 
                 # Account creation switch link
-                switch_html = f"""<div style="text-align: center; margin-top: 8px; font-size: 13.5px; color: {text_secondary};">
-Don't have an account?
-</div>"""
-                st.markdown(switch_html, unsafe_allow_html=True)
-                st.markdown('<div class="ds-switch-btn-wrap" style="text-align: center;">', unsafe_allow_html=True)
-                if st.button("Create an account", key="switch_to_create_account_btn", use_container_width=True):
+                st.markdown('<div class="ds-switch-btn-wrap" style="text-align: center; margin-top: 4px;">', unsafe_allow_html=True)
+                if st.button("Don't have an account? Create an account", key="switch_to_create_account_btn", use_container_width=True):
                     st.session_state["auth_view"] = "register"
                     st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -770,7 +717,7 @@ Don't have an account?
                                 variant="error"
                             )
 
-                st.markdown('<div class="ds-switch-btn-wrap" style="text-align: center; margin-top: 6px;">', unsafe_allow_html=True)
+                st.markdown('<div class="ds-switch-btn-wrap" style="text-align: center; margin-top: 4px;">', unsafe_allow_html=True)
                 if st.button("← Back to Sign In", key="back_to_signin_btn", use_container_width=True):
                     st.session_state["auth_view"] = "signin"
                     st.rerun()
