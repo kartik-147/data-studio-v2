@@ -1949,3 +1949,175 @@ div[data-testid="stPlotlyChart"] {
 .ds-spacer-sm { height: 8px; }
 .ds-spacer-md { height: 16px; }
 .ds-spacer-lg { height: 24px; }
+
+/* ==========================================================================
+   LOGIN PAGE SPECIFIC STYLES (Mockup Design)
+   ========================================================================== */
+.ds-brand-logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ds-brand-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+}
+
+.ds-hero-wrap {
+  padding-top: 20px;
+  padding-bottom: 20px;
+  position: relative;
+}
+
+.ds-dot-matrix {
+  display: grid;
+  grid-template-columns: repeat(6, 6px);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.ds-dot-matrix span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  display: block;
+}
+
+.ds-hero-title {
+  font-size: 46px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+  margin: 0 0 16px 0;
+}
+
+.ds-hero-dot {
+  color: #2563eb;
+  font-size: 50px;
+  line-height: 0;
+}
+
+.ds-hero-subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  max-width: 520px;
+  margin: 0 0 32px 0;
+  font-weight: 450;
+}
+
+.ds-features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.ds-feature-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 16px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: var(--shadow-xs);
+  min-height: 180px;
+}
+
+.ds-feature-card:hover {
+  transform: translateY(-3px);
+  border-color: #2563eb;
+  box-shadow: var(--shadow-md);
+}
+
+.ds-feature-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.ds-feature-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.ds-feature-desc {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.ds-bottom-wave-wrap {
+  margin-top: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.7;
+}
+
+.ds-bottom-node {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.ds-bottom-line {
+  height: 2px;
+  width: 80px;
+  background: linear-gradient(90deg, #3b82f6, transparent);
+}
+
+.ds-auth-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 38px 36px 32px 36px;
+  box-shadow: var(--shadow-xl);
+  margin-top: 4px;
+  position: relative;
+}
+
+.ds-auth-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.ds-auth-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  margin: 0 0 6px 0;
+}
+
+.ds-auth-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 450;
+}
+
+.ds-input-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: block;
+}
+
