@@ -1,16 +1,16 @@
 """
-DATA STUDIO v2 — Real Google OAuth 2.0 Authentication Engine
+DATA STUDIO v2 — Production Google OAuth 2.0 Authentication Engine
 =============================================================================
-Provides strictly verified Google OAuth 2.0 authentication:
+Provides production-ready Google OAuth 2.0 integration:
 - Cryptographic identity verification through Google OpenID Connect (OIDC).
-- Enforces real authentication via accounts.google.com — NO unverified email inputs.
-- Safe configuration discovery (Streamlit Secrets & Environment variables).
-- Dynamic redirect URI detection (supports local & Streamlit Community Cloud).
-- Automatic token exchange and Google profile synchronization.
+- Intelligent multi-format redirect URI matching (handles trailing slash variances).
+- Streamlit native auth (`st.user`) auto-synchronization.
+- Automatic query parameter callback parser and error preservation.
+- Detailed diagnostic assistance for Google Cloud Console setup.
 """
 import os
 import urllib.parse
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, List
 import streamlit as st
 import requests
 
@@ -26,23 +26,43 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRETS_FILE = os.path.join(BASE_DIR, ".streamlit", "secrets.toml")
 
 
+def get_current_origin() -> str:
+    """Detect the exact browser origin (protocol + host) of the running app."""
+    try:
+        if hasattr(st, "context") and hasattr(st.context, "headers") and st.context.headers:
+            headers = st.context.headers
+            host = headers.get("x-forwarded-host") or headers.get("host") or ""
+            proto = headers.get("x-forwarded-proto") or ("https" if "streamlit.app" in host else "http")
+            if host:
+                return f"{proto}://{host}".rstrip("/")
+    except Exception:
+        pass
+    return ""
+
+
 def get_default_redirect_uri() -> str:
     """Determine the appropriate default redirect URI based on environment."""
-    # Check if custom redirect URI configured
+    # 1. Check custom redirect URI configured in secrets
     try:
         if hasattr(st, "secrets") and len(st.secrets) > 0:
             if "google_oauth" in st.secrets and "redirect_uri" in st.secrets["google_oauth"]:
-                return str(st.secrets["google_oauth"]["redirect_uri"]).strip()
+                return str(st.secrets["google_oauth"]["redirect_uri"]).strip().rstrip("/")
             if "auth" in st.secrets and "redirect_uri" in st.secrets["auth"]:
-                return str(st.secrets["auth"]["redirect_uri"]).strip()
+                return str(st.secrets["auth"]["redirect_uri"]).strip().rstrip("/")
     except Exception:
         pass
 
+    # 2. Check environment variable
     env_uri = os.environ.get("GOOGLE_REDIRECT_URI", "").strip()
     if env_uri:
-        return env_uri
+        return env_uri.rstrip("/")
 
-    # Default fallback for production / local
+    # 3. Check dynamically detected host origin
+    origin = get_current_origin()
+    if origin:
+        return origin
+
+    # 4. Default fallback for Streamlit Cloud
     return "https://data-studio-v2.streamlit.app"
 
 
@@ -91,6 +111,8 @@ def get_google_oauth_config() -> Dict[str, Any]:
     # 3. Default redirect URI if unconfigured
     if not redirect_uri:
         redirect_uri = get_default_redirect_uri()
+    else:
+        redirect_uri = redirect_uri.rstrip("/")
 
     is_configured = bool(client_id and client_secret)
 
@@ -140,7 +162,7 @@ def save_google_oauth_secrets(client_id: str, client_secret: str, redirect_uri: 
 [google_oauth]
 client_id = "{client_id.strip()}"
 client_secret = "{client_secret.strip()}"
-redirect_uri = "{redirect_uri.strip() or 'https://data-studio-v2.streamlit.app'}"
+redirect_uri = "{redirect_uri.strip().rstrip('/') or 'https://data-studio-v2.streamlit.app'}"
 """
         with open(SECRETS_FILE, "w", encoding="utf-8") as f:
             f.writelines(cleaned_lines)
@@ -175,47 +197,95 @@ def get_google_auth_url(state: Optional[str] = None) -> Optional[str]:
     return f"{GOOGLE_AUTH_ENDPOINT}?{query_string}"
 
 
-def exchange_code_for_token(code: str, redirect_uri: str, client_id: str, client_secret: str) -> Optional[Dict[str, Any]]:
-    """Exchange authorization code for access and ID tokens via Google OAuth API."""
+def exchange_code_for_token(code: str, redirect_uri: str, client_id: str, client_secret: str) -> Tuple[Optional[Dict[str, Any]], str]:
+    """
+    Exchange authorization code for access and ID tokens via Google OAuth API.
+    Attempts primary redirect_uri, and if redirect_uri_mismatch occurs, tests alternative formats.
+    """
     if not code or not client_id or not client_secret:
-        return None
+        return None, "Missing OAuth code or client credentials."
 
-    payload = {
-        "code": code,
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "redirect_uri": redirect_uri,
-        "grant_type": "authorization_code"
-    }
+    clean_uri = redirect_uri.rstrip("/")
+    candidate_uris: List[str] = [clean_uri, clean_uri + "/"]
 
-    try:
-        resp = requests.post(GOOGLE_TOKEN_ENDPOINT, data=payload, timeout=10)
-        if resp.status_code == 200:
-            return resp.json()
-        else:
-            print(f"[Google Auth Error] Token exchange failed ({resp.status_code}): {resp.text}")
-            return None
-    except Exception as e:
-        print(f"[Google Auth Error] Token request exception: {e}")
-        return None
+    origin = get_current_origin()
+    if origin:
+        clean_origin = origin.rstrip("/")
+        if clean_origin not in candidate_uris:
+            candidate_uris.append(clean_origin)
+            candidate_uris.append(clean_origin + "/")
+
+    last_error = ""
+    for uri in candidate_uris:
+        payload = {
+            "code": code,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": uri,
+            "grant_type": "authorization_code"
+        }
+        try:
+            resp = requests.post(GOOGLE_TOKEN_ENDPOINT, data=payload, timeout=10)
+            if resp.status_code == 200:
+                return resp.json(), ""
+            else:
+                resp_json = {}
+                try:
+                    resp_json = resp.json()
+                except Exception:
+                    pass
+                err_desc = resp_json.get("error_description") or resp_json.get("error") or resp.text
+                last_error = f"{err_desc} (tested redirect_uri: {uri})"
+                print(f"[Google Auth Error] Token exchange failed ({resp.status_code}): {last_error}")
+        except Exception as e:
+            last_error = f"Connection exception during token exchange: {e}"
+            print(f"[Google Auth Error] {last_error}")
+
+    return None, last_error
 
 
-def fetch_google_user_profile(access_token: str) -> Optional[Dict[str, Any]]:
+def fetch_google_user_profile(access_token: str) -> Tuple[Optional[Dict[str, Any]], str]:
     """Retrieve verified user profile metadata from Google UserInfo API."""
     if not access_token:
-        return None
+        return None, "Missing access token."
 
     try:
         headers = {"Authorization": f"Bearer {access_token}"}
         resp = requests.get(GOOGLE_USERINFO_ENDPOINT, headers=headers, timeout=10)
         if resp.status_code == 200:
-            return resp.json()
+            return resp.json(), ""
         else:
-            print(f"[Google Auth Error] UserInfo request failed ({resp.status_code}): {resp.text}")
-            return None
+            return None, f"UserInfo request failed ({resp.status_code}): {resp.text}"
     except Exception as e:
-        print(f"[Google Auth Error] UserInfo exception: {e}")
-        return None
+        return None, f"UserInfo exception: {e}"
+
+
+def check_streamlit_native_user() -> Optional[Dict[str, Any]]:
+    """Check if user is authenticated via Streamlit native OpenID Connect / Google auth."""
+    try:
+        if hasattr(st, "user") and st.user:
+            email = getattr(st.user, "email", None) or (st.user.get("email") if isinstance(st.user, dict) else None)
+            if email:
+                name = getattr(st.user, "name", None) or (st.user.get("name") if isinstance(st.user, dict) else None) or email.split("@")[0]
+                user_record = get_or_create_google_user(
+                    email=email,
+                    full_name=name,
+                    google_id=getattr(st.user, "sub", "") or f"gid_{email.split('@')[0]}"
+                )
+                if user_record:
+                    session_payload = {
+                        "id": user_record["user_id"],
+                        "user_id": user_record["user_id"],
+                        "full_name": user_record["full_name"],
+                        "email": user_record["email"],
+                        "picture": getattr(st.user, "picture", "") or "",
+                        "auth_provider": "google"
+                    }
+                    login_user_session(session_payload, auth_provider="google")
+                    return session_payload
+    except Exception:
+        pass
+    return None
 
 
 def handle_google_oauth_callback() -> Tuple[bool, str, Optional[Dict[str, Any]]]:
@@ -227,6 +297,12 @@ def handle_google_oauth_callback() -> Tuple[bool, str, Optional[Dict[str, Any]]]
     Returns:
         (success: bool, message: str, user_info: Optional[Dict])
     """
+    # 1. Check Streamlit native authentication if present
+    native_user = check_streamlit_native_user()
+    if native_user:
+        return True, f"Welcome, {native_user.get('full_name')}!", native_user
+
+    # 2. Check query parameters
     code = ""
     error = ""
     try:
@@ -245,20 +321,26 @@ def handle_google_oauth_callback() -> Tuple[bool, str, Optional[Dict[str, Any]]]
             st.query_params.clear()
         except Exception:
             pass
-        return False, f"Google Authentication cancelled: {error}", None
+        err_msg = f"Google Authentication was cancelled or rejected by Google: {error}"
+        st.session_state["auth_error_message"] = err_msg
+        return False, err_msg, None
 
     if not code:
         return False, "", None
 
+    # 3. Retrieve configuration
     config = get_google_oauth_config()
     if not config["is_configured"]:
         try:
             st.query_params.clear()
         except Exception:
             pass
-        return False, "Google OAuth is not configured on the server.", None
+        err_msg = "Google OAuth credentials (client_id / client_secret) are not configured in your Streamlit secrets."
+        st.session_state["auth_error_message"] = err_msg
+        return False, err_msg, None
 
-    token_data = exchange_code_for_token(
+    # 4. Exchange code for access token
+    token_data, token_err = exchange_code_for_token(
         code=code,
         redirect_uri=config["redirect_uri"],
         client_id=config["client_id"],
@@ -270,21 +352,27 @@ def handle_google_oauth_callback() -> Tuple[bool, str, Optional[Dict[str, Any]]]
             st.query_params.clear()
         except Exception:
             pass
-        return False, "Failed to obtain access token from Google. The authorization code may have expired.", None
+        err_msg = f"Google Token Exchange Failed: {token_err or 'The authorization code may have expired. Please try signing in again.'}"
+        st.session_state["auth_error_message"] = err_msg
+        return False, err_msg, None
 
-    profile = fetch_google_user_profile(token_data["access_token"])
+    # 5. Fetch verified user profile
+    profile, profile_err = fetch_google_user_profile(token_data["access_token"])
     if not profile or not profile.get("email"):
         try:
             st.query_params.clear()
         except Exception:
             pass
-        return False, "Failed to retrieve verified user profile from Google.", None
+        err_msg = f"Failed to retrieve verified profile from Google: {profile_err}"
+        st.session_state["auth_error_message"] = err_msg
+        return False, err_msg, None
 
     google_email = profile["email"]
     google_name = profile.get("name") or profile.get("given_name") or google_email.split("@")[0]
     google_id = profile.get("id") or profile.get("sub", "")
     google_picture = profile.get("picture", "")
 
+    # 6. Save or retrieve user record
     user_record = get_or_create_google_user(
         email=google_email,
         full_name=google_name,
@@ -297,13 +385,18 @@ def handle_google_oauth_callback() -> Tuple[bool, str, Optional[Dict[str, Any]]]
             st.query_params.clear()
         except Exception:
             pass
-        return False, "Failed to initialize user session for Google account.", None
+        err_msg = "Failed to initialize local user record for Google account."
+        st.session_state["auth_error_message"] = err_msg
+        return False, err_msg, None
 
+    # Clear query parameters and auth errors
     try:
         st.query_params.clear()
     except Exception:
         pass
+    st.session_state.pop("auth_error_message", None)
 
+    # 7. Establish authenticated session
     session_payload = {
         "id": user_record["user_id"],
         "user_id": user_record["user_id"],
@@ -339,8 +432,9 @@ def render_google_setup_dialog(is_dark: bool = False) -> None:
 
 1. Go to [Google Cloud Console &rarr; Credentials](https://console.cloud.google.com/apis/credentials).
 2. Create an **OAuth 2.0 Client ID** (Application type: *Web application*).
-3. Under **Authorized redirect URIs**, add:
+3. Under **Authorized redirect URIs**, add both:
    - `https://data-studio-v2.streamlit.app`
+   - `https://data-studio-v2.streamlit.app/`
 4. Open your [Streamlit Cloud Dashboard](https://share.streamlit.io), go to your App Settings &rarr; **Secrets**, and paste:
 """)
         st.code("""[google_oauth]

@@ -185,7 +185,10 @@ def main() -> None:
     cb_ok, cb_msg, cb_user = handle_google_oauth_callback()
     if cb_ok and cb_user:
         st.toast(f"Welcome, {cb_user.get('full_name', 'User')}! Signed in with Google. ✓")
+        st.session_state["current_page"] = "Overview"
         st.rerun()
+    elif cb_msg:
+        st.session_state["auth_error_message"] = cb_msg
 
     # Route protection — unauthenticated users see login
     if not is_authenticated():
