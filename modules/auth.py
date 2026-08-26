@@ -204,22 +204,26 @@ def get_current_user() -> Dict[str, Any]:
     }
 
 
-def login_user_session(user_info: Dict[str, Any]) -> None:
-    """Establish an authenticated session for a registered user."""
+def login_user_session(user_info: Dict[str, Any], auth_provider: str = "email") -> None:
+    """Establish an authenticated session for a registered or Google user."""
+    provider = user_info.get("auth_provider") or auth_provider
     st.session_state["authenticated"] = True
-    st.session_state["auth_provider"] = "email"
+    st.session_state["auth_provider"] = provider
     st.session_state["is_guest"] = False
     st.session_state["user_info"] = {
         "id": user_info.get("id") or user_info.get("user_id"),
         "user_id": user_info.get("user_id") or user_info.get("id"),
-        "full_name": user_info["full_name"],
-        "email": user_info["email"]
+        "full_name": user_info.get("full_name", "User"),
+        "email": user_info.get("email", ""),
+        "picture": user_info.get("picture", ""),
+        "auth_provider": provider
     }
     st.session_state["current_page"] = "Overview"
 
     # Session Guard: Log login event once per session
     if not st.session_state.get("login_event_logged", False):
-        log_user_login(st.session_state["user_info"])
+        log_payload = dict(st.session_state["user_info"])
+        log_user_login(log_payload)
         st.session_state["login_event_logged"] = True
 
 

@@ -27,6 +27,7 @@ from modules.ui_components import (
 from modules.auth import (
     is_authenticated, get_current_user, logout_user
 )
+from modules.google_auth import handle_google_oauth_callback
 from modules.firebase_service import is_admin_user
 
 # Page view imports (routing targets)
@@ -180,6 +181,11 @@ def render_top_navbar() -> str:
 
 def main() -> None:
     """Main routing dispatcher with route-level authentication protection."""
+    # Check for OAuth callback code in query parameters
+    cb_ok, cb_msg, cb_user = handle_google_oauth_callback()
+    if cb_ok and cb_user:
+        st.toast(f"Welcome, {cb_user.get('full_name', 'User')}! Signed in with Google. ✓")
+        st.rerun()
 
     # Route protection — unauthenticated users see login
     if not is_authenticated():

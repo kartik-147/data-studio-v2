@@ -127,3 +127,57 @@ def save_user(full_name: str, email: str, password_hash: str) -> Optional[Dict[s
     if _write_db(db):
         return new_user
     return None
+
+
+def get_or_create_google_user(
+    email: str,
+    full_name: str,
+    google_id: str,
+    picture: str = ""
+) -> Optional[Dict[str, Any]]:
+    """
+    Retrieve an existing user by email or register a new Google-authenticated user.
+    Sets auth_provider to 'google' and stores Google metadata.
+    """
+    if not email:
+        return None
+    normalized_email = email.strip().lower()
+    
+    existing = get_user_by_email(normalized_email)
+    if existing:
+        # Update google metadata if needed
+        db = _read_db()
+        users = db.get("users", [])
+        for u in users:
+            if u.get("email", "").strip().lower() == normalized_email:
+                u["google_id"] = google_id
+                u["picture"] = picture or u.get("picture", "")
+                u["auth_provider"] = "google"
+                u["last_login_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+                if not u.get("full_name") and full_name:
+                    u["full_name"] = full_name.strip()
+                _write_db(db)
+                return u
+        return existing
+
+    # Create new Google user
+    db = _read_db()
+    users = db.get("users", [])
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    new_user = {
+        "user_id": f"usr_g_{uuid.uuid4().hex[:10]}",
+        "full_name": full_name.strip() if full_name else normalized_email.split("@")[0],
+        "email": normalized_email,
+        "password_hash": None, # Google OAuth users do not use local password
+        "auth_provider": "google",
+        "google_id": google_id,
+        "picture": picture,
+        "created_at": now_iso,
+        "last_login_at": now_iso
+    }
+    users.append(new_user)
+    db["users"] = users
+    if _write_db(db):
+        return new_user
+    return None
+

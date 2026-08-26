@@ -157,7 +157,7 @@ def log_user_login(user_info: Dict[str, Any]) -> bool:
         full_name = user_info.get("full_name", "User")
         email = user_info.get("email", "")
         is_guest = user_info.get("is_guest", False)
-        auth_provider = "guest" if is_guest else "email_password"
+        auth_provider = user_info.get("auth_provider") or ("guest" if is_guest else "email_password")
         
         now = datetime.datetime.now(datetime.timezone.utc)
         now_str = now.isoformat()

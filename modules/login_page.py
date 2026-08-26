@@ -34,6 +34,12 @@ from modules.auth import (
     start_guest_session,
     login_user_session
 )
+from modules.google_auth import (
+    get_google_auth_url,
+    is_google_auth_configured,
+    handle_google_oauth_callback,
+    render_google_auth_dialog
+)
 
 
 def _get_login_page_css(is_dark: bool) -> str:
@@ -308,7 +314,9 @@ div[data-testid="stFormSubmitButton"] button:hover {{
 }}
 
 /* Google Button Styling with Authentic Google 'G' Icon */
-.ds-google-btn-wrap div[data-testid="stButton"] button {{
+.ds-google-btn-wrap div[data-testid="stButton"] button,
+.ds-google-btn-wrap a[data-testid="stLinkButton"],
+.ds-google-btn-wrap div[data-testid="stLinkButton"] a {{
     background: {bg_card} !important;
     border: 1px solid {border_card} !important;
     color: {text_primary} !important;
@@ -319,12 +327,19 @@ div[data-testid="stFormSubmitButton"] button:hover {{
     background-repeat: no-repeat !important;
     background-position: 85px center !important;
     padding-left: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
 }}
 
-.ds-google-btn-wrap div[data-testid="stButton"] button:hover {{
+.ds-google-btn-wrap div[data-testid="stButton"] button:hover,
+.ds-google-btn-wrap a[data-testid="stLinkButton"]:hover,
+.ds-google-btn-wrap div[data-testid="stLinkButton"] a:hover {{
     background-color: {bg_card_subtle} !important;
     border-color: #cbd5e1 !important;
     transform: translateY(-1px) !important;
+    color: {text_primary} !important;
 }}
 
 /* Guest Button Styling */
@@ -377,6 +392,18 @@ div[data-testid="stFormSubmitButton"] button:hover {{
 
 def render_login_page() -> None:
     """Render the exact high-precision split layout matching the user design mockup."""
+    # Check for Google OAuth callback parameters on page load
+    cb_ok, cb_msg, cb_user = handle_google_oauth_callback()
+    if cb_ok and cb_user:
+        st.toast(f"Welcome, {cb_user.get('full_name', 'User')}! Signed in with Google. ✓")
+        st.rerun()
+    elif cb_msg:
+        render_notification(
+            title="Google Sign-In",
+            message=cb_msg,
+            variant="error"
+        )
+
     current_theme = st.session_state.get("theme", "Light")
     is_dark = current_theme == "Dark"
 
@@ -489,8 +516,8 @@ def render_login_page() -> None:
                 st.markdown('<span class="ds-input-label">Email</span>', unsafe_allow_html=True)
                 email = st.text_input(
                     "Email",
-                    value="bendrekartik47@gmail.com",
-                    placeholder="bendrekartik47@gmail.com",
+                    value="",
+                    placeholder="name@company.com",
                     key="signin_email_field",
                     label_visibility="collapsed"
                 )
@@ -550,16 +577,7 @@ def render_login_page() -> None:
             # Google Sign In Button with Official Multi-Color Google G SVG Icon
             st.markdown('<div class="ds-google-btn-wrap">', unsafe_allow_html=True)
             if st.button("Sign in with Google", key="google_signin_action_btn", use_container_width=True):
-                # Seamless Google authentication with current credentials
-                google_user_info = {
-                    "id": "google_usr_kartik",
-                    "user_id": "google_usr_kartik",
-                    "full_name": "Kartik Bendre",
-                    "email": email or "bendrekartik47@gmail.com"
-                }
-                login_user_session(google_user_info)
-                st.toast("Signed in with Google successfully! ✓")
-                st.rerun()
+                render_google_auth_dialog(is_dark=is_dark)
             st.markdown('</div>', unsafe_allow_html=True)
 
             # Guest / Demo Access & Registration switch
