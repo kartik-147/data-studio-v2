@@ -57,29 +57,67 @@ def _get_login_page_css(is_dark: bool) -> str:
 
     return f"""<style>
 /* =========================================================================
-   LOGIN PAGE SCOPED STYLING
+   LOGIN PAGE SCOPED STYLING — FULL-SCREEN NON-SCROLLABLE VIEWPORT (100dvh)
    ========================================================================= */
-.stApp {{
+html, body, .stApp {{
+    min-height: 100vh !important;
+    height: 100vh !important;
+    min-height: 100dvh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
     background-color: {bg_page} !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}}
+
+/* Hide unnecessary Streamlit chrome on Login */
+header[data-testid="stHeader"],
+footer,
+#MainMenu,
+div[data-testid="stToolbar"],
+div[data-testid="stDecoration"] {{
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}}
+
+.main {{
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0 !important;
 }}
 
 .main .block-container {{
-    max-width: 1440px !important;
-    padding-top: 18px !important;
-    padding-bottom: 36px !important;
-    padding-left: 48px !important;
-    padding-right: 48px !important;
+    max-width: 1360px !important;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    padding: clamp(6px, 1.4vh, 16px) clamp(14px, 2.5vw, 40px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
 }}
 
 /* Top Navigation Bar */
 .ds-brand-logo-wrap {{
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }}
 
 .ds-brand-title {{
-    font-size: 20px;
+    font-size: clamp(16px, 1.6vw, 19px);
     font-weight: 800;
     color: {text_primary};
     letter-spacing: -0.03em;
@@ -87,48 +125,47 @@ def _get_login_page_css(is_dark: bool) -> str:
 
 /* Left Hero Presentation */
 .ds-hero-wrap {{
-    padding-top: 20px;
-    padding-bottom: 20px;
+    padding: 0;
     position: relative;
 }}
 
 .ds-dot-matrix {{
     display: grid;
-    grid-template-columns: repeat(6, 6px);
-    gap: 10px;
-    margin-bottom: 24px;
+    grid-template-columns: repeat(6, 5px);
+    gap: 7px;
+    margin-bottom: clamp(4px, 1vh, 14px);
     opacity: {("0.25" if is_dark else "0.35")};
 }}
 
 .ds-dot-matrix span {{
-    width: 4px;
-    height: 4px;
+    width: 3px;
+    height: 3px;
     border-radius: 50%;
     background-color: #3b82f6;
     display: block;
 }}
 
 .ds-hero-title {{
-    font-size: 46px !important;
+    font-size: clamp(22px, 2.6vw, 38px) !important;
     font-weight: 800 !important;
     color: {text_primary} !important;
     letter-spacing: -0.04em !important;
     line-height: 1.12 !important;
-    margin: 0 0 16px 0 !important;
+    margin: 0 0 clamp(4px, 0.8vh, 10px) 0 !important;
 }}
 
 .ds-hero-dot {{
     color: #2563eb !important;
-    font-size: 50px !important;
+    font-size: clamp(24px, 3vw, 42px) !important;
     line-height: 0 !important;
 }}
 
 .ds-hero-subtitle {{
-    font-size: 15px !important;
+    font-size: clamp(11.5px, 0.95vw, 13.5px) !important;
     color: {text_secondary} !important;
-    line-height: 1.55 !important;
-    max-width: 520px !important;
-    margin: 0 0 32px 0 !important;
+    line-height: 1.45 !important;
+    max-width: 480px !important;
+    margin: 0 0 clamp(6px, 1.2vh, 18px) 0 !important;
     font-weight: 450 !important;
 }}
 
@@ -136,73 +173,78 @@ def _get_login_page_css(is_dark: bool) -> str:
 .ds-features-grid {{
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    margin-top: 8px;
+    gap: clamp(6px, 0.8vw, 10px);
+    margin-top: 2px;
 }}
 
 .ds-feature-card {{
     background: {bg_card};
     border: 1px solid {border_color};
-    border-radius: 16px;
-    padding: 22px 16px 18px 16px;
+    border-radius: 12px;
+    padding: clamp(8px, 1.2vh, 14px) clamp(8px, 0.8vw, 12px);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     box-shadow: 0 2px 8px {("rgba(0,0,0,0.2)" if is_dark else "rgba(15,23,42,0.03)")};
-    min-height: 180px;
+    min-height: auto;
 }}
 
 .ds-feature-card:hover {{
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     border-color: #2563eb;
-    box-shadow: 0 10px 24px {("rgba(0,0,0,0.35)" if is_dark else "rgba(37,99,235,0.08)")};
+    box-shadow: 0 8px 18px {("rgba(0,0,0,0.35)" if is_dark else "rgba(37,99,235,0.08)")};
 }}
 
 .ds-feature-icon-box {{
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: clamp(28px, 2.4vw, 36px);
+    height: clamp(28px, 2.4vw, 36px);
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 16px;
+    margin-bottom: clamp(4px, 0.8vh, 8px);
+}}
+
+.ds-feature-icon-box svg {{
+    width: clamp(16px, 1.3vw, 18px);
+    height: clamp(16px, 1.3vw, 18px);
 }}
 
 .ds-feature-title {{
-    font-size: 13.5px;
+    font-size: clamp(11px, 0.9vw, 12.5px);
     font-weight: 700;
     color: {text_primary};
-    margin-bottom: 6px;
+    margin-bottom: 2px;
     letter-spacing: -0.01em;
 }}
 
 .ds-feature-desc {{
-    font-size: 11.5px;
+    font-size: clamp(9.5px, 0.75vw, 11px);
     color: {text_muted};
-    line-height: 1.45;
+    line-height: 1.3;
 }}
 
 /* Ambient Wave Graphic at Bottom Left */
 .ds-bottom-wave-wrap {{
-    margin-top: 44px;
+    margin-top: clamp(6px, 1.2vh, 16px);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     opacity: 0.7;
 }}
 
 .ds-bottom-node {{
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: #3b82f6;
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
 }}
 
 .ds-bottom-line {{
     height: 2px;
-    width: 80px;
+    width: 60px;
     background: linear-gradient(90deg, #3b82f6, transparent);
 }}
 
@@ -211,37 +253,39 @@ div[data-testid="column"]:nth-of-type(2) > div,
 div[data-testid="stColumn"]:nth-of-type(2) > div {{
     background: {bg_card} !important;
     border: 1px solid {border_card} !important;
-    border-radius: 24px !important;
-    padding: 34px 32px 28px 32px !important;
+    border-radius: clamp(14px, 1.6vw, 20px) !important;
+    padding: clamp(14px, 2vh, 22px) clamp(16px, 2vw, 26px) !important;
     box-shadow: {shadow_card} !important;
-    margin-top: 4px !important;
+    margin: auto 0 !important;
+    max-height: calc(100dvh - clamp(16px, 3vh, 40px)) !important;
+    box-sizing: border-box !important;
 }}
 
 .ds-auth-header {{
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: clamp(6px, 1.2vh, 14px);
 }}
 
 .ds-auth-title {{
-    font-size: 24px !important;
+    font-size: clamp(17px, 1.6vw, 21px) !important;
     font-weight: 800 !important;
     color: {text_primary} !important;
     letter-spacing: -0.03em !important;
-    margin: 0 0 6px 0 !important;
+    margin: 0 0 2px 0 !important;
 }}
 
 .ds-auth-subtitle {{
-    font-size: 13px !important;
+    font-size: clamp(11px, 0.85vw, 12px) !important;
     color: {text_secondary} !important;
     margin: 0 !important;
     font-weight: 450 !important;
 }}
 
 .ds-input-label {{
-    font-size: 12.5px;
+    font-size: 11.5px;
     font-weight: 600;
     color: {text_secondary};
-    margin-bottom: 6px;
+    margin-bottom: 2px;
     display: block;
 }}
 
@@ -255,11 +299,11 @@ div[data-testid="stForm"] {{
 div[data-testid="stTextInput"] input {{
     background-color: {input_bg} !important;
     border: 1px solid {border_card} !important;
-    border-radius: 10px !important;
-    height: 44px !important;
+    border-radius: 8px !important;
+    height: clamp(34px, 4vh, 38px) !important;
     color: {text_primary} !important;
-    font-size: 13.5px !important;
-    padding-left: 40px !important;
+    font-size: 13px !important;
+    padding-left: 36px !important;
     transition: all 0.15s ease-in-out !important;
 }}
 
@@ -272,16 +316,16 @@ div[data-testid="stTextInput"] input:focus {{
 /* Email Icon prefix in text input */
 div[data-testid="stTextInput"]:has(input[aria-label="Email"]) input,
 div[data-testid="stTextInput"]:has(input[key="signin_email_field"]) input {{
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>') !important;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>') !important;
     background-repeat: no-repeat !important;
-    background-position: 13px center !important;
+    background-position: 11px center !important;
 }}
 
 /* Password Icon prefix in text input */
 div[data-testid="stTextInput"]:has(input[type="password"]) input {{
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>') !important;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>') !important;
     background-repeat: no-repeat !important;
-    background-position: 13px center !important;
+    background-position: 11px center !important;
 }}
 
 /* Sign In Submit Button */
@@ -289,28 +333,20 @@ div[data-testid="stFormSubmitButton"] button {{
     background: #2563eb !important;
     color: #ffffff !important;
     border: none !important;
-    border-radius: 10px !important;
-    height: 44px !important;
-    font-size: 15px !important;
+    border-radius: 8px !important;
+    height: clamp(34px, 4.2vh, 38px) !important;
+    font-size: 14px !important;
     font-weight: 600 !important;
     letter-spacing: -0.01em !important;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28) !important;
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25) !important;
     transition: all 0.2s ease !important;
-    margin-top: 6px !important;
+    margin-top: 4px !important;
 }}
 
 div[data-testid="stFormSubmitButton"] button:hover {{
     background: #1d4ed8 !important;
-    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.38) !important;
+    box-shadow: 0 5px 14px rgba(37, 99, 235, 0.35) !important;
     transform: translateY(-1px) !important;
-}}
-
-/* Secondary Action Buttons (Google, Guest, etc.) */
-.stButton>button {{
-    border-radius: 10px !important;
-    font-size: 13.5px !important;
-    font-weight: 500 !important;
-    transition: all 0.2s ease !important;
 }}
 
 /* Google Button Styling with Authentic Google 'G' Icon */
@@ -320,13 +356,15 @@ div[data-testid="stFormSubmitButton"] button:hover {{
     background: {bg_card} !important;
     border: 1px solid {border_card} !important;
     color: {text_primary} !important;
-    height: 42px !important;
+    height: clamp(34px, 4.2vh, 38px) !important;
+    font-size: 13px !important;
     font-weight: 600 !important;
+    border-radius: 8px !important;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="%234285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/><path fill="%2334A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z"/><path fill="%23FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15Z"/><path fill="%23EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/></svg>') !important;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="%234285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/><path fill="%2334A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z"/><path fill="%23FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15Z"/><path fill="%23EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/></svg>') !important;
     background-repeat: no-repeat !important;
-    background-position: 85px center !important;
-    padding-left: 36px !important;
+    background-position: clamp(30px, 6vw, 75px) center !important;
+    padding-left: 28px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -348,9 +386,9 @@ div[data-testid="stFormSubmitButton"] button:hover {{
     border: 1px solid {border_card} !important;
     color: {text_primary} !important;
     font-weight: 600 !important;
-    font-size: 13.5px !important;
-    border-radius: 10px !important;
-    height: 40px !important;
+    font-size: 12.5px !important;
+    border-radius: 8px !important;
+    height: clamp(32px, 3.8vh, 36px) !important;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
 }}
 
@@ -367,9 +405,9 @@ div[data-testid="stFormSubmitButton"] button:hover {{
     border: 1px solid {border_card} !important;
     color: {text_primary} !important;
     font-weight: 600 !important;
-    font-size: 13px !important;
-    border-radius: 10px !important;
-    height: 38px !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+    height: clamp(30px, 3.6vh, 34px) !important;
 }}
 
 .ds-switch-btn-wrap div[data-testid="stButton"] button:hover {{
@@ -383,12 +421,12 @@ div[data-testid="stFormSubmitButton"] button:hover {{
     background: {bg_card} !important;
     border: 1px solid {border_card} !important;
     border-radius: 9999px !important;
-    padding: 5px 18px !important;
-    font-size: 13px !important;
+    padding: 3px 14px !important;
+    font-size: 12px !important;
     font-weight: 600 !important;
     color: {text_secondary} !important;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
-    height: 38px !important;
+    height: clamp(30px, 3.6vh, 34px) !important;
 }}
 
 .ds-theme-pill-btn div[data-testid="stButton"] button:hover {{
@@ -396,15 +434,36 @@ div[data-testid="stFormSubmitButton"] button:hover {{
     color: #2563eb !important;
 }}
 
-/* Responsive adjustments */
-@media (max-width: 1024px) {{
-    .ds-features-grid {{
-        grid-template-columns: repeat(2, 1fr);
+/* Responsive adjustments for Mobile and Tablets */
+@media (max-width: 840px) {{
+    div[data-testid="column"]:nth-of-type(1),
+    div[data-testid="stColumn"]:nth-of-type(1) {{
+        display: none !important;
     }}
-    .ds-hero-title {{
-        font-size: 36px !important;
+
+    div[data-testid="column"]:nth-of-type(2),
+    div[data-testid="stColumn"]:nth-of-type(2) {{
+        width: 100% !important;
+        max-width: 420px !important;
+        margin: 0 auto !important;
+        flex: 1 1 100% !important;
     }}
-    .ds-google-btn-wrap div[data-testid="stButton"] button {{
+
+    div[data-testid="column"]:nth-of-type(2) > div,
+    div[data-testid="stColumn"]:nth-of-type(2) > div {{
+        padding: 16px 18px !important;
+        border-radius: 16px !important;
+        max-height: calc(100dvh - 50px) !important;
+    }}
+
+    .main .block-container {{
+        padding: 8px 12px !important;
+        justify-content: center !important;
+    }}
+
+    .ds-google-btn-wrap div[data-testid="stButton"] button,
+    .ds-google-btn-wrap a[data-testid="stLinkButton"],
+    .ds-google-btn-wrap div[data-testid="stLinkButton"] a {{
         background-position: 24px center !important;
     }}
 }}
@@ -465,12 +524,12 @@ def render_login_page() -> None:
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
 
     # =========================================================================
     # 2. MAIN 2-COLUMN SPLIT SCREEN (Left: Hero & 4 Cards | Right: Floating Auth Card)
     # =========================================================================
-    left_col, right_col = st.columns([1.35, 1.0], gap="large")
+    left_col, right_col = st.columns([1.35, 1.0], gap="medium")
 
     # ─────────────────────────────────────────────────────────────────────────
     # LEFT COLUMN: Hero Title, Subtitle, and 4 Feature Cards
@@ -554,7 +613,7 @@ def render_login_page() -> None:
                 )
 
                 # Password Input Field
-                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
                 st.markdown('<span class="ds-input-label">Password</span>', unsafe_allow_html=True)
                 password = st.text_input(
                     "Password",
@@ -565,18 +624,18 @@ def render_login_page() -> None:
                 )
 
                 # Remember Me & Forgot Password Row
-                st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
                 col_rem, col_forgot = st.columns([1.1, 1.1])
                 with col_rem:
                     remember_me = st.checkbox("Remember me", value=True, key="signin_remember_me")
                 with col_forgot:
                     forgot_html = """<div style="text-align: right; padding-top: 4px;">
-<a href="#forgot" style="color: #2563eb; font-size: 12.5px; font-weight: 500; text-decoration: none;">Forgot password?</a>
+<a href="#forgot" style="color: #2563eb; font-size: 12px; font-weight: 500; text-decoration: none;">Forgot password?</a>
 </div>"""
                     st.markdown(forgot_html, unsafe_allow_html=True)
 
                 # Primary Sign In Action
-                st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
                 submit_signin = st.form_submit_button(
                     "Sign In",
                     use_container_width=True
@@ -598,9 +657,9 @@ def render_login_page() -> None:
                         )
 
             # "or" Divider
-            divider_html = f"""<div style="display: flex; align-items: center; margin: 16px 0 14px 0; gap: 12px;">
+            divider_html = f"""<div style="display: flex; align-items: center; margin: 8px 0 6px 0; gap: 8px;">
 <div style="flex: 1; height: 1px; background: {('rgba(30, 45, 69, 0.9)' if is_dark else '#e2e8f0')};"></div>
-<span style="font-size: 12px; color: {('#94a3b8' if is_dark else '#94a3b8')}; font-weight: 500;">or</span>
+<span style="font-size: 11.5px; color: {('#94a3b8' if is_dark else '#94a3b8')}; font-weight: 500;">or</span>
 <div style="flex: 1; height: 1px; background: {('rgba(30, 45, 69, 0.9)' if is_dark else '#e2e8f0')};"></div>
 </div>"""
             st.markdown(divider_html, unsafe_allow_html=True)
@@ -616,7 +675,7 @@ def render_login_page() -> None:
             st.markdown('</div>', unsafe_allow_html=True)
 
             # Guest / Demo Access & Registration switch
-            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
             st.markdown('<div class="ds-guest-btn-wrap" style="text-align: center;">', unsafe_allow_html=True)
             if st.button("👤 Guest / Demo Access", key="guest_access_direct_btn", use_container_width=True):
                 start_guest_session()
@@ -625,7 +684,7 @@ def render_login_page() -> None:
             st.markdown('</div>', unsafe_allow_html=True)
 
             # Account creation switch link
-            switch_html = """<div style="text-align: center; margin-top: 14px; font-size: 12.5px; color: #64748b;">Don't have an account?</div>"""
+            switch_html = """<div style="text-align: center; margin-top: 6px; font-size: 12px; color: #64748b;">Don't have an account?</div>"""
             st.markdown(switch_html, unsafe_allow_html=True)
             st.markdown('<div class="ds-switch-btn-wrap">', unsafe_allow_html=True)
             if st.button("Create an account", key="switch_to_create_account_btn", use_container_width=True):
@@ -652,7 +711,7 @@ def render_login_page() -> None:
                     label_visibility="collapsed"
                 )
 
-                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
                 st.markdown('<span class="ds-input-label">Email</span>', unsafe_allow_html=True)
                 reg_email = st.text_input(
                     "Email",
@@ -661,7 +720,7 @@ def render_login_page() -> None:
                     label_visibility="collapsed"
                 )
 
-                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
                 st.markdown('<span class="ds-input-label">Password</span>', unsafe_allow_html=True)
                 reg_pass = st.text_input(
                     "Password",
@@ -671,7 +730,7 @@ def render_login_page() -> None:
                     label_visibility="collapsed"
                 )
 
-                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
                 st.markdown('<span class="ds-input-label">Confirm Password</span>', unsafe_allow_html=True)
                 reg_confirm = st.text_input(
                     "Confirm Password",
@@ -681,7 +740,7 @@ def render_login_page() -> None:
                     label_visibility="collapsed"
                 )
 
-                st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
                 submit_register = st.form_submit_button(
                     "Create Account",
                     use_container_width=True
@@ -706,7 +765,7 @@ def render_login_page() -> None:
                             variant="error"
                         )
 
-            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
             st.markdown('<div class="ds-switch-btn-wrap">', unsafe_allow_html=True)
             if st.button("← Back to Sign In", key="back_to_signin_btn", use_container_width=True):
                 st.session_state["auth_view"] = "signin"
