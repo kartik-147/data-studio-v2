@@ -206,14 +206,18 @@ def exchange_code_for_token(code: str, redirect_uri: str, client_id: str, client
         return None, "Missing OAuth code or client credentials."
 
     clean_uri = redirect_uri.rstrip("/")
-    candidate_uris: List[str] = [clean_uri, clean_uri + "/"]
+    candidate_uris: List[str] = [
+        clean_uri,
+        clean_uri + "/",
+        clean_uri + "/oauth2callback"
+    ]
 
     origin = get_current_origin()
     if origin:
         clean_origin = origin.rstrip("/")
-        if clean_origin not in candidate_uris:
-            candidate_uris.append(clean_origin)
-            candidate_uris.append(clean_origin + "/")
+        for extra in [clean_origin, clean_origin + "/", clean_origin + "/oauth2callback"]:
+            if extra not in candidate_uris:
+                candidate_uris.append(extra)
 
     last_error = ""
     for uri in candidate_uris:
