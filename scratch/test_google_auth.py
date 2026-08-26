@@ -31,7 +31,6 @@ from modules.google_auth import (
     exchange_code_for_token,
     fetch_google_user_profile,
     handle_google_oauth_callback,
-    login_with_google_account,
     GOOGLE_AUTH_ENDPOINT
 )
 from modules.firebase_service import is_admin_user
@@ -163,17 +162,6 @@ def run_google_auth_tests():
         assert get_current_user()["email"] == "bob.analyst@example.com"
 
     print("OAuth callback handling and end-to-end token exchange verified.")
-
-    # 6. Test Direct Google Account Sign-In Method
-    print("\n--- Test 6: Direct Google Account Sign-In ---")
-    g_ok, g_msg, g_payload = login_with_google_account("charlie.data@gmail.com", "Charlie Data")
-    assert g_ok is True
-    assert g_payload["email"] == "charlie.data@gmail.com"
-    assert g_payload["full_name"] == "Charlie Data"
-    assert g_payload["auth_provider"] == "google"
-    assert is_authenticated() is True
-    assert get_current_user()["email"] == "charlie.data@gmail.com"
-    print("Direct Google account sign-in verified.")
 
     # Cleanup test env vars
     os.environ.pop("GOOGLE_CLIENT_ID", None)

@@ -38,7 +38,7 @@ from modules.google_auth import (
     get_google_auth_url,
     is_google_auth_configured,
     handle_google_oauth_callback,
-    render_google_auth_dialog
+    render_google_setup_dialog
 )
 
 
@@ -576,8 +576,12 @@ def render_login_page() -> None:
 
             # Google Sign In Button with Official Multi-Color Google G SVG Icon
             st.markdown('<div class="ds-google-btn-wrap">', unsafe_allow_html=True)
-            if st.button("Sign in with Google", key="google_signin_action_btn", use_container_width=True):
-                render_google_auth_dialog(is_dark=is_dark)
+            google_auth_url = get_google_auth_url()
+            if google_auth_url:
+                st.link_button("Sign in with Google", url=google_auth_url, use_container_width=True)
+            else:
+                if st.button("Sign in with Google", key="google_signin_action_btn", use_container_width=True):
+                    render_google_setup_dialog(is_dark=is_dark)
             st.markdown('</div>', unsafe_allow_html=True)
 
             # Guest / Demo Access & Registration switch
