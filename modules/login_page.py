@@ -516,6 +516,11 @@ def render_login_page() -> None:
 
     current_theme = st.session_state.get("theme", "Light")
     is_dark = current_theme == "Dark"
+    text_primary = "#f1f5f9" if is_dark else "#0f172a"
+    text_secondary = "#94a3b8" if is_dark else "#475569"
+    text_muted = "#64748b" if is_dark else "#64748b"
+    bg_card_val = "#141c2e" if is_dark else "#ffffff"
+    border_val = "rgba(51, 65, 85, 0.7)" if is_dark else "#cbd5e1"
 
     # Inject scoped design system CSS
     st.markdown(_get_login_page_css(is_dark), unsafe_allow_html=True)
