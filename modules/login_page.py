@@ -55,6 +55,11 @@ def _get_login_page_css(is_dark: bool) -> str:
     input_bg = "#0f1624" if is_dark else "#f8fafc"
     shadow_card = "0 20px 45px -12px rgba(0, 0, 0, 0.45)" if is_dark else "0 20px 45px -12px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.03)"
 
+    bg_workspace = "rgba(15, 23, 42, 0.45)" if is_dark else "rgba(255, 255, 255, 0.7)"
+    border_workspace = "rgba(51, 65, 85, 0.55)" if is_dark else "rgba(203, 213, 225, 0.85)"
+    pill_bg = "rgba(30, 41, 59, 0.7)" if is_dark else "rgba(241, 245, 249, 0.95)"
+    pill_border = "rgba(51, 65, 85, 0.6)" if is_dark else "rgba(203, 213, 225, 0.85)"
+
     return f"""<style>
 /* =========================================================================
    LOGIN PAGE SCOPED STYLING — FULL-SCREEN NON-SCROLLABLE VIEWPORT (100dvh)
@@ -239,27 +244,113 @@ div[data-testid="stMainBlockContainer"] {{
     line-height: 1.25;
 }}
 
-/* Ambient Wave Graphic at Bottom Left */
-.ds-bottom-wave-wrap {{
-    margin-top: clamp(4px, 0.8vh, 10px);
+/* Compact Branded Workspace Section at Lower Left */
+.ds-workspace-banner {{
+    position: relative;
+    overflow: hidden;
+    margin-top: clamp(6px, 1vh, 10px);
+    padding: clamp(8px, 1vh, 10px) clamp(10px, 1.2vw, 14px);
+    background: {bg_workspace};
+    border: 1px solid {border_workspace};
+    border-radius: clamp(8px, 1vw, 11px);
+    box-shadow: 0 2px 6px {("rgba(0,0,0,0.2)" if is_dark else "rgba(15,23,42,0.03)")};
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}}
+
+.ds-workspace-banner:hover {{
+    border-color: rgba(37, 99, 235, 0.4);
+}}
+
+.ds-workspace-bg-decor {{
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 60%;
+    pointer-events: none;
+    opacity: {("0.2" if is_dark else "0.28")};
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    overflow: hidden;
+}}
+
+.ds-workspace-bg-decor svg {{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    color: {("#3b82f6" if is_dark else "#2563eb")};
+}}
+
+.ds-workspace-content {{
+    position: relative;
+    z-index: 1;
+}}
+
+.ds-workspace-header {{
     display: flex;
     align-items: center;
     gap: 6px;
-    opacity: 0.7;
 }}
 
-.ds-bottom-node {{
-    width: 6px;
-    height: 6px;
+.ds-workspace-icon-wrap {{
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    background: rgba(37, 99, 235, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}}
+
+.ds-workspace-icon-wrap svg {{
+    width: 12px;
+    height: 12px;
+    color: #2563eb;
+}}
+
+.ds-workspace-headline {{
+    font-size: clamp(11px, 0.88vw, 12px);
+    font-weight: 700;
+    color: {text_primary};
+    letter-spacing: -0.01em;
+}}
+
+.ds-workspace-desc {{
+    font-size: clamp(9px, 0.72vw, 9.8px);
+    color: {text_secondary};
+    line-height: 1.3;
+    margin: 2px 0 clamp(4px, 0.5vh, 6px) 0;
+    max-width: 96%;
+}}
+
+.ds-workspace-pills {{
+    display: flex;
+    align-items: center;
+    gap: clamp(4px, 0.5vw, 6px);
+    flex-wrap: wrap;
+}}
+
+.ds-workspace-pill {{
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: clamp(8.5px, 0.68vw, 9.5px);
+    font-weight: 600;
+    color: {text_primary};
+    background: {pill_bg};
+    border: 1px solid {pill_border};
+    border-radius: 4px;
+    padding: 1.5px 6px;
+    line-height: 1.2;
+}}
+
+.ds-pill-indicator {{
+    width: 4px;
+    height: 4px;
     border-radius: 50%;
-    background: #3b82f6;
-    box-shadow: 0 0 6px rgba(59, 130, 246, 0.5);
-}}
-
-.ds-bottom-line {{
-    height: 2px;
-    width: 50px;
-    background: linear-gradient(90deg, #3b82f6, transparent);
+    flex-shrink: 0;
 }}
 
 /* =========================================================================
@@ -383,20 +474,14 @@ div[data-testid="stFormSubmitButton"] button:hover {{
     height: clamp(30px, 3.6vh, 34px) !important;
     font-size: 12.5px !important;
     font-weight: 600 !important;
-    border-radius: 7px !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"><path fill="%234285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/><path fill="%2334A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z"/><path fill="%23FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15Z"/><path fill="%23EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/></svg>') !important;
-    background-repeat: no-repeat !important;
-    background-position: clamp(24px, 5vw, 65px) center !important;
-    padding-left: 24px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     text-decoration: none !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+    transition: all 0.2s ease !important;
 }}
 
-.ds-google-btn-wrap div[data-testid="stButton"] button:hover,
-.ds-google-btn-wrap a[data-testid="stLinkButton"]:hover,
 .ds-google-btn-wrap div[data-testid="stLinkButton"] a:hover {{
     background-color: {bg_card_subtle} !important;
     border-color: #cbd5e1 !important;
@@ -469,8 +554,15 @@ div[data-testid="stCheckbox"] label span {{
     .ds-dot-matrix {{
         display: none !important;
     }}
-    .ds-bottom-wave-wrap {{
+    .ds-workspace-bg-decor {{
         display: none !important;
+    }}
+    .ds-workspace-banner {{
+        margin-top: 4px !important;
+        padding: 6px 10px !important;
+    }}
+    .ds-workspace-desc {{
+        margin: 1px 0 3px 0 !important;
     }}
     .ds-hero-title {{
         font-size: 22px !important;
@@ -620,9 +712,47 @@ def render_login_page() -> None:
 <div class="ds-feature-desc">Natural language querying and smart analytical summaries.</div>
 </div>
 </div>
-<div class="ds-bottom-wave-wrap">
-<div class="ds-bottom-node"></div>
-<div class="ds-bottom-line"></div>
+<div class="ds-workspace-banner">
+<div class="ds-workspace-bg-decor">
+<svg viewBox="0 0 200 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+<line x1="0" y1="20" x2="200" y2="20" stroke="currentColor" stroke-dasharray="2 2" stroke-width="0.75" />
+<line x1="0" y1="50" x2="200" y2="50" stroke="currentColor" stroke-dasharray="2 2" stroke-width="0.75" />
+<polyline points="10,60 50,35 90,45 130,20 170,30 195,15" stroke="#2563eb" stroke-width="1.5" />
+<circle cx="10" cy="60" r="2.5" fill="#2563eb" />
+<circle cx="50" cy="35" r="2.5" fill="#2563eb" />
+<circle cx="90" cy="45" r="2.5" fill="#2563eb" />
+<circle cx="130" cy="20" r="2.5" fill="#2563eb" />
+<circle cx="170" cy="30" r="2.5" fill="#2563eb" />
+<circle cx="195" cy="15" r="2.5" fill="#2563eb" />
+</svg>
+</div>
+<div class="ds-workspace-content">
+<div class="ds-workspace-header">
+<div class="ds-workspace-icon-wrap">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+<rect width="18" height="18" x="3" y="3" rx="2"></rect>
+<path d="M3 9h18"></path>
+<path d="M9 21V9"></path>
+</svg>
+</div>
+<span class="ds-workspace-headline">From raw data to clear insights.</span>
+</div>
+<p class="ds-workspace-desc">Upload, explore, prepare, visualize, and understand your data in one intelligent workspace.</p>
+<div class="ds-workspace-pills">
+<div class="ds-workspace-pill">
+<span class="ds-pill-indicator" style="background: #2563eb;"></span>
+<span>Data Analysis</span>
+</div>
+<div class="ds-workspace-pill">
+<span class="ds-pill-indicator" style="background: #10b981;"></span>
+<span>Smart Dashboards</span>
+</div>
+<div class="ds-workspace-pill">
+<span class="ds-pill-indicator" style="background: #7c3aed;"></span>
+<span>AI Insights</span>
+</div>
+</div>
+</div>
 </div>"""
         st.markdown(cards_html, unsafe_allow_html=True)
 
