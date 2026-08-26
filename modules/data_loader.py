@@ -404,6 +404,14 @@ def get_available_sample_datasets() -> Dict[str, Dict[str, Any]]:
     sample_dir = os.path.join(base_dir, "sample_data")
     
     catalog = {
+        "customer_demographics": {
+            "key": "customer_demographics",
+            "name": "Customer Demographics (Stitch Preview)",
+            "filename": "customer_demographics.csv",
+            "description": "Customer profiles, demographics, household income, and regional locations.",
+            "file_type": "CSV",
+            "path": os.path.join(sample_dir, "customer_demographics.csv")
+        },
         "saas_sales": {
             "key": "saas_sales",
             "name": "SaaS Sales & Revenue",

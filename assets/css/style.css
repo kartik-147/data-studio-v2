@@ -4,17 +4,18 @@
    Inspired by: Linear, Stripe, Vercel, Notion
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 
 /* ==========================================================================
    DESIGN TOKENS — LIGHT THEME (DEFAULT)
    ========================================================================== */
 :root {
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-sans: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Source Sans 3', monospace;
 
-  /* Spacing Scale */
+  /* Spacing Scale (Strict 4px Base) */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -25,73 +26,79 @@
   --space-8: 40px;
   --space-9: 48px;
 
-  /* Border Radius */
-  --radius-xs: 3px;
-  --radius-sm: 5px;
-  --radius-md: 7px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
+  /* Border Radius (Strict Disciplined Controls) */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
   --radius-full: 9999px;
 
   /* Transitions */
-  --transition-fast: 130ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Shadows — Light Mode */
+  /* Shadows — Disciplined Minimal Low-Elevation */
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 4px 8px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.10), 0 4px 8px -4px rgba(15, 23, 42, 0.06);
-  --shadow-xl: 0 20px 40px -8px rgba(15, 23, 42, 0.12), 0 8px 16px -8px rgba(15, 23, 42, 0.08);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 14px 20px -4px rgba(15, 23, 42, 0.08);
 
-  /* Light Theme Color Tokens */
-  --bg-primary: #f8fafc;
-  --bg-secondary: #f1f5f9;
+  /* Light Theme Color Tokens (Stitch Design System) */
+  --bg-primary: #f7f9fd;
+  --bg-secondary: #f2f4f8;
   --surface: #ffffff;
-  --surface-hover: #f8fafc;
-  --surface-active: #f1f5f9;
+  --surface-hover: #f7f9fd;
+  --surface-active: #eceef2;
+  --surface-container-low: #f2f4f8;
+  --surface-container: #eceef2;
+  --surface-container-high: #e6e8ec;
   --border: #e2e8f0;
-  --border-subtle: #f1f5f9;
-  --border-focus: #2563eb;
+  --border-subtle: #f2f4f8;
+  --border-dashed: #c6c6cd;
+  --border-focus: #006591;
 
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-primary: #191c1f;
+  --text-secondary: #45464d;
+  --text-muted: #76777d;
   --text-inverted: #ffffff;
 
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-subtle: rgba(37, 99, 235, 0.08);
-  --accent-subtle-border: rgba(37, 99, 235, 0.20);
+  --primary-action: #000000;
+  --primary-action-text: #ffffff;
+  --accent: #006591;
+  --accent-hover: #004c6e;
+  --accent-subtle: rgba(0, 101, 145, 0.08);
+  --accent-subtle-border: rgba(0, 101, 145, 0.22);
 
-  --color-success: #059669;
-  --color-success-bg: rgba(5, 150, 105, 0.07);
-  --color-success-border: rgba(5, 150, 105, 0.18);
-  --color-success-text: #065f46;
+  --color-success: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.10);
+  --color-success-border: rgba(16, 185, 129, 0.22);
+  --color-success-text: #10b981;
 
   --color-warning: #d97706;
-  --color-warning-bg: rgba(217, 119, 6, 0.07);
-  --color-warning-border: rgba(217, 119, 6, 0.18);
-  --color-warning-text: #92400e;
+  --color-warning-bg: rgba(217, 119, 6, 0.08);
+  --color-warning-border: rgba(217, 119, 6, 0.20);
+  --color-warning-text: #b45309;
 
-  --color-error: #dc2626;
-  --color-error-bg: rgba(220, 38, 38, 0.07);
-  --color-error-border: rgba(220, 38, 38, 0.18);
-  --color-error-text: #991b1b;
+  --color-error: #ba1a1a;
+  --color-error-bg: rgba(186, 26, 26, 0.08);
+  --color-error-border: rgba(186, 26, 26, 0.20);
+  --color-error-text: #ba1a1a;
 
-  --color-info: #2563eb;
-  --color-info-bg: rgba(37, 99, 235, 0.07);
-  --color-info-border: rgba(37, 99, 235, 0.18);
-  --color-info-text: #1e40af;
+  --color-info: #006591;
+  --color-info-bg: rgba(0, 101, 145, 0.08);
+  --color-info-border: rgba(0, 101, 145, 0.20);
+  --color-info-text: #006591;
 
   /* Nav specific */
   --nav-bg: #ffffff;
-  --nav-item-text: #64748b;
-  --nav-item-text-active: #2563eb;
-  --nav-item-bg-hover: #f1f5f9;
-  --nav-item-bg-active: rgba(37, 99, 235, 0.08);
-  --nav-group-title: #94a3b8;
+  --nav-item-text: #45464d;
+  --nav-item-text-active: #191c1f;
+  --nav-item-bg-hover: #f2f4f8;
+  --nav-item-bg-active: #eceef2;
+  --nav-group-title: #76777d;
 }
 
 /* ==========================================================================
@@ -2121,3 +2128,613 @@ div[data-testid="stPlotlyChart"] {
   display: block;
 }
 
+/* ==========================================================================
+   STITCH DESIGN SYSTEM — DATASET WORKSPACE MODULE
+   ========================================================================== */
+
+/* Typography Scale */
+.font-headline-lg {
+  font-family: 'Source Sans 3', sans-serif !important;
+  font-size: 30px !important;
+  font-weight: 600 !important;
+  line-height: 38px !important;
+  letter-spacing: -0.02em !important;
+}
+
+.font-headline-md {
+  font-family: 'Source Sans 3', sans-serif !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  line-height: 32px !important;
+  letter-spacing: -0.01em !important;
+}
+
+.font-headline-sm {
+  font-family: 'Source Sans 3', sans-serif !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  line-height: 28px !important;
+}
+
+.font-body-lg {
+  font-family: 'Source Sans 3', sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: 24px !important;
+}
+
+.font-body-md {
+  font-family: 'Source Sans 3', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+}
+
+.font-label-md {
+  font-family: 'Source Sans 3', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 16px !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+.font-mono-data {
+  font-family: 'Source Sans 3', monospace !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Material Symbols alignment helper */
+.mat-icon {
+  font-family: 'Material Symbols Outlined' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  vertical-align: middle;
+}
+
+/* Stitch Page Header */
+.stitch-page-header {
+  margin-top: 12px;
+  margin-bottom: 24px;
+}
+
+.stitch-page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.stitch-page-subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+/* Upload Dropzone */
+.stitch-upload-card {
+  border: 2px dashed var(--border-dashed, #c6c6cd);
+  background: var(--surface);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 24px;
+  text-align: center;
+  transition: all 0.15s ease;
+  margin-bottom: 20px;
+}
+
+.stitch-upload-card:hover {
+  border-color: var(--text-secondary);
+  background: var(--surface-container-low);
+}
+
+.stitch-upload-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--surface-container-low);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+
+.stitch-upload-card:hover .stitch-upload-icon-circle {
+  background: var(--primary-action, #000000);
+  color: #ffffff;
+}
+
+.stitch-upload-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.stitch-upload-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 16px 0;
+}
+
+.stitch-upload-caption {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+/* Active Dataset Card */
+.stitch-active-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.stitch-active-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+
+.stitch-dataset-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stitch-dataset-name {
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stitch-badge-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(16, 185, 129, 0.10);
+  color: #10b981;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  letter-spacing: 0.02em;
+}
+
+.stitch-dataset-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
+}
+
+/* High-Density Data Table */
+.stitch-table-container {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow-x: auto;
+  background: var(--surface);
+  margin-top: 10px;
+  margin-bottom: 8px;
+}
+
+.stitch-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.stitch-table th {
+  background: var(--surface-container-low);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.stitch-table td {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.stitch-table tr:nth-child(even) td {
+  background: var(--surface-container-low);
+}
+
+.stitch-table tr:nth-child(odd) td {
+  background: var(--surface);
+}
+
+.stitch-table tr:hover td {
+  background: var(--surface-hover);
+}
+
+.stitch-table .null-val {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.stitch-table-footer {
+  text-align: right;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  padding-top: 4px;
+}
+
+/* Dataset Health Card */
+.stitch-health-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.stitch-health-icon-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.10);
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stitch-health-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 2px 0;
+}
+
+.stitch-health-desc {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.stitch-health-link {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.stitch-health-link:hover {
+  text-decoration: underline;
+}
+
+/* Bento KPI Grid */
+.stitch-bento-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.stitch-bento-box {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 82px;
+}
+
+.stitch-bento-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.stitch-bento-val {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.stitch-bento-val.error {
+  color: var(--color-error);
+}
+
+.stitch-bento-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: 4px;
+  font-weight: 400;
+}
+
+/* Column Summary Card */
+.stitch-sidebar-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.stitch-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+}
+
+.stitch-sidebar-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.stitch-col-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 13px;
+}
+
+.stitch-col-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 50%;
+  overflow: hidden;
+}
+
+.stitch-col-name {
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stitch-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.stitch-pill-string {
+  background: var(--surface-container);
+  color: var(--text-secondary);
+}
+
+.stitch-pill-numeric {
+  background: #c9e6ff;
+  color: #001e2f;
+}
+
+.stitch-pill-datetime {
+  background: rgba(16, 185, 129, 0.15);
+  color: #065f46;
+}
+
+.stitch-pill-boolean {
+  background: rgba(244, 114, 182, 0.15);
+  color: #831843;
+}
+
+.stitch-col-nulls {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  width: 32px;
+  text-align: right;
+}
+
+.stitch-col-nulls.has-nulls {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+/* Next Steps Card */
+.stitch-step-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.12s ease;
+  cursor: pointer;
+  margin-bottom: 2px;
+}
+
+.stitch-step-link:hover {
+  background: var(--surface-container-low);
+  color: var(--accent);
+}
+
+.stitch-step-link.active-step {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.stitch-step-icon {
+  color: var(--text-muted);
+  transition: color 0.12s ease;
+}
+
+/* Global Form Controls & Button Overrides (Stitch Theme) */
+div[data-testid="stButton"] button[kind="primary"] {
+  background-color: var(--primary-action, #000000) !important;
+  color: var(--primary-action-text, #ffffff) !important;
+  border: 1px solid var(--primary-action, #000000) !important;
+  border-radius: 4px !important;
+  font-family: 'Source Sans 3', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 6px 16px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.12s ease !important;
+}
+
+div[data-testid="stButton"] button[kind="primary"]:hover {
+  background-color: #27272a !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+div[data-testid="stButton"] button[kind="secondary"] {
+  background-color: var(--surface, #ffffff) !important;
+  color: var(--text-primary, #191c1f) !important;
+  border: 1px solid var(--border, #e2e8f0) !important;
+  border-radius: 4px !important;
+  font-family: 'Source Sans 3', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 6px 14px !important;
+  box-shadow: none !important;
+  transition: all 0.12s ease !important;
+}
+
+div[data-testid="stButton"] button[kind="secondary"]:hover {
+  background-color: var(--surface-container-low, #f2f4f8) !important;
+  border-color: #cbd5e1 !important;
+  color: var(--text-primary, #191c1f) !important;
+}
+
+/* Streamlit Input Overrides */
+div[data-testid="stTextInput"] input {
+  background-color: var(--surface, #ffffff) !important;
+  border: 1px solid var(--border, #e2e8f0) !important;
+  border-radius: 4px !important;
+  font-family: 'Source Sans 3', sans-serif !important;
+  font-size: 14px !important;
+  color: var(--text-primary, #191c1f) !important;
+  padding: 6px 10px !important;
+}
+
+div[data-testid="stTextInput"] input:focus {
+  border-color: var(--accent, #006591) !important;
+  box-shadow: 0 0 0 1px var(--accent, #006591) !important;
+}
+
+/* Streamlit Selectbox Overrides */
+div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+  background-color: var(--surface, #ffffff) !important;
+  border: 1px solid var(--border, #e2e8f0) !important;
+  border-radius: 4px !important;
+  font-family: 'Source Sans 3', sans-serif !important;
+  font-size: 13.5px !important;
+  color: var(--text-primary, #191c1f) !important;
+}
+
+/* Streamlit File Uploader Overrides */
+div[data-testid="stFileUploader"] section {
+  background-color: var(--surface, #ffffff) !important;
+  border: 1px solid var(--border, #e2e8f0) !important;
+  border-radius: 4px !important;
+  padding: 12px !important;
+}
+
+div[data-testid="stFileUploader"] section button {
+  background-color: var(--primary-action, #000000) !important;
+  color: var(--primary-action-text, #ffffff) !important;
+  border-radius: 4px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Dark Mode Pill Tokens & Contrast Enhancements */
+[data-theme="dark"] .stitch-pill-string,
+.stApp[data-theme="dark"] .stitch-pill-string {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .stitch-pill-numeric,
+.stApp[data-theme="dark"] .stitch-pill-numeric {
+  background: rgba(56, 189, 248, 0.18) !important;
+  color: #7dd3fc !important;
+}
+
+[data-theme="dark"] .stitch-pill-datetime,
+.stApp[data-theme="dark"] .stitch-pill-datetime {
+  background: rgba(16, 185, 129, 0.18) !important;
+  color: #6ee7b7 !important;
+}
+
+[data-theme="dark"] .stitch-pill-boolean,
+.stApp[data-theme="dark"] .stitch-pill-boolean {
+  background: rgba(244, 114, 182, 0.18) !important;
+  color: #f472b6 !important;
+}
