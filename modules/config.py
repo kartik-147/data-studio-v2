@@ -193,6 +193,13 @@ def init_session_state() -> None:
         "saved_visualizations": [],
         # Activity log
         "activity_log": [],
+        # AI Analyst mode (ask | investigate | story)
+        "ai_analyst_mode": "ask",
+        # Cross-module deep-link hint: set by Data Quality to pre-select a tool in Data Preparation
+        # Values: None | "missing" | "duplicates" | "outliers" | "types"
+        "prep_suggested_action": None,
+        # Data Story narrative cache (None = not yet generated)
+        "ai_story_cache": None,
     }
 
     for key, val in defaults.items():

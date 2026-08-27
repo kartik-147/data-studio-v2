@@ -683,3 +683,847 @@ def generate_correlation_heatmap(
         return fig, top_pair
     except Exception:
         return None, None
+
+
+def generate_scatter_relationship_chart(
+    df: pd.DataFrame,
+    x_col: str,
+    y_col: str,
+    color_col: Optional[str] = None,
+    theme: str = "Dark"
+) -> Optional[go.Figure]:
+    """Generate high-density scatter plot for correlation/driver analysis with trend line."""
+    try:
+        cols_to_use = [x_col, y_col] + ([color_col] if color_col and color_col in df.columns else [])
+        temp_df = df[cols_to_use].dropna().head(1000) # sample to protect rendering speed
+        
+        if len(temp_df) < 5:
+            return None
+
+        cfg = THEME_CONFIGS.get(theme, THEME_CONFIGS["Dark"])
+        
+        if color_col and color_col in temp_df.columns:
+            fig = px.scatter(
+                temp_df,
+                x=x_col,
+                y=y_col,
+                color=color_col,
+                title=f"{y_col.replace('_', ' ').title()} vs {x_col.replace('_', ' ').title()}",
+                color_discrete_sequence=cfg["palette"],
+                opacity=0.75
+            )
+        else:
+            fig = px.scatter(
+                temp_df,
+                x=x_col,
+                y=y_col,
+                title=f"{y_col.replace('_', ' ').title()} vs {x_col.replace('_', ' ').title()}",
+                color_discrete_sequence=[cfg["primary"]],
+                opacity=0.75
+            )
+
+        apply_chart_theme(fig, theme=theme, height=330, show_legend=bool(color_col))
+        fig.update_traces(marker=dict(size=7, line=dict(width=0.5, color=cfg["grid"])))
+        return fig
+    except Exception:
+        return None
+
+
+# =============================================================================
+# MULTI-PERSPECTIVE AI DASHBOARD SYNTHESIS
+# =============================================================================
+
+PERSPECTIVE_DEFINITIONS = [
+    {
+        "id": "executive",
+        "name": "Executive & Core Performance",
+        "tag": "PERSPECTIVE 1 OF 4",
+        "icon": "trending-up",
+        "desc": "High-level KPI scorecard, primary metric distribution, top category breakdown, and composition share."
+    },
+    {
+        "id": "segment",
+        "name": "Segment & Dimensional Slices",
+        "tag": "PERSPECTIVE 2 OF 4",
+        "icon": "layers",
+        "desc": "Cross-categorical comparisons, multi-segment distributions, and categorical volume rankings."
+    },
+    {
+        "id": "drivers",
+        "name": "Driver & Correlation Radar",
+        "tag": "PERSPECTIVE 3 OF 4",
+        "icon": "activity",
+        "desc": "Deep-dive relationship scatter, strongest correlation matrix, and multi-variable interaction patterns."
+    },
+    {
+        "id": "anomalies",
+        "name": "Anomaly & Data Health Matrix",
+        "tag": "PERSPECTIVE 4 OF 4",
+        "icon": "alert-triangle",
+        "desc": "Outlier profiles, data completeness health, high-variance attributes, and risk distributions."
+    }
+]
+
+
+def generate_ai_dashboard_perspective(
+    df: pd.DataFrame,
+    metadata: Dict[str, Any],
+    perspective_idx: int = 0,
+    filtered_df: Optional[pd.DataFrame] = None,
+    theme: str = "Dark"
+) -> Dict[str, Any]:
+    """
+    Synthesizes a complete Power BI / Tableau single-screen dashboard layout
+    with 4 KPI cards, 4 complementary charts, and 3 executive insight bullets
+    tailored dynamically based on the selected AI perspective.
+    """
+    active_df = filtered_df if filtered_df is not None and not filtered_df.empty else df
+    active_idx = perspective_idx % len(PERSPECTIVE_DEFINITIONS)
+    p_meta = PERSPECTIVE_DEFINITIONS[active_idx]
+
+    analytical_cols = select_analytical_columns(active_df, metadata)
+    ranked_num = prioritize_numeric_columns(active_df, analytical_cols["numeric"])
+    ranked_cat = prioritize_categorical_columns(active_df, analytical_cols["categorical"])
+    dt_cols = analytical_cols["datetime"]
+
+    total_rows = len(active_df)
+    total_cols = len(active_df.columns)
+
+    # Build Perspective-Specific KPIs
+    kpi_cards = []
+    charts = []
+    briefing = []
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # PERSPECTIVE 0: Executive & Core Performance
+    # ─────────────────────────────────────────────────────────────────────────
+    if active_idx == 0:
+        # KPI 1: Primary Metric
+        primary_kpi = select_primary_kpi_metric(active_df, ranked_num)
+        if primary_kpi:
+            kpi_cards.append({
+                "label": primary_kpi["label"],
+                "value": primary_kpi["value"],
+                "meta": f"Median: {primary_kpi['median']:,.1f} · Std: {primary_kpi['std']:,.1f}",
+                "badge": "PRIMARY METRIC",
+                "badge_class": "pbi-badge-up",
+                "tile_class": "pbi-kpi-tile-success"
+            })
+        else:
+            kpi_cards.append({
+                "label": "Total Records",
+                "value": f"{total_rows:,}",
+                "meta": f"{total_cols} columns loaded",
+                "badge": "VOLUME",
+                "badge_class": "pbi-badge-neutral",
+                "tile_class": ""
+            })
+
+        # KPI 2: Secondary Numeric or Average
+        if len(ranked_num) >= 2:
+            sec_col = ranked_num[1]
+            s = active_df[sec_col].dropna()
+            kpi_cards.append({
+                "label": f"Avg {sec_col.replace('_', ' ').title()}",
+                "value": f"{s.mean():,.2f}" if s.mean() < 1000 else f"{s.mean():,.1f}",
+                "meta": f"Range: [{s.min():,.1f} – {s.max():,.1f}]",
+                "badge": "BENCHMARK",
+                "badge_class": "pbi-badge-neutral",
+                "tile_class": "pbi-kpi-tile-info"
+            })
+        elif ranked_cat:
+            top_cat = ranked_cat[0]
+            kpi_cards.append({
+                "label": f"Top {top_cat.replace('_', ' ').title()}",
+                "value": str(active_df[top_cat].mode().iloc[0]) if not active_df[top_cat].dropna().empty else "N/A",
+                "meta": f"{active_df[top_cat].nunique()} unique segments",
+                "badge": "LEADER",
+                "badge_class": "pbi-badge-up",
+                "tile_class": "pbi-kpi-tile-purple"
+            })
+
+        # KPI 3: Dataset Quality Score
+        qs = metadata.get("quality_score", 95.0)
+        qs_status = "Optimal" if qs >= 85 else ("Acceptable" if qs >= 70 else "Attention")
+        kpi_cards.append({
+            "label": "Data Quality Index",
+            "value": f"{qs:.1f}%",
+            "meta": f"Missing: {metadata.get('missing_percentage', 0.0):.1f}% · Dups: {metadata.get('duplicate_percentage', 0.0):.1f}%",
+            "badge": qs_status.upper(),
+            "badge_class": "pbi-badge-up" if qs >= 80 else "pbi-badge-down",
+            "tile_class": "pbi-kpi-tile-warning" if qs < 80 else ""
+        })
+
+        # KPI 4: Active Filter Scope
+        pct_of_orig = (total_rows / len(df) * 100) if len(df) > 0 else 100
+        kpi_cards.append({
+            "label": "Active Data Scope",
+            "value": f"{total_rows:,} rows",
+            "meta": f"{pct_of_orig:.0f}% of full dataset",
+            "badge": "FILTERED" if total_rows != len(df) else "100% INCLUDED",
+            "badge_class": "pbi-badge-neutral",
+            "tile_class": "pbi-kpi-tile-info"
+        })
+
+        # Chart 1: Time Trend or Numeric Distribution
+        if dt_cols and ranked_num:
+            c1_fig = generate_time_trend_chart(active_df, dt_cols[0], ranked_num[0], theme=theme)
+            charts.append({"title": f"Timeline Trend: {ranked_num[0].title()}", "badge": "TIMELINE", "fig": c1_fig})
+        elif ranked_num:
+            c1_fig = generate_numeric_distribution_chart(active_df, ranked_num[0], theme=theme)
+            charts.append({"title": f"Distribution: {ranked_num[0].title()}", "badge": "DISTRIBUTION", "fig": c1_fig})
+
+        # Chart 2: Category Breakdown
+        if ranked_cat:
+            c2_fig = generate_categorical_bar_chart(active_df, ranked_cat[0], top_n=8, theme=theme)
+            charts.append({"title": f"Volume by {ranked_cat[0].title()}", "badge": "CATEGORIES", "fig": c2_fig})
+
+        # Chart 3: Composition Share
+        c3_fig = generate_composition_chart(metadata, theme=theme)
+        charts.append({"title": "Schema Data Type Breakdown", "badge": "COMPOSITION", "fig": c3_fig})
+
+        # Chart 4: Correlation or Secondary Category/Numeric
+        if len(ranked_num) >= 2:
+            c4_fig, _ = generate_correlation_heatmap(active_df, ranked_num, theme=theme)
+            charts.append({"title": "Correlation Matrix Snapshot", "badge": "CORRELATION", "fig": c4_fig})
+        elif len(ranked_cat) >= 2:
+            c4_fig = generate_categorical_bar_chart(active_df, ranked_cat[1], top_n=8, theme=theme)
+            charts.append({"title": f"Breakdown: {ranked_cat[1].title()}", "badge": "CATEGORIES", "fig": c4_fig})
+
+        # Executive Briefing
+        briefing.append({
+            "title": "Primary Driver Focus",
+            "text": f"The primary operational feature is '{ranked_num[0] if ranked_num else 'N/A'}' across {total_rows:,} observed records."
+        })
+        if ranked_cat:
+            briefing.append({
+                "title": "Segment Distribution",
+                "text": f"Categorical segment '{ranked_cat[0]}' accounts for dominant record volume across {active_df[ranked_cat[0]].nunique()} unique tiers."
+            })
+        briefing.append({
+            "title": "Data Health Status",
+            "text": f"Overall quality score is {qs:.1f}% with {metadata.get('missing_percentage', 0.0):.1f}% missing value rate."
+        })
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # PERSPECTIVE 1: Segment & Dimensional Slices
+    # ─────────────────────────────────────────────────────────────────────────
+    elif active_idx == 1:
+        # Category-centric KPIs
+        for i, c in enumerate(ranked_cat[:3]):
+            s = active_df[c].dropna()
+            top_val = s.mode().iloc[0] if not s.empty else "N/A"
+            kpi_cards.append({
+                "label": f"{c.replace('_', ' ').title()}",
+                "value": f"{s.nunique()} Segments",
+                "meta": f"Top: {str(top_val)[:18]} ({((s == top_val).sum() / len(s) * 100):.1f}%)" if len(s) > 0 else "N/A",
+                "badge": "CARDINALITY",
+                "badge_class": "pbi-badge-neutral",
+                "tile_class": "pbi-kpi-tile-purple" if i == 0 else ""
+            })
+
+        while len(kpi_cards) < 4:
+            kpi_cards.append({
+                "label": "Total Categorical Fields",
+                "value": f"{len(analytical_cols['categorical'])}",
+                "meta": f"{total_rows:,} total rows",
+                "badge": "DIMENSIONS",
+                "badge_class": "pbi-badge-neutral",
+                "tile_class": "pbi-kpi-tile-info"
+            })
+
+        # 4 Categorical & Comparative Charts
+        for cat in ranked_cat[:3]:
+            fig = generate_categorical_bar_chart(active_df, cat, top_n=10, theme=theme)
+            if fig:
+                charts.append({"title": f"Distribution by {cat.title()}", "badge": "SEGMENT", "fig": fig})
+
+        if ranked_num and ranked_cat:
+            # Scatter / Group comparison
+            fig = generate_scatter_relationship_chart(active_df, ranked_num[0], ranked_num[1] if len(ranked_num) > 1 else ranked_num[0], color_col=ranked_cat[0], theme=theme)
+            if fig:
+                charts.append({"title": f"Segment Dispersion ({ranked_cat[0].title()})", "badge": "DISPERSION", "fig": fig})
+
+        briefing.append({
+            "title": "Dimensional Hierarchy",
+            "text": f"Found {len(ranked_cat)} high-signal categorical dimensions suitable for slicing and grouping."
+        })
+        if ranked_cat:
+            briefing.append({
+                "title": "Concentration Analysis",
+                "text": f"Dimension '{ranked_cat[0]}' shows concentrated activity in top-ranking groups."
+            })
+        briefing.append({
+            "title": "Cross-Filtering Ready",
+            "text": "Use the top slicer bar to dynamically filter the entire dashboard by category."
+        })
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # PERSPECTIVE 2: Driver & Correlation Radar
+    # ─────────────────────────────────────────────────────────────────────────
+    elif active_idx == 2:
+        if len(ranked_num) >= 2:
+            c_matrix = active_df[ranked_num[:6]].dropna().corr()
+            # Find top correlation
+            pairs = []
+            for i in range(len(c_matrix.columns)):
+                for j in range(i + 1, len(c_matrix.columns)):
+                    r = c_matrix.iloc[i, j]
+                    if pd.notna(r):
+                        pairs.append((c_matrix.columns[i], c_matrix.columns[j], float(r)))
+            pairs.sort(key=lambda x: abs(x[2]), reverse=True)
+
+            if pairs:
+                top_p = pairs[0]
+                kpi_cards.append({
+                    "label": "Strongest Correlation",
+                    "value": f"r = {top_p[2]:+.2f}",
+                    "meta": f"{top_p[0]} ↔ {top_p[1]}",
+                    "badge": "COEFFICIENT",
+                    "badge_class": "pbi-badge-up" if abs(top_p[2]) >= 0.7 else "pbi-badge-neutral",
+                    "tile_class": "pbi-kpi-tile-success"
+                })
+
+        while len(kpi_cards) < 4:
+            idx = len(kpi_cards)
+            if idx < len(ranked_num):
+                col = ranked_num[idx]
+                s = active_df[col].dropna()
+                kpi_cards.append({
+                    "label": f"Variance: {col.title()}",
+                    "value": f"{s.std():,.2f}" if s.std() < 1000 else f"{s.std():,.1f}",
+                    "meta": f"Mean: {s.mean():,.2f}",
+                    "badge": "SPREAD",
+                    "badge_class": "pbi-badge-neutral",
+                    "tile_class": ""
+                })
+            else:
+                kpi_cards.append({
+                    "label": "Analyzed Metrics",
+                    "value": f"{len(ranked_num)}",
+                    "meta": "Numeric variables evaluated",
+                    "badge": "CORRELATION RADAR",
+                    "badge_class": "pbi-badge-neutral",
+                    "tile_class": "pbi-kpi-tile-info"
+                })
+
+        # Charts: Heatmap, Scatter 1, Scatter 2, Numeric Distribution
+        if len(ranked_num) >= 2:
+            h_fig, _ = generate_correlation_heatmap(active_df, ranked_num, theme=theme)
+            if h_fig:
+                charts.append({"title": "Pairwise Correlation Heatmap", "badge": "MATRIX", "fig": h_fig})
+
+            sc_fig = generate_scatter_relationship_chart(active_df, ranked_num[0], ranked_num[1], color_col=ranked_cat[0] if ranked_cat else None, theme=theme)
+            if sc_fig:
+                charts.append({"title": f"Relationship: {ranked_num[0].title()} ↔ {ranked_num[1].title()}", "badge": "SCATTER", "fig": sc_fig})
+
+        if len(ranked_num) >= 3:
+            sc2_fig = generate_scatter_relationship_chart(active_df, ranked_num[0], ranked_num[2], theme=theme)
+            if sc2_fig:
+                charts.append({"title": f"Relationship: {ranked_num[0].title()} ↔ {ranked_num[2].title()}", "badge": "SCATTER", "fig": sc2_fig})
+
+        if ranked_num:
+            d_fig = generate_numeric_distribution_chart(active_df, ranked_num[0], theme=theme)
+            if d_fig:
+                charts.append({"title": f"Distribution: {ranked_num[0].title()}", "badge": "DISTRIBUTION", "fig": d_fig})
+
+        briefing.append({
+            "title": "Driver Interdependence",
+            "text": f"Identified {len(ranked_num)} quantitative features with active variance and statistical correlation."
+        })
+        briefing.append({
+            "title": "Predictive Indicators",
+            "text": "Strong linear relationships indicate potential multicollinearity or shared underlying trends."
+        })
+        briefing.append({
+            "title": "Scatter Patterns",
+            "text": "Inspect scatter clusters to identify distinct operational customer/transaction subgroups."
+        })
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # PERSPECTIVE 3: Anomaly & Data Health Matrix
+    # ─────────────────────────────────────────────────────────────────────────
+    else:
+        # Outlier count
+        total_outliers = 0
+        for col in ranked_num[:5]:
+            s = active_df[col].dropna()
+            if len(s) >= 4:
+                q1, q3 = s.quantile(0.25), s.quantile(0.75)
+                iqr = q3 - q1
+                total_outliers += int(((s < q1 - 1.5 * iqr) | (s > q3 + 1.5 * iqr)).sum())
+
+        kpi_cards.append({
+            "label": "Total Potential Outliers",
+            "value": f"{total_outliers:,}",
+            "meta": "IQR 1.5× Boundary Method",
+            "badge": "ANOMALY RADAR",
+            "badge_class": "pbi-badge-down" if total_outliers > 0 else "pbi-badge-up",
+            "tile_class": "pbi-kpi-tile-warning"
+        })
+
+        # Missing values
+        missing_cnt = int(active_df.isna().sum().sum())
+        kpi_cards.append({
+            "label": "Missing Data Cells",
+            "value": f"{missing_cnt:,}",
+            "meta": f"{metadata.get('missing_percentage', 0.0):.2f}% of total cells",
+            "badge": "COMPLETENESS",
+            "badge_class": "pbi-badge-up" if missing_cnt == 0 else "pbi-badge-down",
+            "tile_class": "pbi-kpi-tile-warning" if missing_cnt > 0 else "pbi-kpi-tile-success"
+        })
+
+        # Duplicate records
+        dup_cnt = int(active_df.duplicated().sum())
+        kpi_cards.append({
+            "label": "Duplicate Rows",
+            "value": f"{dup_cnt:,}",
+            "meta": f"{metadata.get('duplicate_percentage', 0.0):.2f}% redundancy",
+            "badge": "UNIQUENESS",
+            "badge_class": "pbi-badge-up" if dup_cnt == 0 else "pbi-badge-down",
+            "tile_class": "pbi-kpi-tile-warning" if dup_cnt > 0 else "pbi-kpi-tile-success"
+        })
+
+        # Quality Score
+        qs = metadata.get("quality_score", 90.0)
+        kpi_cards.append({
+            "label": "Health Index",
+            "value": f"{qs:.1f}/100",
+            "meta": "Automated Quality Assessment",
+            "badge": "AUDIT",
+            "badge_class": "pbi-badge-up" if qs >= 80 else "pbi-badge-down",
+            "tile_class": "pbi-kpi-tile-success" if qs >= 80 else "pbi-kpi-tile-warning"
+        })
+
+        # Charts: Distributions showing outlier tails
+        for col in ranked_num[:3]:
+            fig = generate_numeric_distribution_chart(active_df, col, theme=theme)
+            if fig:
+                charts.append({"title": f"Outlier Tail Inspection: {col.title()}", "badge": "ANOMALY", "fig": fig})
+
+        c_comp = generate_composition_chart(metadata, theme=theme)
+        if c_comp:
+            charts.append({"title": "Schema Completeness Breakdown", "badge": "COMPOSITION", "fig": c_comp})
+
+        briefing.append({
+            "title": "Anomaly Landscape",
+            "text": f"Found {total_outliers:,} potential outlier records across evaluated numeric attributes."
+        })
+        briefing.append({
+            "title": "Completeness Profile",
+            "text": f"Dataset completeness is at {100 - metadata.get('missing_percentage', 0.0):.1f}%."
+        })
+        briefing.append({
+            "title": "Remediation Action",
+            "text": "Navigate to Data Preparation if you wish to cap, winsorize, or filter extreme outlier values."
+        })
+
+    # Fallback to fill 4 charts if needed
+    while len(charts) < 4:
+        if ranked_cat and len(charts) < len(ranked_cat):
+            fig = generate_categorical_bar_chart(active_df, ranked_cat[len(charts) % len(ranked_cat)], theme=theme)
+            if fig:
+                charts.append({"title": f"Category: {ranked_cat[len(charts) % len(ranked_cat)].title()}", "badge": "CATEGORIES", "fig": fig})
+        elif ranked_num:
+            fig = generate_numeric_distribution_chart(active_df, ranked_num[len(charts) % len(ranked_num)], theme=theme)
+            if fig:
+                charts.append({"title": f"Distribution: {ranked_num[len(charts) % len(ranked_num)].title()}", "badge": "DISTRIBUTION", "fig": fig})
+        else:
+            break
+
+    return {
+        "perspective_id": p_meta["id"],
+        "perspective_name": p_meta["name"],
+        "perspective_tag": p_meta["tag"],
+        "perspective_icon": p_meta["icon"],
+        "perspective_desc": p_meta["desc"],
+        "kpi_cards": kpi_cards[:4],
+        "charts": charts[:4],
+        "briefing": briefing[:3]
+    }
+
+
+# =============================================================================
+# STANDALONE SINGLE-SCREEN HTML EXPORT GENERATOR
+# =============================================================================
+
+def export_dashboard_to_standalone_html(
+    dataset_name: str,
+    metadata: Dict[str, Any],
+    perspective_data: Dict[str, Any],
+    theme: str = "Dark"
+) -> str:
+    """
+    Generate a complete, self-contained single-screen executive dashboard in standalone HTML.
+    Includes embedded Plotly CDN scripts, glassmorphic CSS tokens, KPI scorecards,
+    and responsive 2x2 grid suitable for offline viewing, emailing, and 1-page PDF printing.
+    """
+    is_dark = theme == "Dark"
+    bg_color = "#0b1329" if is_dark else "#f8fafc"
+    surface_color = "#131e3a" if is_dark else "#ffffff"
+    text_primary = "#f8fafc" if is_dark else "#0f172a"
+    text_secondary = "#94a3b8" if is_dark else "#475569"
+    border_color = "#1e2c47" if is_dark else "#e2e8f0"
+    accent_color = "#3b82f6" if is_dark else "#2563eb"
+
+    # Convert Plotly figures to embedded HTML snippets
+    chart_divs = []
+    for item in perspective_data.get("charts", []):
+        fig = item.get("fig")
+        if fig is not None:
+            html_snippet = fig.to_html(full_html=False, include_plotlyjs="cdn", config={"displayModeBar": False, "responsive": True})
+            chart_divs.append({
+                "title": item.get("title", "Chart"),
+                "badge": item.get("badge", "VISUALIZATION"),
+                "html": html_snippet
+            })
+
+    # Build KPI tiles HTML
+    kpi_html_list = []
+    for kpi in perspective_data.get("kpi_cards", []):
+        kpi_html = f"""
+        <div class="kpi-card">
+            <div class="kpi-label">{kpi.get('label', '')}</div>
+            <div class="kpi-value">{kpi.get('value', '')}</div>
+            <div class="kpi-meta">
+                <span class="kpi-badge">{kpi.get('badge', '')}</span>
+                <span>{kpi.get('meta', '')}</span>
+            </div>
+        </div>
+        """
+        kpi_html_list.append(kpi_html)
+
+    # Build Briefing HTML
+    brief_html_list = []
+    for b in perspective_data.get("briefing", []):
+        brief_html_list.append(f"""
+        <div class="brief-item">
+            <span class="brief-bullet">✦</span>
+            <div><strong>{b.get('title', '')}</strong>: {b.get('text', '')}</div>
+        </div>
+        """)
+
+    # Build Chart Grid HTML
+    charts_html_list = []
+    for c in chart_divs:
+        charts_html_list.append(f"""
+        <div class="chart-card">
+            <div class="chart-header">
+                <span class="chart-title">{c['title']}</span>
+                <span class="chart-badge">{c['badge']}</span>
+            </div>
+            <div class="chart-body">
+                {c['html']}
+            </div>
+        </div>
+        """)
+
+    # Build Compact Briefing Ticker HTML
+    brief_items_html = " &nbsp;·&nbsp; ".join([
+        f"<strong>{b.get('title', '')}</strong>: {b.get('text', '')}"
+        for b in perspective_data.get("briefing", [])
+    ])
+
+    html_template = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Studio — {dataset_name} Executive Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <style>
+        @page {{
+            size: A4 landscape;
+            margin: 6mm;
+        }}
+        * {{
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }}
+        html, body {{
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: {bg_color};
+            color: {text_primary};
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
+        }}
+        .cockpit-canvas {{
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            padding: 10px 14px;
+            gap: 8px;
+            box-sizing: border-box;
+        }}
+        /* 1. Header Bar */
+        .cockpit-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: {surface_color};
+            border: 1px solid {border_color};
+            border-radius: 8px;
+            padding: 8px 16px;
+            height: 48px;
+            flex-shrink: 0;
+        }}
+        .brand-title {{
+            font-size: 16px;
+            font-weight: 900;
+            letter-spacing: -0.01em;
+            color: {text_primary};
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+        .brand-meta {{
+            font-size: 11px;
+            color: {text_secondary};
+            font-weight: 500;
+        }}
+        .header-actions {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+        .perspective-pill {{
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(59, 130, 246, 0.15);
+            color: {accent_color};
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 3px 10px;
+            border-radius: 12px;
+        }}
+        .print-btn {{
+            background: {accent_color};
+            color: #ffffff;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 11px;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }}
+        .print-btn:hover {{
+            opacity: 0.9;
+        }}
+
+        /* 2. Top KPI Scorecards */
+        .kpi-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            height: 72px;
+            flex-shrink: 0;
+        }}
+        .kpi-card {{
+            background: {surface_color};
+            border: 1px solid {border_color};
+            border-left: 4px solid {accent_color};
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }}
+        .kpi-label {{
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: {text_secondary};
+            line-height: 1;
+        }}
+        .kpi-value {{
+            font-size: 20px;
+            font-weight: 800;
+            color: {text_primary};
+            line-height: 1.1;
+        }}
+        .kpi-meta {{
+            font-size: 10px;
+            color: {text_secondary};
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }}
+        .kpi-badge {{
+            font-size: 8.5px;
+            font-weight: 700;
+            padding: 1px 4px;
+            border-radius: 3px;
+            background: rgba(59, 130, 246, 0.12);
+            color: {accent_color};
+        }}
+
+        /* 3. 2x2 Interactive Chart Grid */
+        .charts-grid {{
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 8px;
+        }}
+        .chart-card {{
+            background: {surface_color};
+            border: 1px solid {border_color};
+            border-radius: 6px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }}
+        .chart-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 4px;
+            border-bottom: 1px solid {border_color};
+            height: 22px;
+            flex-shrink: 0;
+        }}
+        .chart-title {{
+            font-size: 11.5px;
+            font-weight: 700;
+            color: {text_primary};
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }}
+        .chart-badge {{
+            font-size: 8.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: {text_secondary};
+            background: rgba(255,255,255,0.05);
+            padding: 1px 5px;
+            border-radius: 3px;
+            border: 1px solid {border_color};
+        }}
+        .chart-body {{
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }}
+        .chart-body .plotly-graph-div {{
+            height: 100% !important;
+            width: 100% !important;
+        }}
+
+        /* 4. Bottom AI Takeaways Ticker */
+        .brief-bar {{
+            background: {surface_color};
+            border: 1px solid {border_color};
+            border-radius: 6px;
+            padding: 6px 14px;
+            height: 34px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: {text_secondary};
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }}
+        .brief-tag {{
+            font-weight: 800;
+            color: {accent_color};
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            flex-shrink: 0;
+        }}
+
+        /* Single-Page Print Rules */
+        @media print {{
+            html, body {{
+                height: 100% !important;
+                width: 100% !important;
+                overflow: hidden !important;
+                background: #ffffff !important;
+                color: #0f172a !important;
+            }}
+            .cockpit-canvas {{
+                height: 100vh !important;
+                width: 100vw !important;
+                padding: 4mm !important;
+                gap: 4mm !important;
+            }}
+            .print-btn {{
+                display: none !important;
+            }}
+            .chart-card, .kpi-card, .brief-bar, .cockpit-header {{
+                border-color: #cbd5e1 !important;
+                background: #ffffff !important;
+                box-shadow: none !important;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="cockpit-canvas">
+        <div class="cockpit-header">
+            <div class="brand-title">
+                <span>⚡ DATA STUDIO</span>
+                <span class="brand-meta">· {dataset_name} ({metadata.get('total_rows', 0):,} rows × {metadata.get('total_columns', 0)} cols)</span>
+            </div>
+            <div class="header-actions">
+                <span class="perspective-pill">{perspective_data.get('perspective_name', 'Executive Perspective')}</span>
+                <button class="print-btn" onclick="window.print()">🖨 Print / PDF</button>
+            </div>
+        </div>
+
+        <div class="kpi-grid">
+            {''.join(kpi_html_list)}
+        </div>
+
+        <div class="charts-grid">
+            {''.join(charts_html_list)}
+        </div>
+
+        <div class="brief-bar">
+            <span class="brief-tag">✦ AI Briefing:</span>
+            <span>{brief_items_html}</span>
+        </div>
+    </div>
+
+    <script>
+        // Trigger auto-resize on Plotly graphs to fill 100% of grid cells seamlessly
+        window.addEventListener('resize', function() {{
+            var graphs = document.querySelectorAll('.plotly-graph-div');
+            graphs.forEach(function(g) {{
+                Plotly.Plots.resize(g);
+            }});
+        }});
+        setTimeout(function() {{
+            var graphs = document.querySelectorAll('.plotly-graph-div');
+            graphs.forEach(function(g) {{
+                Plotly.Plots.resize(g);
+            }});
+        }}, 300);
+    </script>
+</body>
+</html>
+"""
+    return html_template
+
+

@@ -18,8 +18,10 @@ from modules.ui_components import (
     render_empty_state,
     render_next_step_banner,
     render_ai_context_trigger,
+    render_next_workflow_steps,
     get_icon_svg
 )
+
 
 from modules.data_quality_engine import (
     analyze_data_quality,
@@ -328,9 +330,9 @@ def _render_tab_overview(report: Dict[str, Any]) -> None:
 
 
 def _render_tab_missing(report: Dict[str, Any], theme: str) -> None:
-    """Render Missing Values Tab with charts and detailed breakdown."""
+    """Render Missing Values Tab with charts, filters, and 'Fix in Data Preparation' action."""
     missing = report["missing_analysis"]
-    
+
     render_section_header(
         title="Missing Values Profiling",
         subtitle="Detailed analysis of null and empty records across dataset features."
@@ -369,19 +371,55 @@ def _render_tab_missing(report: Dict[str, Any], theme: str) -> None:
             variant="success"
         )
 
-    # Missing Values Details Table
-    st.markdown("##### Column Missing Breakdown")
-    table_data = pd.DataFrame([
-        {
-            "Column Name": c["column_name"],
-            "Missing Count": f"{c['missing_count']:,}",
-            "Missing %": f"{c['missing_percentage']:.2f}%",
-            "Non-Missing Count": f"{c['non_missing_count']:,}",
-            "Severity": c["severity"]
-        }
-        for c in missing["column_missing_details"]
-    ])
-    st.dataframe(table_data, use_container_width=True, hide_index=True)
+    # ── Severity filter + Fix action ──────────────────────────────────────────
+    col_details = missing["column_missing_details"]
+    affected = [c for c in col_details if c["missing_count"] > 0]
+
+    if affected:
+        filter_col, _, action_col = st.columns([3, 3, 4], gap="small")
+        with filter_col:
+            severity_opts = ["All"] + sorted({c["severity"] for c in affected if c["severity"] != "Healthy"})
+            selected_sev = st.selectbox(
+                "Filter by severity",
+                options=severity_opts,
+                key="miss_severity_filter",
+                label_visibility="collapsed",
+            )
+        with action_col:
+            if st.button(
+                "Fix Missing Values in Data Preparation →",
+                key="miss_fix_prep_btn",
+                type="primary",
+                use_container_width=True,
+            ):
+                st.session_state["prep_suggested_action"] = "missing"
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
+
+        # Apply filter
+        filtered = affected if selected_sev == "All" else [c for c in affected if c["severity"] == selected_sev]
+
+        if filtered:
+            st.markdown("##### Column Missing Breakdown")
+            table_data = pd.DataFrame([
+                {
+                    "Column Name": c["column_name"],
+                    "Missing Count": f"{c['missing_count']:,}",
+                    "Missing %": f"{c['missing_percentage']:.2f}%",
+                    "Non-Missing Count": f"{c['non_missing_count']:,}",
+                    "Severity": c["severity"]
+                }
+                for c in filtered
+            ])
+            st.dataframe(table_data, use_container_width=True, hide_index=True)
+        else:
+            st.info(f"No columns match severity '{selected_sev}'.")
+    else:
+        render_notification(
+            title="100% Complete Data",
+            message="No columns have missing values.",
+            variant="success"
+        )
 
 
 def _render_tab_duplicates(report: Dict[str, Any]) -> None:
@@ -425,6 +463,21 @@ def _render_tab_duplicates(report: Dict[str, Any]) -> None:
     if samples is not None and len(samples) > 0:
         st.markdown("##### Duplicate Row Samples")
         st.dataframe(samples, use_container_width=True, hide_index=False)
+
+    # ── Fix action ────────────────────────────────────────────────────────────
+    if dup.get("duplicate_rows", 0) > 0:
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+        _, fix_col = st.columns([6, 4], gap="small")
+        with fix_col:
+            if st.button(
+                "Remove Duplicates in Data Preparation →",
+                key="dup_fix_prep_btn",
+                type="primary",
+                use_container_width=True,
+            ):
+                st.session_state["prep_suggested_action"] = "duplicates"
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
 
 
 def _render_tab_consistency(report: Dict[str, Any]) -> None:
@@ -562,6 +615,29 @@ def _render_tab_outliers(report: Dict[str, Any], theme: str) -> None:
         st.plotly_chart(chart, use_container_width=True, config={"displayModeBar": False})
 
     if col_outliers:
+        # ── Column selector filter ────────────────────────────────────────────
+        filter_c1, _, action_c = st.columns([3, 3, 4], gap="small")
+        col_names = [o["column"] for o in col_outliers]
+        with filter_c1:
+            selected_col = st.selectbox(
+                "Filter by column",
+                options=["All Columns"] + col_names,
+                key="out_col_filter",
+                label_visibility="collapsed",
+            )
+        with action_c:
+            if st.button(
+                "Handle Outliers in Data Preparation →",
+                key="out_fix_prep_btn",
+                type="primary",
+                use_container_width=True,
+            ):
+                st.session_state["prep_suggested_action"] = "outliers"
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
+
+        filtered_out = col_outliers if selected_col == "All Columns" else [o for o in col_outliers if o["column"] == selected_col]
+
         st.markdown("##### Outlier Bounds & Feature Breakdown")
         out_df = pd.DataFrame([
             {
@@ -573,7 +649,7 @@ def _render_tab_outliers(report: Dict[str, Any], theme: str) -> None:
                 "Min Value": f"{o['min_value']:,}",
                 "Max Value": f"{o['max_value']:,}"
             }
-            for o in col_outliers
+            for o in filtered_out
         ])
         st.dataframe(out_df, use_container_width=True, hide_index=True)
     else:
@@ -585,43 +661,24 @@ def _render_tab_outliers(report: Dict[str, Any], theme: str) -> None:
 
 
 def _render_next_actions(report: Dict[str, Any]) -> None:
-    """Render recommended next action callouts and routing buttons."""
-    render_section_header(
-        title="Recommended Next Actions",
-        subtitle="Suggested data remediation and preparation steps based on audit findings."
-    )
-
+    """Render recommended next action callouts and dynamic workflow navigation."""
     recommendations = report.get("recommendations", [])
-    for rec in recommendations:
-        render_notification(
-            title=rec["title"],
-            message=rec["text"],
-            variant=rec.get("variant", "info")
+    if recommendations:
+        render_section_header(
+            title="Audit Remediation Insights",
+            subtitle="Suggested preparation steps based on audit findings."
         )
+        for rec in recommendations:
+            render_notification(
+                title=rec["title"],
+                message=rec["text"],
+                variant=rec.get("variant", "info")
+            )
 
     st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+    render_ai_context_trigger("Explain quality results with AI", intent="quality_results", key="qual_ai_btn")
 
-    render_next_step_banner(
-        title="Data quality review complete.",
-        recommendation="Prepare your dataset and resolve identified issues before exploratory data analysis.",
-        primary_action_label="CONTINUE TO DATA PREPARATION →",
-        target_page="Data Preparation",
-        key_prefix="qual_next_step"
-    )
+    # Dynamic Bottom Next Workflow Steps Section
+    render_next_workflow_steps("Data Quality")
 
-    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-    c_ai, c_nav = st.columns([4, 6])
-    with c_ai:
-        render_ai_context_trigger("Explain quality results with AI", intent="quality_results", key="qual_ai_btn")
-    with c_nav:
-        st.markdown("<div style='display:flex; justify-content:flex-end; gap:8px;'>", unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Dataset Workspace", key="qual_nav_dataset_btn", use_container_width=True):
-                st.session_state["current_page"] = "Dataset"
-                st.rerun()
-        with col2:
-            if st.button("Analyze Data (EDA)", key="qual_nav_eda_btn", use_container_width=True):
-                st.session_state["current_page"] = "EDA"
-                st.rerun()
 

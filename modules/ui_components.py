@@ -605,6 +605,159 @@ def render_ai_context_trigger(
 
 
 # ============================================================================
+# STANDARDIZED DYNAMIC BOTTOM WORKFLOW STEPS COMPONENT
+# ============================================================================
+
+ANALYTICAL_WORKFLOW_STEPS = [
+    {
+        "page_key": "Dataset",
+        "name": "Dataset",
+        "description": "Upload, inspect, and manage dataset schema.",
+        "icon": "database"
+    },
+    {
+        "page_key": "Data Quality",
+        "name": "Data Quality",
+        "description": "Review missing values, duplicates, and potential data issues.",
+        "icon": "shield-check"
+    },
+    {
+        "page_key": "Data Preparation",
+        "name": "Data Preparation",
+        "description": "Clean, transform, and prepare your dataset.",
+        "icon": "wrench"
+    },
+    {
+        "page_key": "EDA",
+        "name": "Analyze",
+        "description": "Explore statistical patterns and relationships.",
+        "icon": "search"
+    },
+    {
+        "page_key": "Visualization",
+        "name": "Visualization",
+        "description": "Create charts and visual representations of your findings.",
+        "icon": "bar-chart-3"
+    },
+    {
+        "page_key": "Dashboard",
+        "name": "Dashboard",
+        "description": "Combine key insights and charts into a unified dashboard.",
+        "icon": "layout-dashboard"
+    },
+    {
+        "page_key": "AI Analyst",
+        "name": "AI Analyst",
+        "description": "Ask questions and generate AI-powered insights.",
+        "icon": "sparkles"
+    }
+]
+
+
+def render_next_workflow_steps(current_page: Optional[str] = None) -> None:
+    """
+    Render the dynamic bottom 'Next Workflow Steps' section across analytical modules.
+    Automatically generates up to 3 relevant destination cards:
+      - Button 1: Previous Module (if any)
+      - Button 2: Immediate Next Module (Recommended, primary visual emphasis)
+      - Button 3: Second Next Module (if any)
+    """
+    if not current_page:
+        current_page = st.session_state.get("current_page", "Dataset")
+
+    # Resolve index in analytical workflow
+    curr_idx = -1
+    for idx, step in enumerate(ANALYTICAL_WORKFLOW_STEPS):
+        if current_page == step["page_key"] or current_page.lower() == step["name"].lower():
+            curr_idx = idx
+            break
+
+    if curr_idx == -1:
+        return
+
+    # Compute up to 3 buttons dynamically
+    cards = []
+
+    # 1. Previous Module (if exists)
+    if curr_idx > 0:
+        cards.append({
+            "step": ANALYTICAL_WORKFLOW_STEPS[curr_idx - 1],
+            "role_badge": "PREVIOUS STEP",
+            "btn_label": f"← Return to {ANALYTICAL_WORKFLOW_STEPS[curr_idx - 1]['name']}",
+            "is_recommended": False,
+            "btn_type": "secondary"
+        })
+
+    # 2. Immediate Next Module (if exists - Recommended with primary emphasis)
+    if curr_idx < len(ANALYTICAL_WORKFLOW_STEPS) - 1:
+        cards.append({
+            "step": ANALYTICAL_WORKFLOW_STEPS[curr_idx + 1],
+            "role_badge": "RECOMMENDED NEXT",
+            "btn_label": f"Continue to {ANALYTICAL_WORKFLOW_STEPS[curr_idx + 1]['name']} →",
+            "is_recommended": True,
+            "btn_type": "primary"
+        })
+
+    # 3. Second Next Module (if exists)
+    if curr_idx < len(ANALYTICAL_WORKFLOW_STEPS) - 2:
+        cards.append({
+            "step": ANALYTICAL_WORKFLOW_STEPS[curr_idx + 2],
+            "role_badge": "SUBSEQUENT STEP",
+            "btn_label": f"Jump to {ANALYTICAL_WORKFLOW_STEPS[curr_idx + 2]['name']} →",
+            "is_recommended": False,
+            "btn_type": "secondary"
+        })
+
+    if not cards:
+        return
+
+    st.markdown("<div class='ds-wf-steps-container'>", unsafe_allow_html=True)
+
+    render_section_header(
+        title="Next Workflow Steps",
+        subtitle="Continue your analysis journey through subsequent modules or review previous steps."
+    )
+
+    cols = st.columns(len(cards), gap="medium")
+
+    for i, item in enumerate(cards):
+        step_data = item["step"]
+        is_rec = item["is_recommended"]
+        role_badge = item["role_badge"]
+        btn_label = item["btn_label"]
+        btn_type = item["btn_type"]
+
+        card_class = "ds-wf-card ds-wf-card-recommended" if is_rec else "ds-wf-card"
+        badge_class = "ds-wf-badge ds-wf-badge-recommended" if is_rec else "ds-wf-badge"
+        icon_svg = get_icon_svg(step_data["icon"], 16)
+
+        with cols[i]:
+            card_html = (
+                f'<div class="{card_class}">'
+                f'<div>'
+                f'<span class="{badge_class}">{role_badge}</span>'
+                f'<div class="ds-wf-card-title">{icon_svg} {step_data["name"]}</div>'
+                f'<div class="ds-wf-card-desc">{step_data["description"]}</div>'
+                f'</div>'
+                f'</div>'
+            )
+            st.markdown(card_html, unsafe_allow_html=True)
+
+            target_page_key = step_data["page_key"]
+            if st.button(
+                btn_label,
+                key=f"wf_nav_{current_page.replace(' ', '_')}_{target_page_key}_{i}",
+                type=btn_type,
+                use_container_width=True
+            ):
+                st.session_state["current_page"] = target_page_key
+                st.rerun()
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+
+# ============================================================================
 # EMPTY STATE
 # ============================================================================
 

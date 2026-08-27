@@ -27,9 +27,11 @@ from modules.ui_components import (
     render_empty_state,
     render_next_step_banner,
     render_ai_context_trigger,
+    render_next_workflow_steps,
     get_icon_svg,
     get_type_badge_html
 )
+
 
 from modules.data_loader import (
     get_available_sample_datasets,
@@ -159,32 +161,13 @@ def render_visualization_page() -> None:
     # 7. Saved Visualizations Gallery
     _render_saved_visualizations_section(df, current_theme)
 
-    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    render_ai_context_trigger("Suggest chart recommendations with AI", intent="viz_recommend", key="viz_ai_btn")
 
-    # 8. Workflow Next Step Guidance Banner
-    render_next_step_banner(
-        title="Visualizations are ready.",
-        recommendation="Build an executive dashboard combining your key metrics, trend distributions, and charts.",
-        primary_action_label="OPEN DASHBOARD →",
-        target_page="Dashboard",
-        key_prefix="viz_next_step"
-    )
+    # Dynamic Bottom Next Workflow Steps Section
+    render_next_workflow_steps("Visualization")
 
-    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-    c_ai, c_nav = st.columns([4, 6])
-    with c_ai:
-        render_ai_context_trigger("Suggest chart recommendations with AI", intent="viz_recommend", key="viz_ai_btn")
-    with c_nav:
-        st.markdown("<div style='display:flex; justify-content:flex-end; gap:8px;'>", unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Analyze Data (EDA)", key="viz_nav_eda_btn", use_container_width=True):
-                st.session_state["current_page"] = "EDA"
-                st.rerun()
-        with col2:
-            if st.button("Dataset Overview", key="viz_nav_ov_btn", use_container_width=True):
-                st.session_state["current_page"] = "Overview"
-                st.rerun()
+
 
 
 

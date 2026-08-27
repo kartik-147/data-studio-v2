@@ -23,7 +23,8 @@ from modules.ui_components import (
     render_notification,
     get_type_badge_html,
     render_next_step_banner,
-    render_ai_context_trigger
+    render_ai_context_trigger,
+    render_next_workflow_steps
 )
 from modules.data_loader import (
     load_csv,
@@ -60,8 +61,11 @@ def render_dataset_page() -> None:
     col_left, col_right = st.columns([8, 4], gap="medium")
 
     with col_left:
-        _render_upload_section(has_active_dataset=(df is not None))
-        if df is not None and metadata is not None and dataset_name:
+        if df is None or metadata is None or not dataset_name:
+            # Upload box is shown only when no dataset is currently active
+            _render_upload_section(has_active_dataset=False)
+        else:
+            # When active dataset exists, show the full preview card and management tools
             _render_active_dataset_preview_card(df, metadata, dataset_name, file_type)
 
     with col_right:
@@ -69,7 +73,6 @@ def render_dataset_page() -> None:
             _render_dataset_health_card(metadata)
             _render_bento_kpis(metadata)
             _render_column_summary_card(metadata)
-            _render_next_steps_card()
         else:
             _render_empty_sidebar_guide()
 
@@ -88,6 +91,11 @@ def render_dataset_page() -> None:
                 _render_semantic_datatypes_tab(df, metadata)
             with tab_missing:
                 _render_missing_and_duplicates_tab(metadata)
+
+        # ── Standardized Bottom Next Workflow Steps Section ──────────────────
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+        render_next_workflow_steps("Dataset")
+
 
 
 # =============================================================================

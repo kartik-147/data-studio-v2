@@ -3358,3 +3358,642 @@ button[key^="tl_btn_"] {
   min-height: 32px !important;
   height: 32px !important;
 }
+
+/* ==========================================================================
+   DYNAMIC REUSABLE BOTTOM WORKFLOW STEPS CARDS
+   ========================================================================== */
+.ds-wf-steps-container {
+  margin-top: 28px;
+  margin-bottom: 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.ds-wf-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-bottom: 10px;
+  min-height: 128px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-fast);
+}
+
+.ds-wf-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.ds-wf-card-recommended {
+  border: 1.5px solid var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.15), var(--shadow-xs);
+}
+
+.ds-wf-card-recommended:hover {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25), var(--shadow-sm);
+}
+
+.ds-wf-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-container-low);
+  border: 1px solid var(--border);
+  padding: 2px 7px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+  width: fit-content;
+}
+
+.ds-wf-badge-recommended {
+  color: var(--accent);
+  background: var(--accent-subtle);
+  border-color: var(--accent-subtle-border);
+}
+
+.ds-wf-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ds-wf-card-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+div[data-testid="column"]:has(button[key^="wf_nav_"]) button,
+button[key^="wf_nav_"] {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  padding: 6px 12px !important;
+  min-height: 36px !important;
+}
+
+/* ==========================================================================
+   AI ANALYST — 3-MODE MODULE STYLES
+   ========================================================================== */
+
+/* Mode Switcher Pill Row */
+.ds-ai-mode-switcher {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 24px;
+  width: fit-content;
+}
+
+.ds-ai-mode-tab {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 6px 18px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.ds-ai-mode-tab:hover {
+  color: var(--text-primary);
+  background: var(--surface);
+}
+
+.ds-ai-mode-tab-active {
+  color: var(--accent);
+  background: var(--surface);
+  border-color: var(--accent-subtle-border);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Answer Card (ASK mode results) */
+.ds-ai-answer-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-xs);
+}
+
+.ds-ai-answer-source {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-container-low);
+  border: 1px solid var(--border);
+  padding: 2px 7px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.ds-ai-answer-text {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.ds-ai-followup-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+  margin-top: 12px;
+}
+
+.ds-ai-followup-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ds-ai-followup-chip {
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-subtle-border);
+  border-radius: 20px;
+  padding: 3px 12px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.ds-ai-followup-chip:hover {
+  background: rgba(37, 99, 235, 0.15);
+}
+
+/* Suggested Questions Chips */
+.ds-ai-suggested-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+}
+
+.ds-ai-suggested-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.ds-ai-suggested-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.ds-ai-suggested-card:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+/* INVESTIGATE Mode */
+.ds-investigate-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+
+.ds-investigate-finding {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-xs);
+}
+
+.ds-investigate-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.ds-confidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+
+.ds-confidence-high {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.1);
+  border-color: rgba(5, 150, 105, 0.2);
+}
+
+.ds-confidence-medium {
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.1);
+  border-color: rgba(217, 119, 6, 0.2);
+}
+
+.ds-confidence-low {
+  color: var(--text-muted);
+  background: var(--surface-container-low);
+  border-color: var(--border);
+}
+
+/* DATA STORY Mode */
+.ds-story-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ds-story-chapter {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.15s ease;
+}
+
+.ds-story-chapter:hover {
+  border-color: var(--border-hover);
+}
+
+.ds-story-chapter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.ds-story-chapter-num {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+
+.ds-story-chapter-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.ds-story-chapter-content {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.ds-story-finding-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.ds-story-finding-bullet {
+  color: var(--accent);
+  font-size: 16px;
+  line-height: 1;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.ds-story-not-ready {
+  background: var(--surface-container-low);
+  border: 1.5px dashed var(--border-dashed);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+
+/* ==========================================================================
+   DATA QUALITY — INTERACTIVITY ADDITIONS
+   ========================================================================== */
+
+.ds-quality-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+}
+
+.ds-fix-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* ==========================================================================
+   POWER BI & TABLEAU STYLE AI DASHBOARD COCKPIT
+   ========================================================================== */
+
+/* Main Cockpit Canvas */
+.pbi-dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Slicer & Action Control Bar */
+.pbi-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  box-shadow: var(--shadow-xs);
+  margin-bottom: 4px;
+}
+
+.pbi-perspective-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-subtle-border);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* Executive KPI Scorecard Grid */
+.pbi-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.pbi-kpi-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pbi-kpi-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.pbi-kpi-tile-success {
+  border-left-color: #10b981;
+}
+
+.pbi-kpi-tile-warning {
+  border-left-color: #f59e0b;
+}
+
+.pbi-kpi-tile-info {
+  border-left-color: #06b6d4;
+}
+
+.pbi-kpi-tile-purple {
+  border-left-color: #8b5cf6;
+}
+
+.pbi-kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.pbi-kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.pbi-kpi-meta {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pbi-kpi-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pbi-badge-up {
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.pbi-badge-down {
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.pbi-badge-neutral {
+  color: var(--text-secondary);
+  background: var(--surface-container-low);
+}
+
+/* 2x2 Interactive Power BI Chart Canvas */
+.pbi-chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px 10px 18px;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.pbi-chart-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pbi-chart-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pbi-chart-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-container-low);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* AI Executive Summary Callout */
+.pbi-executive-brief {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-xs);
+  margin-top: 4px;
+}
+
+.pbi-brief-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pbi-insight-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.pbi-insight-bullet {
+  color: var(--accent);
+  font-size: 15px;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+/* Single-Screen Print & PDF Optimization */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 10pt !important;
+  }
+
+  /* Hide navigation, sidebars, buttons, and footers */
+  header, footer, .stDeployButton, [data-testid="stSidebar"],
+  .ds-wf-steps-container, .pbi-control-bar button, .ds-ai-trigger-card {
+    display: none !important;
+  }
+
+  .pbi-dashboard-container {
+    gap: 8px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .pbi-kpi-tile {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    padding: 8px 12px !important;
+  }
+
+  .pbi-chart-card {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    break-inside: avoid !important;
+    height: auto !important;
+  }
+}

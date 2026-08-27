@@ -159,6 +159,56 @@ def render_settings_page() -> None:
     )
     st.markdown(app_info_html, unsafe_allow_html=True)
 
+    # ── AI & LLM Model Configuration ──────────────────────────────────────────
+    render_section_header(
+        title="Generative AI & LLM Model",
+        subtitle="Configure your AI Provider (Google Gemini / OpenAI) for multilingual natural language data analysis."
+    )
+
+    from modules.llm_service import get_ai_api_key, set_ai_api_key
+    active_key, active_provider = get_ai_api_key()
+
+    ai_c1, ai_c2, ai_c3 = st.columns([4, 2, 2], gap="small")
+    with ai_c1:
+        st_key_input = st.text_input(
+            "AI API Key",
+            value=active_key or "",
+            type="password",
+            placeholder="Paste your Gemini or OpenAI API Key...",
+            key="settings_ai_api_key_input",
+            help="Free Gemini API key from Google AI Studio (aistudio.google.com)"
+        )
+    with ai_c2:
+        st_prov_sel = st.selectbox(
+            "AI Provider",
+            options=["Gemini", "OpenAI"],
+            index=0 if active_provider == "gemini" else 1,
+            key="settings_ai_provider_sel"
+        )
+    with ai_c3:
+        st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
+        if st.button("Save AI Key", key="settings_save_ai_key_btn", type="primary", use_container_width=True):
+            if st_key_input.strip():
+                set_ai_api_key(st_key_input.strip(), st_prov_sel.lower())
+                st.toast(f"Saved {st_prov_sel} API Key! Real LLM enabled. ✓")
+                st.rerun()
+            else:
+                st.session_state["ai_api_key"] = None
+                st.toast("AI API Key cleared.")
+                st.rerun()
+
+    status_color = "#10b981" if active_key else "#64748b"
+    status_text = f"Active ({active_provider.title()})" if active_key else "Inactive (Using Analytics Engine Mode)"
+    st.markdown(
+        f"""
+        <div style="font-size:12px; color:var(--text-secondary); margin-top:4px; margin-bottom:16px;">
+            <span style="color:{status_color}; font-weight:700;">● Status:</span> {status_text} · 
+            <em>Supports natural language Q&A in English, Hindi (हिंदी), Spanish, French, German, and more.</em>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
     # ── Dataset State Management ───────────────────────────────────────────────
     render_section_header(
         title="Dataset State Management",

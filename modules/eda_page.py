@@ -24,9 +24,11 @@ from modules.ui_components import (
     render_empty_state,
     render_next_step_banner,
     render_ai_context_trigger,
+    render_next_workflow_steps,
     get_icon_svg,
     get_type_badge_html
 )
+
 
 from modules.eda_engine import (
     compute_summary_statistics,
@@ -1001,33 +1003,11 @@ def _render_tab_automated_insights(df: pd.DataFrame, metadata: Dict[str, Any]) -
 # =============================================================================
 
 def _render_next_actions() -> None:
-    """Render recommended next action callouts and routing buttons."""
-    render_section_header(
-        title="Next Workflow Steps",
-        subtitle="Continue your data analysis workflow in subsequent workspace modules."
-    )
+    """Render recommended next action callouts and dynamic workflow navigation."""
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    render_ai_context_trigger("Generate AI Insights for this analysis", intent="eda_insights", key="eda_ai_btn")
 
-    render_next_step_banner(
-        title="Analysis complete.",
-        recommendation="Create visualizations to communicate your findings and explore multi-dimensional charts.",
-        primary_action_label="CONTINUE TO VISUALIZE →",
-        target_page="Visualization",
-        key_prefix="eda_next_step"
-    )
+    # Dynamic Bottom Next Workflow Steps Section
+    render_next_workflow_steps("EDA")
 
-    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-    c_ai, c_nav = st.columns([4, 6])
-    with c_ai:
-        render_ai_context_trigger("Generate AI Insights for this analysis", intent="eda_insights", key="eda_ai_btn")
-    with c_nav:
-        st.markdown("<div style='display:flex; justify-content:flex-end; gap:8px;'>", unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Data Quality Audit", key="eda_nav_quality_btn", use_container_width=True):
-                st.session_state["current_page"] = "Data Quality"
-                st.rerun()
-        with col2:
-            if st.button("Data Preparation", key="eda_nav_prep_btn", use_container_width=True):
-                st.session_state["current_page"] = "Data Preparation"
-                st.rerun()
 
