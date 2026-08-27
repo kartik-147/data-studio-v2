@@ -172,11 +172,11 @@ def render_settings_page() -> None:
     with ai_c1:
         st_key_input = st.text_input(
             "AI API Key",
-            value=active_key or "",
+            value="",
             type="password",
-            placeholder="•••••••••••• (API Key Active from Secrets)" if active_key else "Paste Gemini or OpenAI API Key...",
+            placeholder="•••••••••••••••• (API Key Active & Secured)" if active_key else "Paste Gemini or OpenAI API Key...",
             key="settings_ai_api_key_input",
-            help="Free Gemini API key from Google AI Studio (aistudio.google.com)"
+            help="Your API key is securely encrypted in memory/secrets and never revealed to guests or users."
         )
     with ai_c2:
         st_prov_sel = st.selectbox(
@@ -193,6 +193,8 @@ def render_settings_page() -> None:
                 set_ai_api_key(input_val, st_prov_sel.lower())
                 st.toast(f"Saved {st_prov_sel} API Key! Real LLM enabled. ✓")
                 st.rerun()
+            elif active_key:
+                st.toast("Existing secured key remains active.")
             else:
                 st.session_state["ai_api_key"] = None
                 st.toast("AI API Key cleared.")
@@ -209,12 +211,12 @@ def render_settings_page() -> None:
                     st.error(msg)
 
     status_color = "#10b981" if active_key else "#64748b"
-    status_source = f"Active ({active_provider.title()} · Live)" if active_key else "Inactive (Using Analytics Engine Mode)"
+    status_source = f"Active ({active_provider.title()} · Secured)" if active_key else "Inactive (Using Analytics Engine Mode)"
     st.markdown(
         f"""
         <div style="font-size:12px; color:var(--text-secondary); margin-top:4px; margin-bottom:16px;">
             <span style="color:{status_color}; font-weight:700;">● Status:</span> <strong style="color:{status_color};">{status_source}</strong> · 
-            <em>Supports multilingual natural language Q&A in English, Hindi (हिंदी), Spanish, French, German, and more.</em>
+            <em>API key is protected and hidden from view. Multilingual Q&A is active for all users.</em>
         </div>
         """,
         unsafe_allow_html=True

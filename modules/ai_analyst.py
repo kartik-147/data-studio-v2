@@ -494,9 +494,9 @@ def _render_ask_mode() -> None:
         with cfg_col1:
             entered_key = st.text_input(
                 "API Key",
-                value=active_key or "",
+                value="",
                 type="password",
-                placeholder="•••••••••••• (Active from Secrets)" if active_key else "Paste Gemini or OpenAI API Key here...",
+                placeholder="•••••••••••••••• (API Key Active & Secured)" if active_key else "Paste Gemini or OpenAI API Key here...",
                 key="ai_analyst_key_input",
                 label_visibility="collapsed"
             )
@@ -515,6 +515,8 @@ def _render_ask_mode() -> None:
                     set_ai_api_key(raw_k, selected_provider.lower())
                     st.toast(f"Saved {selected_provider} API Key! Real LLM enabled. ✓")
                     st.rerun()
+                elif active_key:
+                    st.toast("Existing secured key remains active.")
                 else:
                     st.session_state["ai_api_key"] = None
                     st.toast("API Key cleared. Using Analytics Engine mode.")
