@@ -34,16 +34,27 @@ from modules.eda_engine import (
 
 def get_ai_api_key() -> Tuple[Optional[str], str]:
     """
-    Retrieve active API key and provider from session state or environment.
+    Retrieve active API key and provider from session state, st.secrets, or environment.
     Returns (api_key, provider_name).
     """
-    # 1. Session State
+    # 1. Session State (User entered in UI)
     session_key = st.session_state.get("ai_api_key")
     provider = st.session_state.get("ai_provider", "gemini").lower()
     if session_key and session_key.strip():
         return session_key.strip(), provider
 
-    # 2. Environment Variables
+    # 2. Streamlit Cloud Secrets (st.secrets)
+    try:
+        if "GEMINI_API_KEY" in st.secrets:
+            return str(st.secrets["GEMINI_API_KEY"]).strip(), "gemini"
+        if "GOOGLE_API_KEY" in st.secrets:
+            return str(st.secrets["GOOGLE_API_KEY"]).strip(), "gemini"
+        if "OPENAI_API_KEY" in st.secrets:
+            return str(st.secrets["OPENAI_API_KEY"]).strip(), "openai"
+    except Exception:
+        pass
+
+    # 3. Environment Variables
     gemini_env = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if gemini_env:
         return gemini_env.strip(), "gemini"
