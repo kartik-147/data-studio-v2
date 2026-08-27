@@ -318,24 +318,24 @@ def _render_2x2_chart_grid(charts: List[Dict[str, Any]]) -> None:
     if len(charts) >= 1:
         row1_c1, row1_c2 = st.columns(2, gap="medium")
         with row1_c1:
-            _render_single_chart_card(charts[0])
+            _render_single_chart_card(charts[0], chart_idx=0)
         with row1_c2:
             if len(charts) >= 2:
-                _render_single_chart_card(charts[1])
+                _render_single_chart_card(charts[1], chart_idx=1)
 
     # Row 2: Chart 2 and Chart 3
     if len(charts) >= 3:
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
         row2_c1, row2_c2 = st.columns(2, gap="medium")
         with row2_c1:
-            _render_single_chart_card(charts[2])
+            _render_single_chart_card(charts[2], chart_idx=2)
         with row2_c2:
             if len(charts) >= 4:
-                _render_single_chart_card(charts[3])
+                _render_single_chart_card(charts[3], chart_idx=3)
 
 
-def _render_single_chart_card(chart_item: Dict[str, Any]) -> None:
-    """Render an individual card container for a Plotly chart."""
+def _render_single_chart_card(chart_item: Dict[str, Any], chart_idx: int = 0) -> None:
+    """Render an individual card container for a Plotly chart with unique element keys."""
     title = chart_item.get("title", "Visual Component")
     badge = chart_item.get("badge", "CHART")
     fig = chart_item.get("fig")
@@ -349,7 +349,13 @@ def _render_single_chart_card(chart_item: Dict[str, Any]) -> None:
     )
 
     if fig is not None:
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False, "responsive": True})
+        chart_key = f"pbi_cockpit_chart_{chart_idx}_{abs(hash(title)) % 1000000}"
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+            key=chart_key,
+            config={"displayModeBar": False, "responsive": True}
+        )
     else:
         st.markdown(
             '<div style="height:300px; display:flex; align-items:center; justify-content:center; background:var(--surface-container-low); border-radius:6px; color:var(--text-muted); font-size:13px;">'

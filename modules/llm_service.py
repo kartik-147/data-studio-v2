@@ -198,8 +198,15 @@ def build_dataset_llm_context(df: pd.DataFrame, metadata: Dict[str, Any]) -> str
 # GEMINI API CALLER
 # ─────────────────────────────────────────────────────────────────────────────
 
+# ─────────────────────────────────────────────────────────────────────────────
+# GEMINI API CALLER (MULTI-MODEL AUTO-FALLBACK)
+# ─────────────────────────────────────────────────────────────────────────────
+
 def _call_gemini_api(prompt: str, context: str, api_key: str) -> Dict[str, Any]:
-    """Call Google Gemini 1.5/2.0 Flash API with fallback to direct HTTP REST."""
+    """
+    Call Google Gemini API with automatic multi-model fallback across SDK and REST.
+    Tries 1.5-flash, 2.0-flash, 1.5-pro, and gemini-pro across v1beta and v1 endpoints.
+    """
     system_instruction = (
         "You are an expert, multilingual AI Data Analyst embedded in Data Studio v2. "
         "Your role is to answer questions strictly grounded in the provided dataset context.\n\n"
@@ -215,56 +222,75 @@ def _call_gemini_api(prompt: str, context: str, api_key: str) -> Dict[str, Any]:
     try:
         import google.generativeai as genai
         genai.configure(api_key=api_key)
-        
-        # Prefer fast & accurate flash model
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            system_instruction=system_instruction
-        )
-        full_content = f"--- ACTIVE DATASET CONTEXT ---\n{context}\n\n--- USER QUESTION ---\n{prompt}"
-        response = model.generate_content(full_content)
-        raw_text = response.text
-        return _parse_llm_response(raw_text, "Google Gemini 1.5 Flash")
+        sdk_models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro"]
+        for m_name in sdk_models:
+            try:
+                model = genai.GenerativeModel(
+                    model_name=m_name,
+                    system_instruction=system_instruction
+                )
+                full_content = f"--- ACTIVE DATASET CONTEXT ---\n{context}\n\n--- USER QUESTION ---\n{prompt}"
+                response = model.generate_content(full_content)
+                if response and response.text:
+                    return _parse_llm_response(response.text, f"Google Gemini ({m_name})")
+            except Exception:
+                continue
     except Exception:
         pass
 
-    # 2. Fallback: Direct HTTP REST Call to Gemini API (zero external dependency)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": f"{system_instruction}\n\n--- DATASET CONTEXT ---\n{context}\n\n--- USER QUESTION ---\n{prompt}"}
-                ]
-            }
-        ],
-        "generationConfig": {
-            "temperature": 0.3,
-            "maxOutputTokens": 1024
-        }
-    }
+    # 2. Fallback: Direct HTTP REST with multi-model fallback
+    candidate_endpoints = [
+        ("v1beta", "gemini-1.5-flash"),
+        ("v1beta", "gemini-2.0-flash"),
+        ("v1beta", "gemini-1.5-flash-latest"),
+        ("v1", "gemini-1.5-flash"),
+        ("v1beta", "gemini-1.5-pro"),
+        ("v1beta", "gemini-pro"),
+        ("v1", "gemini-pro"),
+    ]
 
-    try:
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=25) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-            return _parse_llm_response(raw_text, "Google Gemini API (REST)")
-    except urllib.error.HTTPError as e:
-        err_body = e.read().decode("utf-8", errors="replace")
+    last_err = None
+    for api_ver, mod_name in candidate_endpoints:
+        url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{mod_name}:generateContent?key={api_key}"
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": f"{system_instruction}\n\n--- DATASET CONTEXT ---\n{context}\n\n--- USER QUESTION ---\n{prompt}"}
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.3,
+                "maxOutputTokens": 1024
+            }
+        }
+
         try:
-            err_json = json.loads(err_body)
-            msg = err_json.get("error", {}).get("message", str(e))
-        except Exception:
-            msg = str(e)
-        raise RuntimeError(f"Gemini API Error: {msg}")
-    except Exception as e:
-        raise RuntimeError(f"Gemini Request Failed: {str(e)}")
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=25) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+                return _parse_llm_response(raw_text, f"Google Gemini REST ({mod_name})")
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode("utf-8", errors="replace")
+            try:
+                err_json = json.loads(err_body)
+                last_err = err_json.get("error", {}).get("message", str(e))
+            except Exception:
+                last_err = str(e)
+            # If model not found (404/400), try next candidate model
+            continue
+        except Exception as e:
+            last_err = str(e)
+            continue
+
+    raise RuntimeError(f"Gemini API Error: {last_err or 'All Gemini model endpoints failed'}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -356,6 +382,177 @@ def _parse_llm_response(raw_text: str, source_label: str) -> Dict[str, Any]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# SELF-CONTAINED DETERMINISTIC FALLBACK ENGINE
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _answer_question_deterministic(q: str, df: pd.DataFrame, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Self-contained fallback engine for answering dataset questions when offline or no API key is present.
+    """
+    q_lower = q.lower().strip()
+    numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
+    cat_cols = [c for c in df.columns if df[c].dtype == object or str(df[c].dtype) == "category"]
+
+    # Shape / size
+    if any(kw in q_lower for kw in ["how many rows", "how many columns", "shape", "size", "dimension", "rows and columns"]):
+        rows, cols = df.shape
+        answer = (
+            f"This dataset contains **{rows:,} rows** and **{cols} columns** "
+            f"({rows * cols:,} total data cells).\n\n"
+            f"• **Numeric columns**: {len(numeric_cols)}\n"
+            f"• **Categorical columns**: {len(cat_cols)}\n"
+            f"• **Memory usage**: {metadata.get('memory_formatted', 'N/A')}"
+        )
+        return {
+            "answer": answer,
+            "source": "Dataset Dimensions",
+            "followups": ["What are the column names?", "What is the overall data quality?"],
+            "is_llm": False,
+        }
+
+    # Quality score
+    if any(kw in q_lower for kw in ["quality", "health", "score", "how clean", "cleanliness"]):
+        qs = metadata.get("quality_score", 95.0)
+        missing_pct = metadata.get("missing_percentage", 0.0)
+        dup_pct = metadata.get("duplicate_percentage", 0.0)
+        status = "Excellent" if qs >= 90 else ("Good" if qs >= 75 else "Needs Attention")
+        answer = (
+            f"The **Data Quality Score is {qs:.1f}%** ({status}).\n\n"
+            f"• **Missing values rate**: {missing_pct:.2f}%\n"
+            f"• **Duplicate rows**: {dup_pct:.2f}%\n"
+            f"• **Completeness**: {100 - missing_pct:.1f}% of cells populated."
+        )
+        return {
+            "answer": answer,
+            "source": "Data Quality Engine",
+            "followups": ["Which columns have missing values?", "Which columns have outliers?"],
+            "is_llm": False,
+        }
+
+    # Missing values
+    if any(kw in q_lower for kw in ["missing", "null", "nan", "blank", "empty"]):
+        missing_s = df.isna().sum()
+        missing_cols = missing_s[missing_s > 0].sort_values(ascending=False)
+        if missing_cols.empty:
+            answer = "Great news! This dataset contains **no missing values** (0 null cells across all columns)."
+        else:
+            top_missing = missing_cols.head(5)
+            lines = [f"• **{col}**: {cnt:,} missing ({cnt/len(df)*100:.1f}%)" for col, cnt in top_missing.items()]
+            answer = f"Found missing values in **{len(missing_cols)} column(s)**:\n\n" + "\n".join(lines)
+        return {
+            "answer": answer,
+            "source": "Missing Value Analysis",
+            "followups": ["What are the duplicate rows?", "How many rows does this dataset have?"],
+            "is_llm": False,
+        }
+
+    # Duplicate rows
+    if any(kw in q_lower for kw in ["duplicate", "duplicate rows", "repeats", "redundant"]):
+        dup_count = int(df.duplicated().sum())
+        if dup_count == 0:
+            answer = "This dataset contains **0 duplicate rows** — all records are unique."
+        else:
+            pct = dup_count / len(df) * 100
+            answer = (
+                f"This dataset contains **{dup_count:,} duplicate rows** "
+                f"({pct:.2f}% of all rows). You can remove them in **Data Preparation**."
+            )
+        return {
+            "answer": answer,
+            "source": "Deduplication Engine",
+            "followups": ["Which columns have missing values?", "What is the overall data quality?"],
+            "is_llm": False,
+        }
+
+    # Strongest correlation
+    if any(kw in q_lower for kw in ["correlation", "correlated", "relationship", "strongest correlation"]):
+        if len(numeric_cols) < 2:
+            answer = "Correlation analysis requires at least 2 numeric columns. This dataset has fewer."
+        else:
+            corr_matrix = compute_correlation_matrix(df, numeric_cols[:8])
+            pos, neg = extract_strongest_correlations(corr_matrix, top_n=2)
+            lines = []
+            if pos:
+                lines.append(f"• Strongest positive: **{pos[0]['Variable 1']}** ↔ **{pos[0]['Variable 2']}** (r = **{pos[0]['Correlation (r)']:.2f}**)")
+            if neg:
+                lines.append(f"• Strongest negative: **{neg[0]['Variable 1']}** ↔ **{neg[0]['Variable 2']}** (r = **{neg[0]['Correlation (r)']:.2f}**)")
+            answer = "Top correlation findings:\n\n" + "\n".join(lines) if lines else "No significant correlations found."
+        return {
+            "answer": answer,
+            "source": "Correlation Engine",
+            "followups": ["What is the average value?", "Which column has the most outliers?"],
+            "is_llm": False,
+        }
+
+    # Outliers
+    if any(kw in q_lower for kw in ["outlier", "outliers", "anomaly", "anomalies", "extreme"]):
+        if not numeric_cols:
+            answer = "Outlier analysis requires numeric columns. None were found."
+        else:
+            outlier_data = compute_iqr_outliers(df, numeric_cols[:6])
+            total = outlier_data.get("total_outliers", 0)
+            if total == 0:
+                answer = "No IQR outliers detected across numeric columns (using 1.5× IQR fence rule)."
+            else:
+                lines = []
+                for col, info in outlier_data.get("outliers_by_column", {}).items():
+                    if info["count"] > 0:
+                        lines.append(f"• **{col}**: {info['count']:,} outliers ({info['percentage']:.1f}%)")
+                answer = f"Found **{total:,} potential outliers** across columns:\n\n" + "\n".join(lines)
+        return {
+            "answer": answer,
+            "source": "Outlier Detection Engine (IQR)",
+            "followups": ["What is the strongest correlation?", "What is the average value?"],
+            "is_llm": False,
+        }
+
+    # Specific column averages
+    for col in numeric_cols:
+        if col.lower() in q_lower:
+            s = df[col].dropna()
+            mean_val = s.mean()
+            median_val = s.median()
+            std_val = s.std()
+            min_val = s.min()
+            max_val = s.max()
+            answer = (
+                f"Summary for column **'{col}'**:\n\n"
+                f"• **Mean (Average)**: {mean_val:,.2f}\n"
+                f"• **Median**: {median_val:,.2f}\n"
+                f"• **Standard Deviation**: {std_val:,.2f}\n"
+                f"• **Range**: [{min_val:,.2f}, {max_val:,.2f}]\n"
+                f"• **Non-null count**: {len(s):,} of {len(df):,}"
+            )
+            return {
+                "answer": answer,
+                "source": f"Descriptive Statistics ({col})",
+                "followups": [f"What are the outliers in '{col}'?", "What is the strongest correlation?"],
+                "is_llm": False,
+            }
+
+    # Default automated insights
+    insights = generate_eda_insights(df, metadata)
+    if insights:
+        top = insights[:3]
+        lines = [f"**{ins['title']}** &mdash; {ins['observation']}" for ins in top if "observation" in ins]
+        answer = (
+            "Here are the top **automated data observations** for this dataset:\n\n"
+            + "\n\n".join(f"• {l}" for l in lines)
+        )
+    else:
+        answer = (
+            "I couldn't find a specific match for your question in the rule engine. "
+            "Configure an active Google Gemini key to ask any free-form questions in your native language!"
+        )
+    return {
+        "answer": answer,
+        "source": "Automated Insights Engine",
+        "followups": ["How many rows does this dataset have?", "Which columns have missing values?", "What is the strongest correlation?"],
+        "is_llm": False,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # MAIN PUBLIC QUERY FUNCTION
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -380,12 +577,11 @@ def ask_ai_analyst(
             else:
                 return _call_gemini_api(question, context, api_key)
         except Exception as e:
-            # Fallback to deterministic with error notice
+            # Display warning and cleanly fallback
             err_msg = str(e)
             st.warning(f"AI LLM query encountered an issue ({err_msg}). Falling back to Analytics Engine.")
 
-    # Fallback to deterministic rule-based engine
-    from modules.ai_analyst import _answer_question_deterministic
+    # Self-contained fallback to deterministic rule-based engine (ZERO circular imports)
     return _answer_question_deterministic(question, df, metadata)
 
 
