@@ -376,6 +376,8 @@ def create_dataset_metadata(
 
     return {
         "name": filename,
+        "filename": filename,
+        "dataset_name": filename,
         "file_type": file_type,
         "total_rows": total_rows,
         "total_columns": total_cols,

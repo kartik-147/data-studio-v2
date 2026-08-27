@@ -273,12 +273,43 @@ def _render_visual_summaries(data: Dict[str, Any], theme: str) -> None:
         st.markdown(stat_html, unsafe_allow_html=True)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TIMEZONE FORMATTING (INDIAN STANDARD TIME - IST UTC+5:30)
+# ─────────────────────────────────────────────────────────────────────────────
+
+IST_TZ = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+
+def _format_to_ist(ts_val: Any) -> str:
+    """
+    Convert UTC/ISO timestamps or datetime objects to Indian Standard Time (IST).
+    Returns formatted string: 'YYYY-MM-DD HH:MM:SS IST'
+    """
+    if not ts_val or ts_val == "N/A" or ts_val == "None":
+        return "—"
+    try:
+        if isinstance(ts_val, datetime.datetime):
+            dt = ts_val
+        elif isinstance(ts_val, str):
+            clean_str = ts_val.strip().replace("Z", "+00:00")
+            dt = datetime.datetime.fromisoformat(clean_str)
+        else:
+            return str(ts_val)
+
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=datetime.timezone.utc)
+        ist_dt = dt.astimezone(IST_TZ)
+        return ist_dt.strftime("%Y-%m-%d %H:%M:%S IST")
+    except Exception:
+        clean = str(ts_val)[:19].replace("T", " ")
+        return f"{clean} IST" if clean else "—"
+
+
 # =============================================================================
 # TAB RENDERERS
 # =============================================================================
 
 def _render_tab_activity(activity_list: List[Dict[str, Any]]) -> None:
-    """Render unified chronological feed of logins and uploads."""
+    """Render unified chronological feed of logins and uploads with IST timestamps."""
     if not activity_list:
         st.info("No activity records available for this time range.")
         return
@@ -290,12 +321,14 @@ def _render_tab_activity(activity_list: List[Dict[str, Any]]) -> None:
         user_name = item["user"]
         email = item["email"]
         details = item["details"]
-        ts_str = item["timestamp_str"]
+        ts_str = item.get("timestamp_str") or item.get("timestamp")
         is_guest = item.get("is_guest", False)
 
         badge_color = "var(--color-warning)" if is_guest else "var(--accent)"
         badge_label = "GUEST" if is_guest else "USER"
         icon_name = "upload" if item["type"] == "upload" else "shield-check"
+
+        formatted_time = _format_to_ist(ts_str)
 
         row_html = (
             f'<div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">'
@@ -311,14 +344,14 @@ def _render_tab_activity(activity_list: List[Dict[str, Any]]) -> None:
             f'<div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">{email} • {details}</div>'
             f'</div>'
             f'</div>'
-            f'<div style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">{ts_str[:19].replace("T", " ")} UTC</div>'
+            f'<div style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">{formatted_time}</div>'
             f'</div>'
         )
         st.markdown(row_html, unsafe_allow_html=True)
 
 
 def _render_tab_users(users_list: List[Dict[str, Any]]) -> None:
-    """Render searchable registered user directory."""
+    """Render searchable registered user directory with IST timestamps."""
     if not users_list:
         st.info("No registered users found in Firestore database.")
         return
@@ -341,8 +374,8 @@ def _render_tab_users(users_list: List[Dict[str, Any]]) -> None:
             "Email Address": u.get("email", ""),
             "Auth Provider": u.get("auth_provider", "email_password"),
             "Total Uploads": u.get("upload_count", 0),
-            "Last Login": str(u.get("last_login_at", ""))[:19].replace("T", " "),
-            "First Seen": str(u.get("created_at", ""))[:19].replace("T", " ")
+            "Last Login": _format_to_ist(u.get("last_login_at")),
+            "First Seen": _format_to_ist(u.get("created_at"))
         })
 
     df_users = pd.DataFrame(rows)
@@ -350,7 +383,7 @@ def _render_tab_users(users_list: List[Dict[str, Any]]) -> None:
 
 
 def _render_tab_uploads(uploads_list: List[Dict[str, Any]]) -> None:
-    """Render dataset upload history table."""
+    """Render dataset upload history table with correct dataset names and IST timestamps."""
     if not uploads_list:
         st.info("No dataset upload records found for the selected period.")
         return
@@ -371,8 +404,16 @@ def _render_tab_uploads(uploads_list: List[Dict[str, Any]]) -> None:
 
     rows = []
     for u in filtered:
+        raw_name = u.get("dataset_name", "")
+        # Format dataset name cleanly
+        if not raw_name or raw_name == "dataset":
+            ext = u.get("file_extension") or u.get("file_type", "csv").lower()
+            clean_name = f"dataset.{ext}" if ext else "dataset.csv"
+        else:
+            clean_name = raw_name
+
         rows.append({
-            "Dataset Name": u.get("dataset_name", ""),
+            "Dataset Name": clean_name,
             "File Type": u.get("file_type", "CSV"),
             "Rows": f"{u.get('row_count', 0):,}",
             "Cols": u.get("column_count", 0),
@@ -380,7 +421,7 @@ def _render_tab_uploads(uploads_list: List[Dict[str, Any]]) -> None:
             "Missing %": f"{u.get('missing_percentage', 0.0):.1f}%",
             "User": u.get("full_name", "User"),
             "Email": u.get("email", ""),
-            "Upload Time": str(u.get("upload_time", ""))[:19].replace("T", " ")
+            "Upload Time": _format_to_ist(u.get("upload_time"))
         })
 
     df_uploads = pd.DataFrame(rows)

@@ -223,10 +223,14 @@ def log_dataset_upload(
         full_name = user_info.get("full_name", "Guest")
         email = user_info.get("email", "guest@session")
         is_guest = user_info.get("is_guest", False)
-        auth_provider = "guest" if is_guest else "email_password"
-
-        dataset_name = metadata.get("filename", "dataset")
-        extension = dataset_name.split(".")[-1].lower() if "." in dataset_name else ""
+        dataset_name = (
+            metadata.get("filename")
+            or metadata.get("name")
+            or metadata.get("dataset_name")
+            or (st.session_state.get("dataset_name") if hasattr(st, "session_state") else None)
+            or "dataset.csv"
+        )
+        extension = dataset_name.split(".")[-1].lower() if "." in dataset_name else (file_type.lower() if file_type else "")
 
         # Extract clean column types map (lowercase for consistency)
         raw_types = metadata.get("column_types", {})
