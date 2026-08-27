@@ -174,7 +174,7 @@ def render_settings_page() -> None:
             "AI API Key",
             value=active_key or "",
             type="password",
-            placeholder="Paste your Gemini or OpenAI API Key...",
+            placeholder="•••••••••••• (API Key Active from Secrets)" if active_key else "Paste Gemini or OpenAI API Key...",
             key="settings_ai_api_key_input",
             help="Free Gemini API key from Google AI Studio (aistudio.google.com)"
         )
@@ -198,12 +198,12 @@ def render_settings_page() -> None:
                 st.rerun()
 
     status_color = "#10b981" if active_key else "#64748b"
-    status_text = f"Active ({active_provider.title()})" if active_key else "Inactive (Using Analytics Engine Mode)"
+    status_source = "Active (Configured in Streamlit Secrets / Session)" if active_key else "Inactive (Using Analytics Engine Mode)"
     st.markdown(
         f"""
         <div style="font-size:12px; color:var(--text-secondary); margin-top:4px; margin-bottom:16px;">
-            <span style="color:{status_color}; font-weight:700;">● Status:</span> {status_text} · 
-            <em>Supports natural language Q&A in English, Hindi (हिंदी), Spanish, French, German, and more.</em>
+            <span style="color:{status_color}; font-weight:700;">● Status:</span> <strong style="color:{status_color};">{status_source}</strong> · 
+            <em>Supports multilingual natural language Q&A in English, Hindi (हिंदी), Spanish, French, German, and more.</em>
         </div>
         """,
         unsafe_allow_html=True
