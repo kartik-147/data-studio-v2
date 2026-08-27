@@ -471,65 +471,70 @@ def _render_ask_mode() -> None:
         subtitle=f"Ask questions in any language (English, Hindi, Spanish, etc.) grounded in '{dataset_name}'."
     )
 
-    # ── AI Model & API Key Configuration Drawer ────────────────────────────────
-    active_key, active_provider = get_ai_api_key()
-    is_llm_active = bool(active_key)
+    # ── AI Model & API Key Configuration Drawer (Admin Only) ───────────────────
+    from modules.firebase_service import is_admin_user
+    from modules.auth import get_current_user
+    current_usr = get_current_user()
 
-    with st.expander(
-        f"{'✨ Real Generative AI: Active' if is_llm_active else '⚙️ AI Model & API Key Configuration (Click to enable Gemini/OpenAI)'}",
-        expanded=not is_llm_active
-    ):
-        st.markdown(
-            """
-            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
-                Enter a free <strong>Google Gemini API Key</strong> (or OpenAI Key) to unlock real generative LLM answers in any language (English, हिंदी, Español, Français, etc.) grounded in your dataset.
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+    if is_admin_user(current_usr):
+        active_key, active_provider = get_ai_api_key()
+        is_llm_active = bool(active_key)
 
-        from modules.llm_service import test_ai_connection
-
-        cfg_col1, cfg_col2, cfg_col3, cfg_col4 = st.columns([4, 2, 2, 2], gap="small")
-        with cfg_col1:
-            entered_key = st.text_input(
-                "API Key",
-                value="",
-                type="password",
-                placeholder="•••••••••••••••• (API Key Active & Secured)" if active_key else "Paste Gemini or OpenAI API Key here...",
-                key="ai_analyst_key_input",
-                label_visibility="collapsed"
+        with st.expander(
+            f"{'✨ Real Generative AI: Active' if is_llm_active else '⚙️ AI Model & API Key Configuration (Admin)'}",
+            expanded=not is_llm_active
+        ):
+            st.markdown(
+                """
+                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
+                    Enter a free <strong>Google Gemini API Key</strong> (or OpenAI Key) to unlock real generative LLM answers in any language (English, हिंदी, Español, Français, etc.) grounded in your dataset.
+                </div>
+                """,
+                unsafe_allow_html=True
             )
-        with cfg_col2:
-            selected_provider = st.selectbox(
-                "Provider",
-                options=["Gemini", "OpenAI"],
-                index=0 if active_provider == "gemini" else 1,
-                key="ai_analyst_provider_sel",
-                label_visibility="collapsed"
-            )
-        with cfg_col3:
-            if st.button("Save Key", key="ai_save_key_btn", type="primary", use_container_width=True):
-                raw_k = (entered_key or "").strip()
-                if raw_k:
-                    set_ai_api_key(raw_k, selected_provider.lower())
-                    st.toast(f"Saved {selected_provider} API Key! Real LLM enabled. ✓")
-                    st.rerun()
-                elif active_key:
-                    st.toast("Existing secured key remains active.")
-                else:
-                    st.session_state["ai_api_key"] = None
-                    st.toast("API Key cleared. Using Analytics Engine mode.")
-                    st.rerun()
-        with cfg_col4:
-            if st.button("Test Key", key="ai_test_key_btn", use_container_width=True):
-                test_k = (entered_key or active_key or "").strip()
-                with st.spinner("Testing API connection..."):
-                    ok, msg = test_ai_connection(test_k, selected_provider.lower())
-                    if ok:
-                        st.success(msg)
+
+            from modules.llm_service import test_ai_connection
+
+            cfg_col1, cfg_col2, cfg_col3, cfg_col4 = st.columns([4, 2, 2, 2], gap="small")
+            with cfg_col1:
+                entered_key = st.text_input(
+                    "API Key",
+                    value="",
+                    type="password",
+                    placeholder="•••••••••••••••• (API Key Active & Secured)" if active_key else "Paste Gemini or OpenAI API Key here...",
+                    key="ai_analyst_key_input",
+                    label_visibility="collapsed"
+                )
+            with cfg_col2:
+                selected_provider = st.selectbox(
+                    "Provider",
+                    options=["Gemini", "OpenAI"],
+                    index=0 if active_provider == "gemini" else 1,
+                    key="ai_analyst_provider_sel",
+                    label_visibility="collapsed"
+                )
+            with cfg_col3:
+                if st.button("Save Key", key="ai_save_key_btn", type="primary", use_container_width=True):
+                    raw_k = (entered_key or "").strip()
+                    if raw_k:
+                        set_ai_api_key(raw_k, selected_provider.lower())
+                        st.toast(f"Saved {selected_provider} API Key! Real LLM enabled. ✓")
+                        st.rerun()
+                    elif active_key:
+                        st.toast("Existing secured key remains active.")
                     else:
-                        st.error(msg)
+                        st.session_state["ai_api_key"] = None
+                        st.toast("API Key cleared. Using Analytics Engine mode.")
+                        st.rerun()
+            with cfg_col4:
+                if st.button("Test Key", key="ai_test_key_btn", use_container_width=True):
+                    test_k = (entered_key or active_key or "").strip()
+                    with st.spinner("Testing API connection..."):
+                        ok, msg = test_ai_connection(test_k, selected_provider.lower())
+                        if ok:
+                            st.success(msg)
+                        else:
+                            st.error(msg)
 
     # Suggested questions
     suggested = _generate_suggested_questions(df)
