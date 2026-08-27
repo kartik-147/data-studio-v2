@@ -374,3 +374,24 @@ def ask_ai_analyst(
     # Fallback to deterministic rule-based engine
     from modules.ai_analyst import _answer_question_deterministic
     return _answer_question_deterministic(question, df, metadata)
+
+
+def test_ai_connection(api_key: Optional[str] = None, provider: str = "gemini") -> Tuple[bool, str]:
+    """Test connection to Gemini or OpenAI API to verify key validity."""
+    key = api_key or get_ai_api_key()[0]
+    if not key:
+        return False, "No API key found. Please enter an API key or add GEMINI_API_KEY to Streamlit Secrets."
+
+    prov = (provider or "gemini").lower()
+    if prov == "openai":
+        try:
+            res = _call_openai_api("Respond with 'OK'", "Test dataset", key)
+            return True, "Connected successfully to OpenAI API! ✓"
+        except Exception as e:
+            return False, f"OpenAI error: {str(e)}"
+    else:
+        try:
+            res = _call_gemini_api("Respond with 'OK'", "Test dataset", key)
+            return True, f"Connected successfully to {res.get('source', 'Google Gemini')}! ✓"
+        except Exception as e:
+            return False, f"Gemini error: {str(e)}"

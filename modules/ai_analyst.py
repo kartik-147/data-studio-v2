@@ -488,13 +488,15 @@ def _render_ask_mode() -> None:
             unsafe_allow_html=True
         )
 
-        cfg_col1, cfg_col2, cfg_col3 = st.columns([4, 2, 2], gap="small")
+        from modules.llm_service import test_ai_connection
+
+        cfg_col1, cfg_col2, cfg_col3, cfg_col4 = st.columns([4, 2, 2, 2], gap="small")
         with cfg_col1:
             entered_key = st.text_input(
                 "API Key",
                 value=active_key or "",
                 type="password",
-                placeholder="Paste Gemini or OpenAI API Key here...",
+                placeholder="•••••••••••• (Active from Secrets)" if active_key else "Paste Gemini or OpenAI API Key here...",
                 key="ai_analyst_key_input",
                 label_visibility="collapsed"
             )
@@ -508,14 +510,24 @@ def _render_ask_mode() -> None:
             )
         with cfg_col3:
             if st.button("Save Key", key="ai_save_key_btn", type="primary", use_container_width=True):
-                if entered_key.strip():
-                    set_ai_api_key(entered_key, selected_provider.lower())
+                raw_k = (entered_key or "").strip()
+                if raw_k:
+                    set_ai_api_key(raw_k, selected_provider.lower())
                     st.toast(f"Saved {selected_provider} API Key! Real LLM enabled. ✓")
                     st.rerun()
                 else:
                     st.session_state["ai_api_key"] = None
                     st.toast("API Key cleared. Using Analytics Engine mode.")
                     st.rerun()
+        with cfg_col4:
+            if st.button("Test Key", key="ai_test_key_btn", use_container_width=True):
+                test_k = (entered_key or active_key or "").strip()
+                with st.spinner("Testing API connection..."):
+                    ok, msg = test_ai_connection(test_k, selected_provider.lower())
+                    if ok:
+                        st.success(msg)
+                    else:
+                        st.error(msg)
 
     # Suggested questions
     suggested = _generate_suggested_questions(df)

@@ -165,10 +165,10 @@ def render_settings_page() -> None:
         subtitle="Configure your AI Provider (Google Gemini / OpenAI) for multilingual natural language data analysis."
     )
 
-    from modules.llm_service import get_ai_api_key, set_ai_api_key
+    from modules.llm_service import get_ai_api_key, set_ai_api_key, test_ai_connection
     active_key, active_provider = get_ai_api_key()
 
-    ai_c1, ai_c2, ai_c3 = st.columns([4, 2, 2], gap="small")
+    ai_c1, ai_c2, ai_c3, ai_c4 = st.columns([4, 2, 2, 2], gap="small")
     with ai_c1:
         st_key_input = st.text_input(
             "AI API Key",
@@ -187,18 +187,29 @@ def render_settings_page() -> None:
         )
     with ai_c3:
         st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
-        if st.button("Save AI Key", key="settings_save_ai_key_btn", type="primary", use_container_width=True):
-            if st_key_input.strip():
-                set_ai_api_key(st_key_input.strip(), st_prov_sel.lower())
+        if st.button("Save Key", key="settings_save_ai_key_btn", type="primary", use_container_width=True):
+            input_val = (st_key_input or "").strip()
+            if input_val:
+                set_ai_api_key(input_val, st_prov_sel.lower())
                 st.toast(f"Saved {st_prov_sel} API Key! Real LLM enabled. ✓")
                 st.rerun()
             else:
                 st.session_state["ai_api_key"] = None
                 st.toast("AI API Key cleared.")
                 st.rerun()
+    with ai_c4:
+        st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
+        if st.button("Test Key", key="settings_test_ai_key_btn", use_container_width=True):
+            test_target_key = (st_key_input or active_key or "").strip()
+            with st.spinner("Testing API connection..."):
+                ok, msg = test_ai_connection(test_target_key, st_prov_sel.lower())
+                if ok:
+                    st.success(msg)
+                else:
+                    st.error(msg)
 
     status_color = "#10b981" if active_key else "#64748b"
-    status_source = "Active (Configured in Streamlit Secrets / Session)" if active_key else "Inactive (Using Analytics Engine Mode)"
+    status_source = f"Active ({active_provider.title()} · Live)" if active_key else "Inactive (Using Analytics Engine Mode)"
     st.markdown(
         f"""
         <div style="font-size:12px; color:var(--text-secondary); margin-top:4px; margin-bottom:16px;">
