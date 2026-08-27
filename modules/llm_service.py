@@ -32,11 +32,44 @@ from modules.eda_engine import (
 # API KEY RESOLUTION & PERSISTENCE
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _search_secrets_recursively(obj: Any) -> Tuple[Optional[str], str]:
+    """Recursively traverse st.secrets (including nested tables like [firebase], [gemini], etc.)"""
+    if isinstance(obj, str):
+        v_str = obj.strip()
+        if v_str.startswith("AIzaSy"):
+            return v_str, "gemini"
+        if v_str.startswith("sk-") and len(v_str) > 20:
+            return v_str, "openai"
+        return None, "gemini"
+
+    if isinstance(obj, dict) or hasattr(obj, "items"):
+        # First pass: check direct keys in this dict
+        for k, v in obj.items():
+            k_lower = str(k).lower()
+            if isinstance(v, str) and v.strip():
+                v_str = v.strip()
+                if "gemini" in k_lower or "google" in k_lower or "ai_api" in k_lower or "llm_key" in k_lower:
+                    return v_str, "gemini"
+                if "openai" in k_lower:
+                    return v_str, "openai"
+                if v_str.startswith("AIzaSy"):
+                    return v_str, "gemini"
+                if v_str.startswith("sk-") and len(v_str) > 20:
+                    return v_str, "openai"
+
+        # Second pass: recurse into nested dicts/sections
+        for k, v in obj.items():
+            if isinstance(v, dict) or hasattr(v, "items"):
+                found_key, prov = _search_secrets_recursively(v)
+                if found_key:
+                    return found_key, prov
+
+    return None, "gemini"
+
+
 def get_ai_api_key() -> Tuple[Optional[str], str]:
     """
-    Retrieve active API key and provider from session state, st.secrets, or environment.
-    Supports uppercase, lowercase, nested TOML tables ([gemini], [google], [ai]),
-    and auto-detection of Google AI Studio keys.
+    Retrieve active API key and provider from session state, st.secrets (recursively), or environment.
     Returns (api_key, provider_name).
     """
     # 1. Session State (User entered directly in UI)
@@ -45,45 +78,25 @@ def get_ai_api_key() -> Tuple[Optional[str], str]:
     if session_key and str(session_key).strip():
         return str(session_key).strip(), provider
 
-    # 2. Streamlit Cloud Secrets (st.secrets) — comprehensive multi-pattern check
+    # 2. Streamlit Cloud Secrets (st.secrets) — deep recursive search
     try:
         if hasattr(st, "secrets") and st.secrets:
-            # A. Direct string lookup (all case variations)
-            candidate_keys = [
-                "GEMINI_API_KEY", "gemini_api_key", "Gemini_Api_Key", "GEMINI_KEY", "gemini_key",
-                "GOOGLE_API_KEY", "google_api_key", "Google_Api_Key",
-                "OPENAI_API_KEY", "openai_api_key",
-                "AI_API_KEY", "ai_api_key"
-            ]
-            for ck in candidate_keys:
-                if ck in st.secrets and st.secrets[ck]:
-                    val = str(st.secrets[ck]).strip()
-                    if val:
-                        prov = "openai" if "openai" in ck.lower() else "gemini"
-                        return val, prov
-
-            # B. Nested sections: [gemini], [google], [openai], [ai]
-            for section in ["gemini", "google", "openai", "ai", "llm"]:
-                if section in st.secrets:
-                    sec_obj = st.secrets[section]
-                    if isinstance(sec_obj, dict) or hasattr(sec_obj, "get"):
-                        for k in ["api_key", "key", "gemini_api_key", "google_api_key", "openai_api_key"]:
-                            if k in sec_obj and sec_obj[k]:
-                                val = str(sec_obj[k]).strip()
-                                if val:
-                                    prov = "openai" if (section == "openai" or "openai" in k) else "gemini"
-                                    return val, prov
-
-            # C. Dynamic scan: Any top-level secret whose name contains "gemini" or starts with "AIza"
-            for k, v in st.secrets.items():
-                if isinstance(v, str) and v.strip():
-                    v_str = v.strip()
-                    if "gemini" in k.lower() or "google_ai" in k.lower() or v_str.startswith("AIzaSy"):
-                        return v_str, "gemini"
-                    if "openai" in k.lower() or v_str.startswith("sk-"):
-                        return v_str, "openai"
+            secret_key, secret_prov = _search_secrets_recursively(st.secrets)
+            if secret_key:
+                return secret_key, secret_prov
     except Exception:
         pass
+
+    # 3. Environment Variables
+    env_gemini = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    if env_gemini and env_gemini.strip():
+        return env_gemini.strip(), "gemini"
+
+    env_openai = os.environ.get("OPENAI_API_KEY")
+    if env_openai and env_openai.strip():
+        return env_openai.strip(), "openai"
+
+    return None, provider
 
     # 3. Environment Variables
     env_gemini = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
