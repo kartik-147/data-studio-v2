@@ -23,16 +23,19 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 
-from modules.config import is_dataset_loaded
+from modules.config import is_dataset_loaded, mark_workflow_step, log_activity
 from modules.ui_components import (
     render_page_header,
     render_section_header,
     render_metric_card,
     render_notification,
     render_empty_state,
+    render_next_step_banner,
+    render_ai_context_trigger,
     get_icon_svg,
     get_type_badge_html
 )
+
 from modules.data_loader import (
     create_dataset_metadata,
     get_available_sample_datasets,
@@ -170,8 +173,11 @@ def _apply_prepared_to_analysis() -> None:
             st.session_state.get("dataset_file_type", "CSV")
         )
         st.session_state["prep_active_dataset_mode"] = "Prepared"
+        mark_workflow_step("prep", True)
+        log_activity(f"Applied prepared dataset ({len(working_df):,} rows × {len(working_df.columns)} cols) to active session", "wrench")
         st.toast("Prepared dataset is now active across all Data Studio modules!")
         st.rerun()
+
 
 
 # =============================================================================
@@ -295,6 +301,34 @@ def render_data_preparation_page() -> None:
 
     with tab_preview:
         _render_tab_preview_and_export(orig_df, working_df, dataset_name)
+
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+
+    # 6. Workflow Next Step Guidance Banner
+    render_next_step_banner(
+        title="Data preparation complete.",
+        recommendation="Explore patterns, distributions, correlations, and statistical summaries in the Analyze workspace.",
+        primary_action_label="CONTINUE TO ANALYZE →",
+        target_page="EDA",
+        key_prefix="prep_next_step"
+    )
+
+    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+    c_ai, c_nav = st.columns([4, 6])
+    with c_ai:
+        render_ai_context_trigger("Suggest cleaning transformations with AI", intent="data_prep_cleaning", key="prep_ai_btn")
+    with c_nav:
+        st.markdown("<div style='display:flex; justify-content:flex-end; gap:8px;'>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Data Quality Audit", key="prep_nav_qual_btn", use_container_width=True):
+                st.session_state["current_page"] = "Data Quality"
+                st.rerun()
+        with col2:
+            if st.button("Visualize Data", key="prep_nav_viz_btn", use_container_width=True):
+                st.session_state["current_page"] = "Visualization"
+                st.rerun()
+
 
 
 # =============================================================================

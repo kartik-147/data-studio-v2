@@ -9,15 +9,18 @@ from typing import Optional, Dict, Any, List
 import pandas as pd
 import streamlit as st
 
-from modules.config import is_dataset_loaded
+from modules.config import is_dataset_loaded, mark_workflow_step
 from modules.ui_components import (
     render_page_header,
     render_section_header,
     render_metric_card,
     render_notification,
     render_empty_state,
+    render_next_step_banner,
+    render_ai_context_trigger,
     get_icon_svg
 )
+
 from modules.dashboard_engine import (
     select_analytical_columns,
     prioritize_numeric_columns,
@@ -85,10 +88,12 @@ def render_dashboard_page() -> None:
 
     # 4. Page Header
     render_page_header(
-        title="Dashboard",
-        subtitle=f"Automatically generated insights from {dataset_name}",
+        title="Executive Dashboard",
+        subtitle=f"Automatically generated executive overview and analytical breakdown for {dataset_name}",
         icon="layout-dashboard"
     )
+    mark_workflow_step("dashboard", True)
+
 
     # 5. Dataset Context Bar
     _render_dataset_context_bar(dataset_name, file_type, metadata)
@@ -480,23 +485,25 @@ def _render_smart_insights_section(
 
 
 def _render_navigation_actions() -> None:
-    """Render quick links to next exploratory phases."""
+    """Render quick links to next exploratory phases and completion actions."""
     render_section_header(
-        title="Next Analysis Actions",
-        subtitle="Continue your analysis workflow across specialized Data Studio modules."
+        title="Workflow Completion & Next Steps",
+        subtitle="Your analytics dashboard is ready. Continue exploring with AI, refine visualizations, or load a new dataset."
     )
 
-    n1, n2, n3 = st.columns(3)
-    
-    with n1:
-        if st.button("Dataset Workspace", key="dash_nav_dataset_btn", use_container_width=True):
-            st.session_state["current_page"] = "Dataset"
-            st.rerun()
-    with n2:
-        if st.button("Data Quality Audit", key="dash_nav_quality_btn", use_container_width=True):
-            st.session_state["current_page"] = "Data Quality"
-            st.rerun()
-    with n3:
-        if st.button("Exploratory Data Analysis", key="dash_nav_eda_btn", use_container_width=True):
-            st.session_state["current_page"] = "EDA"
-            st.rerun()
+    render_next_step_banner(
+        title="Your analytics dashboard is ready.",
+        recommendation="You have completed the automated workflow. Engage the AI Analyst for natural language queries, create custom visualizations, or upload a new dataset.",
+        primary_action_label="✦ ASK AI ANALYST →",
+        target_page="AI Analyst",
+        key_prefix="dash_next_step",
+        suggested_actions=[
+            {"label": "🔍 Continue Analysis (EDA)", "page": "EDA"},
+            {"label": "📊 Custom Visualizations", "page": "Visualization"},
+            {"label": "📁 Upload New Dataset", "page": "Dataset"}
+        ]
+    )
+
+    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+    render_ai_context_trigger("Explain this dashboard with AI", intent="dashboard_summary", key="dash_ai_btn")
+

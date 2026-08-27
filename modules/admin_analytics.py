@@ -127,17 +127,13 @@ def render_admin_analytics_page() -> None:
 
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
-    # 7. Visual Summaries: Format Composition & Ingestion Averages
-    _render_visual_summaries(data, current_theme)
-
-    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-
-    # 8. Tabbed Logs & Audit Tables
-    tab_activity, tab_users, tab_uploads, tab_schema = st.tabs([
+    # 7. Tabbed Logs, Statistics & Audit Tables (5 Sections)
+    tab_activity, tab_users, tab_uploads, tab_stats, tab_system = st.tabs([
         "RECENT ACTIVITY",
         "USER DIRECTORY",
         "DATASET UPLOADS",
-        "SCHEMA ANALYTICS"
+        "DATASET STATISTICS",
+        "SYSTEM OVERVIEW"
     ])
 
     with tab_activity:
@@ -149,8 +145,11 @@ def render_admin_analytics_page() -> None:
     with tab_uploads:
         _render_tab_uploads(data.get("uploads", []))
 
-    with tab_schema:
-        _render_tab_schema(data.get("column_type_frequencies", {}), current_theme)
+    with tab_stats:
+        _render_tab_dataset_statistics(data, current_theme)
+
+    with tab_system:
+        _render_tab_system_overview(data)
 
 
 # =============================================================================
@@ -160,48 +159,56 @@ def render_admin_analytics_page() -> None:
 def _render_kpi_grid(kpis: Dict[str, Any]) -> None:
     """Render top 6 administrative KPI cards."""
     render_section_header(
-        title="Activity Overview",
-        subtitle="Key user engagement and ingestion metrics."
+        title="Administrative KPIs",
+        subtitle="Platform health, user volume, and data ingestion metrics."
     )
 
     c1, c2, c3, c4, c5, c6 = st.columns(6)
 
     with c1:
         render_metric_card(
-            label="Registered Users",
+            label="Total Registered Users",
             value=f"{kpis.get('total_registered_users', 0):,}",
-            status="Accounts"
+            status="Accounts",
+            icon="users"
         )
     with c2:
         render_metric_card(
-            label="Login Events",
+            label="Total Login Events",
             value=f"{kpis.get('total_login_events', 0):,}",
-            status="Sessions"
+            status="Sessions",
+            icon="activity"
         )
     with c3:
         render_metric_card(
-            label="Dataset Uploads",
+            label="Total Dataset Uploads",
             value=f"{kpis.get('total_dataset_uploads', 0):,}",
-            status="Ingestion"
+            status="Uploads",
+            icon="database"
         )
     with c4:
         render_metric_card(
-            label="Active Users",
+            label="Recent Active Users",
             value=f"{kpis.get('unique_active_users', 0):,}",
-            status="Unique"
+            status="Unique",
+            icon="shield-check"
         )
     with c5:
+        avg_mb = kpis.get("avg_size_mb", 0.0)
         render_metric_card(
-            label="Today's Logins",
-            value=f"{kpis.get('today_logins', 0):,}",
-            status="UTC Today"
+            label="Average Dataset Size",
+            value=f"{avg_mb:.2f} MB" if avg_mb > 0 else f"{kpis.get('avg_rows', 0):,} rows",
+            status="Avg Size",
+            icon="table"
         )
     with c6:
         render_metric_card(
-            label="Today's Uploads",
-            value=f"{kpis.get('today_uploads', 0):,}",
-            status="UTC Today"
+            label="Total Records Analyzed",
+            value=f"{kpis.get('total_records_analyzed', 0):,}",
+            status="Total Rows",
+            icon="bar-chart-3"
         )
+
 
 
 def _render_visual_summaries(data: Dict[str, Any], theme: str) -> None:
@@ -380,38 +387,153 @@ def _render_tab_uploads(uploads_list: List[Dict[str, Any]]) -> None:
     st.dataframe(df_uploads, use_container_width=True, hide_index=True)
 
 
-def _render_tab_schema(col_frequencies: Dict[str, int], theme: str) -> None:
-    """Render aggregate data type distribution across all user datasets."""
-    if not col_frequencies:
-        st.info("No schema or column type data recorded yet.")
-        return
+def _render_tab_dataset_statistics(data: Dict[str, Any], theme: str) -> None:
+    """Render comprehensive dataset statistics, formats, column distributions, and averages."""
+    col_chart1, col_chart2 = st.columns([5, 5], gap="large")
 
-    col_chart, col_table = st.columns([6, 4], gap="large")
+    with col_chart1:
+        render_section_header(
+            title="File Format Distribution",
+            subtitle="Uploaded dataset format breakdown."
+        )
+        ft_counts = data.get("file_type_counts", {})
+        if ft_counts:
+            labels = list(ft_counts.keys())
+            values = list(ft_counts.values())
+            colors = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b"]
 
-    with col_chart:
-        labels = list(col_frequencies.keys())
-        values = list(col_frequencies.values())
+            fig = go.Figure(data=[
+                go.Pie(
+                    labels=labels,
+                    values=values,
+                    hole=0.55,
+                    marker=dict(colors=colors[:len(labels)]),
+                    textinfo="label+percent",
+                    hoverinfo="label+value+percent"
+                )
+            ])
+            _apply_theme_to_fig(fig, theme=theme, height=220)
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+        else:
+            st.info("No dataset upload records found.")
 
-        fig = go.Figure(data=[
-            go.Bar(
-                x=labels,
-                y=values,
-                marker=dict(color="#3b82f6"),
-                text=values,
-                textposition="auto"
-            )
-        ])
-        _apply_theme_to_fig(fig, theme=theme, height=280)
-        fig.update_layout(xaxis_title="Detected Column Type", yaxis_title="Total Columns Ingested")
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    with col_chart2:
+        render_section_header(
+            title="Column Type Frequencies",
+            subtitle="Aggregated schema types across all datasets."
+        )
+        col_frequencies = data.get("column_type_frequencies", {})
+        if col_frequencies:
+            labels = list(col_frequencies.keys())
+            values = list(col_frequencies.values())
 
-    with col_table:
-        st.markdown("##### Column Type Frequencies")
-        df_types = pd.DataFrame([
-            {"Data Type": k, "Total Ingested Columns": v}
-            for k, v in sorted(col_frequencies.items(), key=lambda x: x[1], reverse=True)
-        ])
-        st.dataframe(df_types, use_container_width=True, hide_index=True)
+            fig2 = go.Figure(data=[
+                go.Bar(
+                    x=labels,
+                    y=values,
+                    marker=dict(color="#3b82f6"),
+                    text=values,
+                    textposition="auto"
+                )
+            ])
+            _apply_theme_to_fig(fig2, theme=theme, height=220)
+            fig2.update_layout(xaxis_title="Data Type", yaxis_title="Count")
+            st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+        else:
+            st.info("No schema frequency records available.")
+
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+
+    render_section_header(
+        title="Ingestion Averages & Dimensions",
+        subtitle="Summary metrics across all uploaded datasets in this period."
+    )
+    kpis = data.get("kpis", {})
+    stat_html = (
+        f'<div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: 12px;">'
+        f'<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">'
+        f'<div>'
+        f'<div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Avg Rows / Dataset</div>'
+        f'<div style="font-size: 18px; font-weight: 700; color: var(--text-primary);">{kpis.get("avg_rows", 0):,}</div>'
+        f'</div>'
+        f'<div>'
+        f'<div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Avg Columns / Dataset</div>'
+        f'<div style="font-size: 18px; font-weight: 700; color: var(--text-primary);">{kpis.get("avg_cols", 0)}</div>'
+        f'</div>'
+        f'<div>'
+        f'<div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Avg File Size</div>'
+        f'<div style="font-size: 18px; font-weight: 700; color: #60a5fa;">{kpis.get("avg_size_mb", 0.0):.2f} MB</div>'
+        f'</div>'
+        f'<div>'
+        f'<div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Total Records Ingested</div>'
+        f'<div style="font-size: 18px; font-weight: 700; color: var(--color-success);">{kpis.get("total_records_analyzed", 0):,}</div>'
+        f'</div>'
+        f'</div>'
+        f'</div>'
+    )
+    st.markdown(stat_html, unsafe_allow_html=True)
+
+
+def _render_tab_system_overview(data: Dict[str, Any]) -> None:
+    """Render system diagnostics, database status, and privacy configuration."""
+    render_section_header(
+        title="System Architecture & Cloud Services",
+        subtitle="Real-time operational status and security posture."
+    )
+
+    sys1, sys2, sys3 = st.columns(3)
+    with sys1:
+        render_metric_card(
+            label="Database Engine",
+            value="Firestore Cloud",
+            description="Active & Synced",
+            status="Online",
+            icon="database",
+            change_type="success"
+        )
+    with sys2:
+        admin_email = get_configured_admin_email() or "Configured in Secrets"
+        render_metric_card(
+            label="Authorized Admin",
+            value=admin_email.split("@")[0],
+            description=admin_email,
+            status="Admin Role",
+            icon="shield-check",
+            change_type="neutral"
+        )
+    with sys3:
+        render_metric_card(
+            label="Platform Version",
+            value="Data Studio v2",
+            description="Enterprise Edition",
+            status="Stable",
+            icon="zap",
+            change_type="success"
+        )
+
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+
+    render_section_header(
+        title="Privacy & Data Governance Posture",
+        subtitle="Zero raw dataset persistence architecture."
+    )
+
+    st.markdown(
+        """
+        <div style="background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--color-success); border-radius: var(--radius-md); padding: 16px 20px; line-height: 1.55;">
+            <div style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+                Privacy-First Metadata Logging Guarantee
+            </div>
+            <div style="font-size: 13px; color: var(--text-secondary);">
+                Data Studio operates on a strict zero-data-retention architecture. Only high-level dataset metadata 
+                (row count, column count, memory footprint, column type names, and timestamp) and user authentication logs 
+                are synchronized with Firebase Firestore. Raw customer dataset records and cell contents remain exclusively 
+                in ephemeral in-memory session compute and are never saved or sent to any remote database.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 def _render_setup_guide() -> None:
@@ -442,3 +564,4 @@ def _render_setup_guide() -> None:
         '</div>'
     )
     st.markdown(guide_html, unsafe_allow_html=True)
+

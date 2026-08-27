@@ -454,6 +454,7 @@ def set_active_dataset(df: pd.DataFrame, name: str, file_type: str = "CSV") -> N
     Store the active dataset, pristine original copy, and calculated metadata
     in the central Streamlit session state architecture.
     """
+    from modules.config import reset_workflow_progress, log_activity
     metadata = create_dataset_metadata(df, name, file_type)
     st.session_state["dataset"] = df
     st.session_state["original_dataset"] = df.copy(deep=True)
@@ -461,6 +462,8 @@ def set_active_dataset(df: pd.DataFrame, name: str, file_type: str = "CSV") -> N
     st.session_state["dataset_name"] = name
     st.session_state["dataset_metadata"] = metadata
     st.session_state["dataset_file_type"] = file_type
+    reset_workflow_progress()
+    log_activity(f"Loaded dataset '{name}' ({len(df):,} rows × {len(df.columns)} cols)", "database")
 
 
 def clear_dataset_state() -> None:
@@ -468,9 +471,14 @@ def clear_dataset_state() -> None:
     Reset all dataset-dependent session state while preserving appearance,
     routing, and application preferences.
     """
+    from modules.config import reset_workflow_progress, log_activity
+    prev_name = st.session_state.get("dataset_name", "dataset")
     st.session_state["dataset"] = None
     st.session_state["original_dataset"] = None
     st.session_state["cleaned_dataset"] = None
     st.session_state["dataset_name"] = None
     st.session_state["dataset_metadata"] = None
     st.session_state["dataset_file_type"] = None
+    reset_workflow_progress()
+    log_activity(f"Cleared active dataset '{prev_name}'", "x")
+

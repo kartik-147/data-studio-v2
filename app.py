@@ -58,8 +58,9 @@ load_css(st.session_state.get("theme", "Light"))
 
 def render_top_navbar() -> str:
     """
-    Render a clean, modern SaaS Top Navigation Bar (Option 1).
-    Completely replaces the left sidebar with a responsive header and tabbed navigation.
+    Render a clean, modern SaaS Top Navigation Bar.
+    Presents the canonical workflow order:
+    OVERVIEW -> DATASET -> QUALITY -> PREPARE -> ANALYZE -> VISUALIZE -> DASHBOARD -> AI ANALYST -> SETTINGS (+ ADMIN ANALYTICS for verified admin)
     """
     current_page = st.session_state.get("current_page", "Overview")
     current_theme = st.session_state.get("theme", "Light")
@@ -67,7 +68,7 @@ def render_top_navbar() -> str:
     is_dark = current_theme == "Dark"
     user_name = user.get("full_name", "User")
     is_guest = user.get("is_guest", False)
-    badge_label = "Guest" if is_guest else "Member"
+    is_admin = is_admin_user(user)
 
     # ── Tier 1: Brand, Status, and User Profile ──────────────────────────────
     col_brand, col_status, col_user = st.columns([3.2, 4.3, 4.5], gap="small")
@@ -116,9 +117,22 @@ def render_top_navbar() -> str:
             )
 
     with col_user:
-        badge_bg = "rgba(217,119,6,0.1)" if is_guest else "rgba(0,101,145,0.1)"
-        badge_color = "#d97706" if is_guest else "#006591"
-        badge_border = "rgba(217,119,6,0.2)" if is_guest else "rgba(0,101,145,0.2)"
+        if is_admin:
+            badge_label = "ADMIN"
+            badge_bg = "rgba(37, 99, 235, 0.12)"
+            badge_color = "#2563eb"
+            badge_border = "rgba(37, 99, 235, 0.3)"
+        elif is_guest:
+            badge_label = "GUEST"
+            badge_bg = "rgba(217, 119, 6, 0.1)"
+            badge_color = "#d97706"
+            badge_border = "rgba(217, 119, 6, 0.2)"
+        else:
+            badge_label = "MEMBER"
+            badge_bg = "rgba(0, 101, 145, 0.1)"
+            badge_color = "#006591"
+            badge_border = "rgba(0, 101, 145, 0.2)"
+
         st.markdown(
             f"""
             <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; height: 100%;">
@@ -132,21 +146,22 @@ def render_top_navbar() -> str:
     # ── Tier 2: Navigation Pills & Quick Actions ─────────────────────────────
     st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
     
+    # Exact canonical navigation order & shorter labels
     nav_items = [
-        ("Dataset", "DATASET"),
         ("Overview", "OVERVIEW"),
-        ("Data Preparation", "DATA PREP"),
-        ("EDA", "ANALYZE"),
-        ("Visualization", "VISUALIZATION"),
-        ("Dashboard", "DASHBOARD"),
+        ("Dataset", "DATASET"),
         ("Data Quality", "QUALITY"),
+        ("Data Preparation", "PREPARE"),
+        ("EDA", "ANALYZE"),
+        ("Visualization", "VISUALIZE"),
+        ("Dashboard", "DASHBOARD"),
         ("AI Analyst", "AI ANALYST"),
         ("Settings", "SETTINGS"),
     ]
-    if is_admin_user(user):
-        nav_items.append(("Admin Analytics", "ADMIN"))
+    if is_admin:
+        nav_items.append(("Admin Analytics", "ADMIN ANALYTICS"))
 
-    # Render navigation pill buttons in a neat horizontal row
+    # Render navigation pill buttons in a responsive horizontal row
     cols = st.columns(len(nav_items) + 2, gap="small")
     for i, (page_key, page_label) in enumerate(nav_items):
         with cols[i]:
@@ -195,8 +210,13 @@ def main() -> None:
         render_login_page()
         return
 
-    # Render sleek Top Navigation Bar (Option 1)
+    # Render sleek Top Navigation Bar
     active_page = render_top_navbar()
+
+    # Server-side Route Protection for Admin Analytics
+    if active_page == "Admin Analytics" and not is_admin_user(get_current_user()):
+        st.session_state["current_page"] = "Overview"
+        st.rerun()
 
     # Dataset context bar (shows on other analytical pages when dataset is loaded)
     if is_dataset_loaded() and active_page != "Dataset":
@@ -205,12 +225,12 @@ def main() -> None:
     # Page Router
     page_router = {
         "Overview": render_overview_page,
-        "Dashboard": render_dashboard_page,
         "Dataset": render_dataset_page,
         "Data Quality": render_data_quality_page,
         "Data Preparation": render_data_preparation_page,
         "EDA": render_eda_page,
         "Visualization": render_visualization_page,
+        "Dashboard": render_dashboard_page,
         "AI Analyst": render_ai_analyst_page,
         "Settings": render_settings_page,
         "Admin Analytics": render_admin_analytics_page,
@@ -222,3 +242,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

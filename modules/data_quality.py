@@ -9,15 +9,18 @@ from typing import Optional, Dict, Any, List
 import pandas as pd
 import streamlit as st
 
-from modules.config import is_dataset_loaded
+from modules.config import is_dataset_loaded, mark_workflow_step
 from modules.ui_components import (
     render_page_header,
     render_section_header,
     render_metric_card,
     render_notification,
     render_empty_state,
+    render_next_step_banner,
+    render_ai_context_trigger,
     get_icon_svg
 )
+
 from modules.data_quality_engine import (
     analyze_data_quality,
     generate_missing_bar_chart,
@@ -72,8 +75,10 @@ def render_data_quality_page() -> None:
 
     # 3. Perform Comprehensive Quality Audit
     audit_report = analyze_data_quality(df, metadata)
+    mark_workflow_step("quality", True)
 
     # 4. Standardized Page Header
+
     render_page_header(
         title="Data Quality",
         subtitle="Understand the health, completeness, and reliability of your dataset.",
@@ -594,18 +599,29 @@ def _render_next_actions(report: Dict[str, Any]) -> None:
             variant=rec.get("variant", "info")
         )
 
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
-    n1, n2, n3 = st.columns(3)
-    with n1:
-        if st.button("Dataset Workspace", key="qual_nav_dataset_btn", use_container_width=True):
-            st.session_state["current_page"] = "Dataset"
-            st.rerun()
-    with n2:
-        if st.button("Data Preparation (Module 5)", key="qual_nav_prep_btn", use_container_width=True):
-            st.session_state["current_page"] = "Data Preparation"
-            st.rerun()
-    with n3:
-        if st.button("Exploratory Data Analysis", key="qual_nav_eda_btn", use_container_width=True):
-            st.session_state["current_page"] = "EDA"
-            st.rerun()
+    render_next_step_banner(
+        title="Data quality review complete.",
+        recommendation="Prepare your dataset and resolve identified issues before exploratory data analysis.",
+        primary_action_label="CONTINUE TO DATA PREPARATION →",
+        target_page="Data Preparation",
+        key_prefix="qual_next_step"
+    )
+
+    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+    c_ai, c_nav = st.columns([4, 6])
+    with c_ai:
+        render_ai_context_trigger("Explain quality results with AI", intent="quality_results", key="qual_ai_btn")
+    with c_nav:
+        st.markdown("<div style='display:flex; justify-content:flex-end; gap:8px;'>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Dataset Workspace", key="qual_nav_dataset_btn", use_container_width=True):
+                st.session_state["current_page"] = "Dataset"
+                st.rerun()
+        with col2:
+            if st.button("Analyze Data (EDA)", key="qual_nav_eda_btn", use_container_width=True):
+                st.session_state["current_page"] = "EDA"
+                st.rerun()
+

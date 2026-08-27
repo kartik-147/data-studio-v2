@@ -430,6 +430,181 @@ def render_notification(
 
 
 # ============================================================================
+# WORKFLOW TIMELINE COMPONENT
+# ============================================================================
+
+def render_workflow_timeline(interactive: bool = True) -> None:
+    """
+    Render a professional analytics progress timeline with 6 workflow steps:
+    1. Upload Dataset -> 2. Check Quality -> 3. Prepare Data -> 4. Analyze Data -> 5. Visualize Data -> 6. Build Dashboard
+    Three professional states:
+      - Completed: subtle checkmark (✓)
+      - Current: application accent color
+      - Upcoming: neutral styling
+    """
+    from modules.config import WORKFLOW_STEPS, is_workflow_step_completed, is_dataset_loaded, get_current_workflow_stage
+    
+    current_page = st.session_state.get("current_page", "Overview")
+    stage_info = get_current_workflow_stage()
+    current_step_num = stage_info["current_step_num"]
+
+    steps_html = []
+    for step in WORKFLOW_STEPS:
+        s_num = step["step_num"]
+        s_key = step["key"]
+        s_name = step["name"]
+        s_short = step.get("short_name", s_name)
+        s_page = step["page"]
+        
+        is_comp = is_workflow_step_completed(s_key)
+        is_curr = (s_num == current_step_num) and is_dataset_loaded()
+        is_page_active = (current_page == s_page)
+        
+        if is_comp:
+            state_class = "ds-timeline-step-completed"
+            icon_badge = '<span class="ds-timeline-badge ds-badge-completed">✓</span>'
+            status_text = "Completed"
+        elif is_curr or (s_num == 1 and not is_dataset_loaded()):
+            state_class = "ds-timeline-step-current"
+            icon_badge = f'<span class="ds-timeline-badge ds-badge-current">{s_num}</span>'
+            status_text = "Current Step"
+        else:
+            state_class = "ds-timeline-step-upcoming"
+            icon_badge = f'<span class="ds-timeline-badge ds-badge-upcoming">{s_num}</span>'
+            status_text = "Upcoming"
+
+        step_card = (
+            f'<div class="ds-timeline-step {state_class}">'
+            f'<div class="ds-timeline-step-header">'
+            f'{icon_badge}'
+            f'<span class="ds-timeline-step-num">STEP 0{s_num}</span>'
+            f'</div>'
+            f'<div class="ds-timeline-step-title">{s_name}</div>'
+            f'<div class="ds-timeline-step-status">{status_text}</div>'
+            f'</div>'
+        )
+        steps_html.append(step_card)
+
+    timeline_container_html = (
+        f'<div class="ds-timeline-wrapper">'
+        f'<div class="ds-timeline-track"></div>'
+        f'<div class="ds-timeline-steps">{"".join(steps_html)}</div>'
+        f'</div>'
+    )
+    st.markdown(timeline_container_html, unsafe_allow_html=True)
+
+    # 1-Click interactive navigation buttons below timeline if requested
+    if interactive:
+        st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
+        nav_cols = st.columns(len(WORKFLOW_STEPS))
+        for idx, step in enumerate(WORKFLOW_STEPS):
+            with nav_cols[idx]:
+                s_key = step["key"]
+                s_page = step["page"]
+                s_name = step["short_name"]
+                is_comp = is_workflow_step_completed(s_key)
+                is_curr = (step["step_num"] == current_step_num)
+                btn_label = f"✓ {s_name}" if is_comp else (f"● {s_name}" if is_curr else s_name)
+                
+                if st.button(
+                    btn_label,
+                    key=f"tl_btn_{s_key}",
+                    use_container_width=True,
+                    type="primary" if is_curr else "secondary"
+                ):
+                    st.session_state["current_page"] = s_page
+                    st.rerun()
+
+
+# ============================================================================
+# INTELLIGENT NEXT-STEP GUIDANCE BANNER
+# ============================================================================
+
+def render_next_step_banner(
+    title: str,
+    recommendation: str,
+    primary_action_label: str,
+    target_page: str,
+    key_prefix: str = "next_step",
+    suggested_actions: Optional[List[Dict[str, str]]] = None
+) -> None:
+    """
+    Render a high-visibility, professional next-step guidance callout card.
+    Dynamically guides the user from their current completed task to the next logical workflow phase.
+    """
+    banner_icon = get_icon_svg("arrow-right", 18)
+    banner_html = (
+        f'<div class="ds-next-step-banner">'
+        f'<div class="ds-next-step-content">'
+        f'<div class="ds-next-step-header">'
+        f'<span class="ds-next-step-badge">RECOMMENDED NEXT STEP</span>'
+        f'</div>'
+        f'<div class="ds-next-step-title">{title}</div>'
+        f'<div class="ds-next-step-desc">{recommendation}</div>'
+        f'</div>'
+        f'</div>'
+    )
+    st.markdown(banner_html, unsafe_allow_html=True)
+
+    # Action buttons
+    if suggested_actions:
+        btn_cols = st.columns(len(suggested_actions) + 1)
+        with btn_cols[0]:
+            if st.button(
+                primary_action_label,
+                key=f"{key_prefix}_primary_btn",
+                type="primary",
+                use_container_width=True
+            ):
+                st.session_state["current_page"] = target_page
+                st.rerun()
+        for i, act in enumerate(suggested_actions):
+            with btn_cols[i + 1]:
+                if st.button(
+                    act.get("label", "Action"),
+                    key=f"{key_prefix}_extra_{i}",
+                    use_container_width=True
+                ):
+                    st.session_state["current_page"] = act.get("page", "Overview")
+                    st.rerun()
+    else:
+        c1, c2 = st.columns([7, 5])
+        with c2:
+            if st.button(
+                primary_action_label,
+                key=f"{key_prefix}_primary_btn",
+                type="primary",
+                use_container_width=True
+            ):
+                st.session_state["current_page"] = target_page
+                st.rerun()
+
+
+# ============================================================================
+# CONTEXTUAL AI TRIGGER
+# ============================================================================
+
+def render_ai_context_trigger(
+    label: str = "Ask AI about this data",
+    intent: str = "general",
+    key: str = "ai_trigger"
+) -> None:
+    """
+    Render a clean, contextual AI Analyst trigger button without interrupting the workflow.
+    """
+    ai_icon = get_icon_svg("sparkles", 14)
+    if st.button(
+        f"✦ {label}",
+        key=key,
+        use_container_width=False,
+        help="Consult AI Analyst for natural language queries and automated observations."
+    ):
+        st.session_state["ai_analyst_intent"] = intent
+        st.session_state["current_page"] = "AI Analyst"
+        st.rerun()
+
+
+# ============================================================================
 # EMPTY STATE
 # ============================================================================
 

@@ -21,7 +21,9 @@ from modules.auth import get_current_user
 from modules.firebase_service import log_dataset_upload
 from modules.ui_components import (
     render_notification,
-    get_type_badge_html
+    get_type_badge_html,
+    render_next_step_banner,
+    render_ai_context_trigger
 )
 from modules.data_loader import (
     load_csv,
@@ -33,6 +35,7 @@ from modules.data_loader import (
     set_active_dataset,
     clear_dataset_state
 )
+
 
 
 def render_dataset_page() -> None:
@@ -491,26 +494,25 @@ def _render_next_steps_card() -> None:
         textwrap.dedent("""
         <div class="stitch-sidebar-card">
             <h3 class="stitch-sidebar-title font-label-md" style="border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 10px;">
-                NEXT STEPS
+                WORKFLOW NEXT STEP
             </h3>
+            <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
+                Dataset uploaded successfully.<br>
+                <strong style="color: var(--text-primary);">Recommended next step:</strong><br>
+                Check your dataset quality for missing values, duplicates, and potential issues.
+            </p>
         </div>
         """),
         unsafe_allow_html=True
     )
 
-    n1, n2, n3, n4 = st.columns(1), st.columns(1), st.columns(1), st.columns(1)
-
-    if st.button("📋  Review dataset schema", key="stitch_step_review_btn", use_container_width=True):
-        st.toast("Inspect detailed schema in the tabs below.")
-    if st.button("🛡  Check data quality", key="stitch_step_quality_btn", use_container_width=True):
+    if st.button("CONTINUE TO DATA QUALITY →", key="stitch_step_quality_primary_btn", type="primary", use_container_width=True):
         st.session_state["current_page"] = "Data Quality"
         st.rerun()
-    if st.button("📐  Prepare & clean data", key="stitch_step_prep_btn", use_container_width=True):
-        st.session_state["current_page"] = "Data Preparation"
-        st.rerun()
-    if st.button("✦  Explore insights (EDA)", key="stitch_step_eda_btn", type="primary", use_container_width=True):
-        st.session_state["current_page"] = "EDA"
-        st.rerun()
+
+    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+    render_ai_context_trigger("Ask AI about this data", intent="dataset_profile", key="ds_ai_ask_btn")
+
 
 
 def _render_empty_sidebar_guide() -> None:

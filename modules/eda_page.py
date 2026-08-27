@@ -15,16 +15,19 @@ from typing import Optional, Dict, Any, List
 import pandas as pd
 import streamlit as st
 
-from modules.config import is_dataset_loaded
+from modules.config import is_dataset_loaded, mark_workflow_step
 from modules.ui_components import (
     render_page_header,
     render_section_header,
     render_metric_card,
     render_notification,
     render_empty_state,
+    render_next_step_banner,
+    render_ai_context_trigger,
     get_icon_svg,
     get_type_badge_html
 )
+
 from modules.eda_engine import (
     compute_summary_statistics,
     compute_correlation_matrix,
@@ -120,13 +123,15 @@ def render_eda_page() -> None:
 
     # 3. Standardized Page Header
     render_page_header(
-        title="EDA & Insights",
+        title="Analyze Data (EDA)",
         subtitle="Descriptive statistics, skewness, kurtosis, correlation matrices, outlier detection, and column deep dives.",
         icon="search"
     )
+    mark_workflow_step("analyze", True)
 
     # 4. Dataset Context Banner
     _render_context_bar(dataset_name, file_type, metadata)
+
 
     # 5. Section 1: Dataset Overview KPI Cards
     _render_dataset_overview_kpis(df, metadata)
@@ -1002,16 +1007,27 @@ def _render_next_actions() -> None:
         subtitle="Continue your data analysis workflow in subsequent workspace modules."
     )
 
-    n1, n2, n3 = st.columns(3)
-    with n1:
-        if st.button("Data Quality Workspace", key="eda_nav_quality_btn", use_container_width=True):
-            st.session_state["current_page"] = "Data Quality"
-            st.rerun()
-    with n2:
-        if st.button("Data Preparation", key="eda_nav_prep_btn", use_container_width=True):
-            st.session_state["current_page"] = "Data Preparation"
-            st.rerun()
-    with n3:
-        if st.button("Visualization Builder", key="eda_nav_viz_btn", use_container_width=True):
-            st.session_state["current_page"] = "Visualization"
-            st.rerun()
+    render_next_step_banner(
+        title="Analysis complete.",
+        recommendation="Create visualizations to communicate your findings and explore multi-dimensional charts.",
+        primary_action_label="CONTINUE TO VISUALIZE →",
+        target_page="Visualization",
+        key_prefix="eda_next_step"
+    )
+
+    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+    c_ai, c_nav = st.columns([4, 6])
+    with c_ai:
+        render_ai_context_trigger("Generate AI Insights for this analysis", intent="eda_insights", key="eda_ai_btn")
+    with c_nav:
+        st.markdown("<div style='display:flex; justify-content:flex-end; gap:8px;'>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Data Quality Audit", key="eda_nav_quality_btn", use_container_width=True):
+                st.session_state["current_page"] = "Data Quality"
+                st.rerun()
+        with col2:
+            if st.button("Data Preparation", key="eda_nav_prep_btn", use_container_width=True):
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
+

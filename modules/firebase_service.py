@@ -455,8 +455,10 @@ def fetch_admin_analytics(date_filter: str = "All Time") -> Dict[str, Any]:
                 "today_uploads": today_uploads_count,
                 "avg_rows": avg_rows,
                 "avg_cols": avg_cols,
-                "avg_size_mb": avg_size_mb
+                "avg_size_mb": avg_size_mb,
+                "total_records_analyzed": total_rows_sum
             },
+
             "file_type_counts": file_type_counts,
             "column_type_frequencies": column_type_frequencies,
             "recent_activity": activity_items[:50],  # Top 50 recent events
