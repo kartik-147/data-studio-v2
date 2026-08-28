@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 sys.path.insert(0, os.path.abspath("."))
 import pandas as pd
 import numpy as np
@@ -43,4 +44,23 @@ for i, q in enumerate(test_queries, 1):
     print("Follow-ups:", res.get("followups", []))
     assert res["answer"] and len(res["answer"]) > 10, f"Query '{q}' returned empty answer!"
 
-print("\n>>> ALL AI ANALYST TESTS PASSED SUCCESSFULLY! <<<")
+from modules.ai_analyst import _run_investigation, _build_data_story
+
+print("\n--- Testing Root-Cause Investigation ---")
+inv_res = _run_investigation(df, target="Income", dimension="Location", time_col=None)
+print("Investigation Target:", inv_res["target"])
+print("Target Mean:", inv_res["target_mean"])
+print("Confidence:", inv_res["confidence"])
+assert inv_res["group_df"] is not None
+print("Explanations:", inv_res["explanations"])
+
+print("\n--- Testing Data Story Generation & Text Cleaning ---")
+chapters = _build_data_story(df, metadata)
+assert len(chapters) == 7, f"Expected 7 chapters, got {len(chapters)}"
+for ch in chapters:
+    print(f"[{ch['num']}] {ch['title']} ({len(ch['lines'])} lines)")
+    for line in ch['lines']:
+        clean_l = re.sub(r"<[^>]+>", "", line)
+        assert len(clean_l) > 0
+
+print("\n>>> ALL AI ANALYST, INVESTIGATION, AND DATA STORY TESTS PASSED SUCCESSFULLY! <<<")

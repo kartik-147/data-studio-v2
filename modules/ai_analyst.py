@@ -12,6 +12,7 @@ Three analytical modes delivering automated intelligence:
 """
 from __future__ import annotations
 import html
+import re
 import textwrap
 from typing import Optional, Dict, Any, List
 
@@ -458,16 +459,19 @@ def _run_investigation(
 
     # 2. Group by dimension
     try:
-        if df[dimension].dtype == object or str(df[dimension].dtype) == "category":
+        if not pd.api.types.is_numeric_dtype(df[dimension]):
             grouped = df.groupby(dimension)[target].agg(["mean", "count", "std"]).reset_index()
             grouped.columns = ["Category", "Mean", "Count", "Std"]
+            grouped["Mean"] = grouped["Mean"].round(2)
             grouped = grouped.sort_values("Mean", ascending=False)
             result["group_df"] = grouped.head(15)
         else:
             df_tmp = df.copy()
-            df_tmp["_bin"] = pd.cut(df_tmp[dimension], bins=min(10, df_tmp[dimension].nunique()), precision=1)
-            grouped = df_tmp.groupby("_bin")[target].agg(["mean", "count"]).reset_index()
+            df_tmp["_bin"] = pd.cut(df_tmp[dimension], bins=min(10, max(2, df_tmp[dimension].nunique())), precision=1)
+            grouped = df_tmp.groupby("_bin", observed=False)[target].agg(["mean", "count"]).reset_index()
             grouped.columns = ["Category", "Mean", "Count"]
+            grouped["Mean"] = grouped["Mean"].round(2)
+            grouped["Category"] = grouped["Category"].astype(str)
             grouped = grouped.sort_values("Mean", ascending=False)
             result["group_df"] = grouped.head(10)
     except Exception:
