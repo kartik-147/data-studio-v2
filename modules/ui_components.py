@@ -475,6 +475,7 @@ def load_css(theme: str = "Light") -> None:
         /* ── Inputs, Selectboxes, Dropdowns & Popovers in Dark Mode ── */
         div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
         div[data-testid="stMultiSelect"] div[data-baseweb="select"] > div,
+        div[data-baseweb="select"] > div,
         div[data-testid="stTextInput"] input,
         div[data-testid="stNumberInput"] input,
         div[data-testid="stTextArea"] textarea,
@@ -483,54 +484,159 @@ def load_css(theme: str = "Light") -> None:
             background-color: #141c2e !important;
             color: #f1f5f9 !important;
             border: 1px solid #1e2d45 !important;
+            border-radius: 6px !important;
         }
 
         div[data-testid="stSelectbox"] div[data-baseweb="select"] > div *,
         div[data-testid="stMultiSelect"] div[data-baseweb="select"] > div *,
+        div[data-baseweb="select"] > div *,
         div[data-testid="stTextInput"] input *,
         div[data-testid="stNumberInput"] input *,
         div[data-testid="stTextArea"] textarea * {
             color: #f1f5f9 !important;
         }
 
+        div[data-baseweb="select"] input {
+            color: #f1f5f9 !important;
+            background-color: transparent !important;
+        }
+
+        div[data-baseweb="select"] svg {
+            fill: #94a3b8 !important;
+            color: #94a3b8 !important;
+        }
+
+        /* Multiselect Tags (Pills) */
         span[data-baseweb="tag"],
-        div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+        div[data-testid="stMultiSelect"] span[data-baseweb="tag"],
+        div[data-baseweb="tag"] {
             background-color: #1e293b !important;
             color: #f1f5f9 !important;
             border: 1px solid #334155 !important;
+            border-radius: 4px !important;
         }
 
-        span[data-baseweb="tag"] * {
+        span[data-baseweb="tag"] *,
+        div[data-baseweb="tag"] * {
             color: #f1f5f9 !important;
         }
 
+        span[data-baseweb="tag"] [role="presentation"],
+        span[data-baseweb="tag"] svg,
+        div[data-baseweb="tag"] svg {
+            fill: #94a3b8 !important;
+            color: #94a3b8 !important;
+        }
+
+        span[data-baseweb="tag"] [role="presentation"]:hover svg,
+        div[data-baseweb="tag"] svg:hover {
+            fill: #ef4444 !important;
+            color: #ef4444 !important;
+        }
+
+        /* ── Complete Dropdown Popovers, Virtual Menus & Listboxes in Dark Mode ── */
         div[data-baseweb="popover"],
+        div[data-baseweb="popover"] > div,
+        div[data-baseweb="popover"] ul,
+        div[data-baseweb="popover"] div,
         div[data-baseweb="menu"],
+        div[data-baseweb="menu"] > ul,
         ul[data-baseweb="menu"],
+        ul[role="listbox"],
+        div[role="listbox"],
+        div[data-testid*="VirtualDropdown"],
+        div[data-testid*="virtualDropdown"],
+        div[data-testid="stSelectboxVirtualDropdown"],
+        div[data-testid="stMultiSelectVirtualDropdown"],
         div[data-testid="stPopoverBody"] {
             background-color: #141c2e !important;
             color: #f1f5f9 !important;
             border: 1px solid #1e2d45 !important;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65) !important;
         }
 
+        div[data-baseweb="popover"] *,
+        div[data-baseweb="menu"] *,
+        ul[role="listbox"] *,
+        div[data-testid*="VirtualDropdown"] *,
+        div[data-testid="stPopoverBody"] * {
+            color: #f1f5f9 !important;
+            background-color: transparent !important;
+        }
+
+        /* Menu / Listbox Items */
         li[data-baseweb="menu-item"],
+        li[role="option"],
+        div[role="option"],
         div[data-baseweb="option"] {
             background-color: #141c2e !important;
             color: #f1f5f9 !important;
+            padding: 8px 14px !important;
+            cursor: pointer !important;
+            border-bottom: 1px solid rgba(30, 45, 69, 0.5) !important;
         }
 
         li[data-baseweb="menu-item"]:hover,
+        li[role="option"]:hover,
+        div[role="option"]:hover,
         div[data-baseweb="option"]:hover,
         li[data-baseweb="menu-item"][aria-selected="true"],
-        div[data-baseweb="option"][aria-selected="true"] {
+        li[role="option"][aria-selected="true"],
+        div[role="option"][aria-selected="true"] {
             background-color: #1e293b !important;
             color: #38bdf8 !important;
         }
 
         li[data-baseweb="menu-item"]:hover *,
-        div[data-baseweb="option"]:hover * {
+        li[role="option"]:hover *,
+        div[role="option"]:hover *,
+        div[data-baseweb="option"]:hover *,
+        li[data-baseweb="menu-item"][aria-selected="true"] *,
+        li[role="option"][aria-selected="true"] * {
             color: #38bdf8 !important;
+        }
+
+        /* ── Disabled Buttons & Popover Buttons ── */
+        .stButton > button:disabled,
+        div[data-testid="stButton"] button:disabled,
+        button:disabled {
+            background-color: #111827 !important;
+            color: #475569 !important;
+            border: 1px solid #1e293b !important;
+            cursor: not-allowed !important;
+            opacity: 0.65 !important;
+            box-shadow: none !important;
+        }
+
+        .stButton > button:disabled *,
+        div[data-testid="stButton"] button:disabled *,
+        button:disabled * {
+            color: #475569 !important;
+            fill: #475569 !important;
+        }
+
+        div[data-testid="stPopover"] button {
+            background-color: #182234 !important;
+            color: #f8fafc !important;
+            border: 1px solid #334155 !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        div[data-testid="stPopover"] button * {
+            color: #f8fafc !important;
+            fill: #f8fafc !important;
+            font-weight: 600 !important;
+        }
+
+        div[data-testid="stPopover"] button:hover {
+            background-color: #243048 !important;
+            border-color: #38bdf8 !important;
+            color: #38bdf8 !important;
+        }
+
+        div[data-testid="stPopover"] button:hover * {
+            color: #38bdf8 !important;
+            fill: #38bdf8 !important;
         }
 
         /* ── Expanders, Accordions & Summaries in Dark Mode ──────── */
@@ -829,6 +935,94 @@ def load_css(theme: str = "Light") -> None:
 
         .stitch-table tr:nth-child(even) td {
             background-color: #f8fafc !important;
+        }
+
+        /* ── Inputs, Selectboxes, Dropdowns & Popovers in Light Mode ── */
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+        div[data-testid="stMultiSelect"] div[data-baseweb="select"] > div,
+        div[data-baseweb="select"] > div,
+        div[data-testid="stTextInput"] input,
+        div[data-testid="stNumberInput"] input,
+        div[data-testid="stTextArea"] textarea,
+        div[data-testid="stDateInput"] input,
+        div[data-testid="stTimeInput"] input {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+        }
+
+        span[data-baseweb="tag"],
+        div[data-testid="stMultiSelect"] span[data-baseweb="tag"],
+        div[data-baseweb="tag"] {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 4px !important;
+        }
+
+        span[data-baseweb="tag"] * {
+            color: #0f172a !important;
+        }
+
+        div[data-baseweb="popover"],
+        div[data-baseweb="popover"] > div,
+        div[data-baseweb="popover"] ul,
+        div[data-baseweb="popover"] div,
+        div[data-baseweb="menu"],
+        div[data-baseweb="menu"] > ul,
+        ul[data-baseweb="menu"],
+        ul[role="listbox"],
+        div[role="listbox"],
+        div[data-testid*="VirtualDropdown"],
+        div[data-testid*="virtualDropdown"],
+        div[data-testid="stSelectboxVirtualDropdown"],
+        div[data-testid="stMultiSelectVirtualDropdown"],
+        div[data-testid="stPopoverBody"] {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12) !important;
+        }
+
+        div[data-baseweb="popover"] *,
+        div[data-baseweb="menu"] *,
+        ul[role="listbox"] *,
+        div[data-testid*="VirtualDropdown"] *,
+        div[data-testid="stPopoverBody"] * {
+            color: #0f172a !important;
+            background-color: transparent !important;
+        }
+
+        li[data-baseweb="menu-item"],
+        li[role="option"],
+        div[role="option"],
+        div[data-baseweb="option"] {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            padding: 8px 14px !important;
+            cursor: pointer !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+        }
+
+        li[data-baseweb="menu-item"]:hover,
+        li[role="option"]:hover,
+        div[role="option"]:hover,
+        div[data-baseweb="option"]:hover,
+        li[data-baseweb="menu-item"][aria-selected="true"],
+        li[role="option"][aria-selected="true"],
+        div[role="option"][aria-selected="true"] {
+            background-color: #f1f5f9 !important;
+            color: #2563eb !important;
+        }
+
+        li[data-baseweb="menu-item"]:hover *,
+        li[role="option"]:hover *,
+        div[role="option"]:hover *,
+        div[data-baseweb="option"]:hover *,
+        li[data-baseweb="menu-item"][aria-selected="true"] *,
+        li[role="option"][aria-selected="true"] * {
+            color: #2563eb !important;
         }
         """
 

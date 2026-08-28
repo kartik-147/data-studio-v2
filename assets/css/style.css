@@ -4307,3 +4307,118 @@ button[key^="wf_nav_"] {
     height: auto !important;
   }
 }
+
+/* ==========================================================================
+   UNIVERSAL BASEWEB SELECTS, MULTISELECTS & FLOATING POPOVER MENUS
+   ========================================================================== */
+div[data-baseweb="select"] > div {
+  background-color: var(--surface) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+div[data-baseweb="select"] input {
+  color: var(--text-primary) !important;
+}
+
+div[data-baseweb="select"] svg {
+  fill: var(--text-muted) !important;
+  color: var(--text-muted) !important;
+}
+
+/* Multiselect Tags (Pills) */
+span[data-baseweb="tag"],
+div[data-testid="stMultiSelect"] span[data-baseweb="tag"],
+div[data-baseweb="tag"] {
+  background-color: var(--surface-container) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+span[data-baseweb="tag"] *,
+div[data-baseweb="tag"] * {
+  color: var(--text-primary) !important;
+}
+
+span[data-baseweb="tag"] svg,
+div[data-baseweb="tag"] svg {
+  fill: var(--text-muted) !important;
+  color: var(--text-muted) !important;
+}
+
+span[data-baseweb="tag"]:hover svg,
+div[data-baseweb="tag"]:hover svg {
+  fill: var(--color-error) !important;
+  color: var(--color-error) !important;
+}
+
+/* Floating Popovers, Menus, Virtual Dropdowns & Listboxes */
+div[data-baseweb="popover"],
+div[data-baseweb="popover"] > div,
+div[data-baseweb="popover"] ul,
+div[data-baseweb="popover"] div,
+div[data-baseweb="menu"],
+div[data-baseweb="menu"] > ul,
+ul[data-baseweb="menu"],
+ul[role="listbox"],
+div[role="listbox"],
+div[data-testid*="VirtualDropdown"],
+div[data-testid*="virtualDropdown"],
+div[data-testid="stSelectboxVirtualDropdown"],
+div[data-testid="stMultiSelectVirtualDropdown"],
+div[data-testid="stPopoverBody"] {
+  background-color: var(--surface) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-xl) !important;
+}
+
+div[data-baseweb="popover"] *,
+div[data-baseweb="menu"] *,
+ul[role="listbox"] *,
+div[data-testid*="VirtualDropdown"] *,
+div[data-testid="stPopoverBody"] * {
+  color: var(--text-primary) !important;
+}
+
+li[data-baseweb="menu-item"],
+li[role="option"],
+div[role="option"],
+div[data-baseweb="option"] {
+  background-color: var(--surface) !important;
+  color: var(--text-primary) !important;
+  padding: 8px 14px !important;
+  cursor: pointer !important;
+  border-bottom: 1px solid var(--surface-container-high) !important;
+}
+
+li[data-baseweb="menu-item"]:hover,
+li[role="option"]:hover,
+div[role="option"]:hover,
+div[data-baseweb="option"]:hover,
+li[data-baseweb="menu-item"][aria-selected="true"],
+li[role="option"][aria-selected="true"],
+div[role="option"][aria-selected="true"] {
+  background-color: var(--surface-hover) !important;
+  color: var(--accent) !important;
+}
+
+li[data-baseweb="menu-item"]:hover *,
+li[role="option"]:hover *,
+div[role="option"]:hover *,
+div[data-baseweb="option"]:hover *,
+li[data-baseweb="menu-item"][aria-selected="true"] *,
+li[role="option"][aria-selected="true"] * {
+  color: var(--accent) !important;
+}
+
+/* Disabled button states */
+.stButton > button:disabled,
+div[data-testid="stButton"] button:disabled,
+button:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
