@@ -21,6 +21,9 @@ metadata = create_dataset_metadata(df, "test_customers.csv", "CSV")
 print(f"Dataset initialized: {df.shape[0]} rows, {df.shape[1]} columns")
 
 test_queries = [
+    "hii",
+    "hello",
+    "help",
     "How many rows and columns are in this dataset?",
     "What are the column names and data types?",
     "What is the average Age?",
@@ -38,7 +41,8 @@ for i, q in enumerate(test_queries, 1):
     res = ask_ai_analyst(q, df, metadata)
     print(f"\n[Test {i}] Q: {q}")
     print(f"Source: {res['source']}")
-    print(f"Answer snippet: {res['answer'][:120]}...")
+    ans_safe = res['answer'][:120].encode('ascii', 'replace').decode('ascii')
+    print(f"Answer snippet: {ans_safe}...")
     if "table" in res and res["table"] is not None:
         print(f"Attached Table Shape: {res['table'].shape}")
     print("Follow-ups:", res.get("followups", []))

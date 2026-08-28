@@ -34,32 +34,31 @@ from modules.eda_engine import (
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _search_secrets_recursively(obj: Any) -> Tuple[Optional[str], str]:
-    """Recursively traverse st.secrets (including nested tables like [firebase], [gemini], etc.)"""
-    if isinstance(obj, str):
-        v_str = obj.strip()
-        if v_str.startswith("AIzaSy"):
-            return v_str, "gemini"
-        if v_str.startswith("sk-") and len(v_str) > 20:
-            return v_str, "openai"
-        return None, "gemini"
-
+    """
+    Recursively traverse st.secrets to find EXPLICIT Gemini or OpenAI keys.
+    Strictly ignores Firebase Auth keys or non-LLM config.
+    """
     if isinstance(obj, dict) or hasattr(obj, "items"):
-        # First pass: check direct keys in this dict
+        # Check direct keys in this dict
         for k, v in obj.items():
             k_lower = str(k).lower()
+            # Skip entire firebase configuration section
+            if k_lower == "firebase":
+                continue
             if isinstance(v, str) and v.strip():
                 v_str = v.strip()
-                if "gemini" in k_lower or "google" in k_lower or "ai_api" in k_lower or "llm_key" in k_lower:
+                # Explicit Gemini keys
+                if any(tag in k_lower for tag in ["gemini_api_key", "google_api_key", "gemini_key", "ai_api_key", "gemini", "google_ai"]):
                     return v_str, "gemini"
-                if "openai" in k_lower:
-                    return v_str, "openai"
-                if v_str.startswith("AIzaSy"):
-                    return v_str, "gemini"
-                if v_str.startswith("sk-") and len(v_str) > 20:
+                # Explicit OpenAI keys
+                if any(tag in k_lower for tag in ["openai_api_key", "openai_key", "openai"]):
                     return v_str, "openai"
 
-        # Second pass: recurse into nested dicts/sections
+        # Recurse into nested sections (excluding firebase)
         for k, v in obj.items():
+            k_lower = str(k).lower()
+            if k_lower == "firebase":
+                continue
             if isinstance(v, dict) or hasattr(v, "items"):
                 found_key, prov = _search_secrets_recursively(v)
                 if found_key:
@@ -435,6 +434,40 @@ def _answer_question_deterministic(q: str, df: pd.DataFrame, metadata: Dict[str,
     cat_cols = [c for c in df.columns if not pd.api.types.is_numeric_dtype(df[c])]
     all_cols = list(df.columns)
     dataset_name = st.session_state.get("dataset_name", "dataset")
+
+    # ── 0. Conversational Greetings & Help ────────────────────────────────────
+    greetings = ["hi", "hii", "hiii", "hello", "hey", "heyy", "namaste", "hola", "greetings", "good morning", "good afternoon", "good evening"]
+    is_greeting = q_lower in greetings or any(q_lower.startswith(g + " ") for g in greetings)
+    is_help = any(kw in q_lower for kw in ["help", "what can you do", "who are you", "how to use", "what are you"])
+
+    if is_greeting or is_help:
+        sample_questions = []
+        if numeric_cols:
+            sample_questions.append(f"• *'What is the average {numeric_cols[0]}?'*")
+            sample_questions.append(f"• *'Which record has the highest {numeric_cols[0]}?'*")
+        if cat_cols and numeric_cols:
+            sample_questions.append(f"• *'Show {numeric_cols[0]} by {cat_cols[0]}'*")
+        if len(numeric_cols) >= 2:
+            sample_questions.append(f"• *'What are the strongest correlations?'*")
+        sample_questions.append("• *'Are there missing values or duplicate rows?'*")
+        sample_questions.append("• *'What are the column names and data types?'*")
+
+        answer = (
+            f"👋 Hello! I am your AI Analyst for **'{dataset_name}'** ({len(df):,} rows × {len(df.columns)} columns).\n\n"
+            f"You can ask me questions about your dataset, for example:\n"
+            + "\n".join(sample_questions) + "\n\n"
+            f"💡 **Tip**: Enter your Google Gemini API key in **⚙️ AI Configuration** above to unlock free-form conversational answers in any language!"
+        )
+        return {
+            "answer": answer,
+            "source": "AI Analyst Assistant",
+            "followups": [
+                f"What is the average {numeric_cols[0]}?" if numeric_cols else "What are the columns?",
+                "What are the strongest correlations?",
+                "What is the overall data quality?"
+            ],
+            "is_llm": False,
+        }
 
     # ── 1. Columns & Schema ──────────────────────────────────────────────────
     if any(kw in q_lower for kw in ["what are the column", "list column", "show column", "column name", "column list", "schema", "features", "data type", "dtypes"]):
