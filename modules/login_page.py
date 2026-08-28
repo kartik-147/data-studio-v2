@@ -180,7 +180,7 @@ div[data-testid="stMainBlockContainer"] {{
 }}
 
 /* Theme Toggle Pill in Header */
-.ds-theme-pill-btn div[data-testid="stButton"] button {{
+.ds-theme-pill-btn div[data-testid="stButton"] button {
     background: {bg_card} !important;
     border: 1px solid {border_color} !important;
     border-radius: 6px !important;
@@ -190,12 +190,22 @@ div[data-testid="stMainBlockContainer"] {{
     color: {text_secondary} !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
     height: 32px !important;
-}}
+}
 
-.ds-theme-pill-btn div[data-testid="stButton"] button:hover {{
+.ds-theme-pill-btn div[data-testid="stButton"] button * {
+    color: {text_secondary} !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+}
+
+.ds-theme-pill-btn div[data-testid="stButton"] button:hover {
     border-color: {('#475569' if is_dark else '#94a3b8')} !important;
     color: {text_primary} !important;
-}}
+}
+
+.ds-theme-pill-btn div[data-testid="stButton"] button:hover * {
+    color: {text_primary} !important;
+}
 
 /* =========================================================================
    LEFT MARKETING COLUMN
@@ -456,7 +466,7 @@ div[data-testid="stFormSubmitButton"] button:active {{
 
 /* Google Button Styling with Official G Icon */
 .ds-google-btn-wrap div[data-testid="stLinkButton"] a,
-.ds-google-btn-wrap div[data-testid="stButton"] button {{
+.ds-google-btn-wrap div[data-testid="stButton"] button {
     background-color: {bg_card} !important;
     border: 1px solid {border_color} !important;
     color: {text_primary} !important;
@@ -474,18 +484,29 @@ div[data-testid="stFormSubmitButton"] button:active {{
     background-repeat: no-repeat !important;
     background-position: 16px center !important;
     padding-left: 24px !important;
-}}
+}
+
+.ds-google-btn-wrap div[data-testid="stLinkButton"] a *,
+.ds-google-btn-wrap div[data-testid="stButton"] button * {
+    color: {text_primary} !important;
+    font-weight: 600 !important;
+}
 
 .ds-google-btn-wrap div[data-testid="stLinkButton"] a:hover,
-.ds-google-btn-wrap div[data-testid="stButton"] button:hover {{
+.ds-google-btn-wrap div[data-testid="stButton"] button:hover {
     background-color: {bg_card_subtle} !important;
     border-color: {('#475569' if is_dark else '#94a3b8')} !important;
     color: {text_primary} !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
-}}
+}
+
+.ds-google-btn-wrap div[data-testid="stLinkButton"] a:hover *,
+.ds-google-btn-wrap div[data-testid="stButton"] button:hover * {
+    color: {text_primary} !important;
+}
 
 /* Guest / Demo Button Styling */
-.ds-guest-btn-wrap div[data-testid="stButton"] button {{
+.ds-guest-btn-wrap div[data-testid="stButton"] button {
     background: {bg_card} !important;
     border: 1px solid {border_color} !important;
     color: {text_primary} !important;
@@ -495,16 +516,25 @@ div[data-testid="stFormSubmitButton"] button:active {{
     height: 34px !important;
     transition: all 0.15s ease !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
-}}
+}
 
-.ds-guest-btn-wrap div[data-testid="stButton"] button:hover {{
+.ds-guest-btn-wrap div[data-testid="stButton"] button * {
+    color: {text_primary} !important;
+    font-weight: 600 !important;
+}
+
+.ds-guest-btn-wrap div[data-testid="stButton"] button:hover {
     color: #2563eb !important;
     border-color: rgba(37, 99, 235, 0.4) !important;
     background: {('rgba(37,99,235,0.08)' if is_dark else 'rgba(37,99,235,0.04)')} !important;
-}}
+}
+
+.ds-guest-btn-wrap div[data-testid="stButton"] button:hover * {
+    color: #2563eb !important;
+}
 
 /* Switch View Buttons */
-.ds-switch-btn-wrap div[data-testid="stButton"] button {{
+.ds-switch-btn-wrap div[data-testid="stButton"] button {
     background: transparent !important;
     border: none !important;
     color: #2563eb !important;
@@ -513,13 +543,22 @@ div[data-testid="stFormSubmitButton"] button:active {{
     padding: 3px 8px !important;
     height: auto !important;
     box-shadow: none !important;
-}}
+}
 
-.ds-switch-btn-wrap div[data-testid="stButton"] button:hover {{
+.ds-switch-btn-wrap div[data-testid="stButton"] button * {
+    color: #2563eb !important;
+    font-weight: 600 !important;
+}
+
+.ds-switch-btn-wrap div[data-testid="stButton"] button:hover {
     background: transparent !important;
     color: #1d4ed8 !important;
     text-decoration: underline !important;
-}}
+}
+
+.ds-switch-btn-wrap div[data-testid="stButton"] button:hover * {
+    color: #1d4ed8 !important;
+}
 
 /* Checkbox label */
 div[data-testid="stCheckbox"] label span {{

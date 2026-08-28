@@ -10,6 +10,7 @@ from modules.ui_components import (
     render_section_header,
     render_metric_card,
     render_notification,
+    render_next_workflow_steps,
     get_icon_svg,
 )
 from modules.config import APP_VERSION, APP_NAME
@@ -259,3 +260,8 @@ def render_settings_page() -> None:
             'Your account and history are not affected.</div>',
             unsafe_allow_html=True
         )
+
+    # ── Standardized Bottom Next Workflow Steps Section ──────────────────
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    render_next_workflow_steps("Settings")
+

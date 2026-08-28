@@ -63,27 +63,22 @@ def get_icon_svg(name: str, size: int = 18) -> str:
 def load_css(theme: str = "Light") -> None:
     """
     Inject the design system CSS with dynamic theme class application.
-    Light is the default. Dark activates the .ds-theme-dark CSS class.
+    Light is the default. Dark activates dark mode tokens and overrides.
+    Ensures all tables, dataframes, buttons, tabs, inputs, and cards are 100% visible and themed.
     """
     css_path = os.path.join(os.path.dirname(__file__), "..", "assets", "css", "style.css")
+    css_content = ""
     if os.path.exists(css_path):
         with open(css_path, "r", encoding="utf-8") as f:
             css_content = f.read()
 
-    # Apply dark theme class on body via style injection when dark is active
-    dark_override = ""
-    if theme.lower() == "dark":
-        dark_override = """
-        /* Propagate dark theme tokens globally */
-        .stApp, .main, body {
-            background-color: var(--bg-primary) !important;
-        }
-        """
+    is_dark = theme.lower() == "dark"
 
-    # Build theme class override block
-    theme_class_block = ""
-    if theme.lower() == "dark":
-        theme_class_block = """
+    if is_dark:
+        theme_block = """
+        /* ══════════════════════════════════════════════════════════════════════
+           DARK THEME CONFIGURATION & COMPLETE ELEMENT OVERRIDES
+           ══════════════════════════════════════════════════════════════════════ */
         :root {
             --app-bg: #0b0f19;
             --bg-primary: #0b0f19;
@@ -139,10 +134,705 @@ def load_css(theme: str = "Light") -> None:
             --nav-item-bg-hover: #182234;
             --nav-item-bg-active: rgba(56, 189, 248, 0.12);
             --nav-group-title: #475569;
+
+            /* Streamlit Native Variables Override for Dark Mode */
+            --background-color: #0b0f19;
+            --secondary-background-color: #141c2e;
+            --text-color: #f1f5f9;
+            --primary-color: #38bdf8;
+        }
+
+        /* Global App Canvas in Dark Mode */
+        .stApp, .main, body, section[data-testid="stMain"],
+        div[data-testid="stAppViewContainer"],
+        div[data-testid="stAppViewBlockContainer"],
+        div[data-testid="stMainBlockContainer"] {
+            background-color: #0b0f19 !important;
+            color: #f1f5f9 !important;
+        }
+
+        /* ── All Secondary / Standard Buttons in Dark Mode ─────────── */
+        .stButton > button,
+        div[data-testid="stButton"] button,
+        button[data-testid="stBaseButton-secondary"],
+        button[data-testid="baseButton-secondary"],
+        button[data-testid="stBaseButton-minimal"],
+        button[data-testid="stBaseButton-tertiary"],
+        button[data-testid="stBaseButton-header"],
+        button[data-testid="stBaseButton-icon"],
+        .stButton > button[kind="secondary"],
+        .stButton > button:not([kind="primary"]),
+        div[data-testid="stDownloadButton"] button,
+        div[data-testid="stFormSubmitButton"] button:not([kind="primary"]),
+        div[data-testid="stFileUploader"] section button,
+        div[data-testid="stFileUploader"] button,
+        div[data-testid="stPills"] button:not([aria-selected="true"]),
+        div[data-testid="stSegmentedControl"] button:not([aria-selected="true"]),
+        div[data-testid="stPopover"] button,
+        div[data-testid="stButtonGroup"] button,
+        button[kind="secondary"],
+        button[kind="secondaryFormSubmit"],
+        div[data-testid="stLinkButton"] a {
+            background-color: #182234 !important;
+            color: #f8fafc !important;
+            border: 1px solid #334155 !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        /* Universal Text inside Secondary Buttons in Dark Mode */
+        .stButton > button *,
+        div[data-testid="stButton"] button *,
+        button[data-testid="stBaseButton-secondary"] *,
+        button[data-testid="baseButton-secondary"] *,
+        button[data-testid="stBaseButton-minimal"] *,
+        button[data-testid="stBaseButton-tertiary"] *,
+        button[data-testid="stBaseButton-header"] *,
+        button[data-testid="stBaseButton-icon"] *,
+        .stButton > button[kind="secondary"] *,
+        .stButton > button:not([kind="primary"]) *,
+        div[data-testid="stDownloadButton"] button *,
+        div[data-testid="stFormSubmitButton"] button:not([kind="primary"]) *,
+        div[data-testid="stFileUploader"] section button *,
+        div[data-testid="stFileUploader"] button *,
+        div[data-testid="stPills"] button:not([aria-selected="true"]) *,
+        div[data-testid="stSegmentedControl"] button:not([aria-selected="true"]) *,
+        div[data-testid="stPopover"] button *,
+        div[data-testid="stButtonGroup"] button *,
+        button[kind="secondary"] *,
+        button[kind="secondaryFormSubmit"] *,
+        div[data-testid="stLinkButton"] a * {
+            color: #f8fafc !important;
+            fill: #f8fafc !important;
+            font-weight: 600 !important;
+        }
+
+        /* Secondary Buttons Hover State in Dark Mode */
+        .stButton > button:hover,
+        div[data-testid="stButton"] button:hover,
+        button[data-testid="stBaseButton-secondary"]:hover,
+        button[data-testid="baseButton-secondary"]:hover,
+        button[data-testid="stBaseButton-minimal"]:hover,
+        button[data-testid="stBaseButton-tertiary"]:hover,
+        button[data-testid="stBaseButton-header"]:hover,
+        button[data-testid="stBaseButton-icon"]:hover,
+        .stButton > button[kind="secondary"]:hover,
+        .stButton > button:not([kind="primary"]):hover,
+        div[data-testid="stDownloadButton"] button:hover,
+        div[data-testid="stFormSubmitButton"] button:not([kind="primary"]):hover,
+        div[data-testid="stFileUploader"] section button:hover,
+        div[data-testid="stFileUploader"] button:hover,
+        div[data-testid="stPills"] button:hover,
+        div[data-testid="stSegmentedControl"] button:hover,
+        div[data-testid="stPopover"] button:hover,
+        div[data-testid="stButtonGroup"] button:hover,
+        button[kind="secondary"]:hover,
+        button[kind="secondaryFormSubmit"]:hover,
+        div[data-testid="stLinkButton"] a:hover {
+            background-color: #243048 !important;
+            border-color: #38bdf8 !important;
+            color: #38bdf8 !important;
+        }
+
+        .stButton > button:hover *,
+        div[data-testid="stButton"] button:hover *,
+        button[data-testid="stBaseButton-secondary"]:hover *,
+        button[data-testid="baseButton-secondary"]:hover *,
+        button[data-testid="stBaseButton-minimal"]:hover *,
+        button[data-testid="stBaseButton-tertiary"]:hover *,
+        button[data-testid="stBaseButton-header"]:hover *,
+        button[data-testid="stBaseButton-icon"]:hover *,
+        .stButton > button[kind="secondary"]:hover *,
+        .stButton > button:not([kind="primary"]):hover *,
+        div[data-testid="stDownloadButton"] button:hover *,
+        div[data-testid="stFormSubmitButton"] button:not([kind="primary"]):hover *,
+        div[data-testid="stFileUploader"] section button:hover *,
+        div[data-testid="stFileUploader"] button:hover *,
+        div[data-testid="stPills"] button:hover *,
+        div[data-testid="stSegmentedControl"] button:hover *,
+        div[data-testid="stPopover"] button:hover *,
+        div[data-testid="stButtonGroup"] button:hover *,
+        button[kind="secondary"]:hover *,
+        button[kind="secondaryFormSubmit"]:hover *,
+        div[data-testid="stLinkButton"] a:hover * {
+            color: #38bdf8 !important;
+            fill: #38bdf8 !important;
+        }
+
+        /* ── All Primary Buttons in Dark Mode ──────────────────────── */
+        .stButton > button[kind="primary"],
+        div[data-testid="stButton"] button[kind="primary"],
+        button[data-testid="stBaseButton-primary"],
+        button[data-testid="baseButton-primary"],
+        button[kind="primary"],
+        button[kind="primaryFormSubmit"],
+        div[data-testid="stFormSubmitButton"] button[kind="primary"] {
+            background-color: #2563eb !important;
+            border: 1px solid #3b82f6 !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4) !important;
+        }
+
+        .stButton > button[kind="primary"] *,
+        div[data-testid="stButton"] button[kind="primary"] *,
+        button[data-testid="stBaseButton-primary"] *,
+        button[data-testid="baseButton-primary"] *,
+        button[kind="primary"] *,
+        button[kind="primaryFormSubmit"] *,
+        div[data-testid="stFormSubmitButton"] button[kind="primary"] * {
+            color: #ffffff !important;
+            fill: #ffffff !important;
+            font-weight: 600 !important;
+        }
+
+        .stButton > button[kind="primary"]:hover,
+        div[data-testid="stButton"] button[kind="primary"]:hover,
+        button[data-testid="stBaseButton-primary"]:hover,
+        button[data-testid="baseButton-primary"]:hover,
+        button[kind="primary"]:hover,
+        button[kind="primaryFormSubmit"]:hover,
+        div[data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
+            background-color: #1d4ed8 !important;
+            border-color: #60a5fa !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.5) !important;
+        }
+
+        .stButton > button[kind="primary"]:hover *,
+        div[data-testid="stButton"] button[kind="primary"]:hover *,
+        button[data-testid="stBaseButton-primary"]:hover *,
+        button[data-testid="baseButton-primary"]:hover *,
+        button[kind="primary"]:hover *,
+        button[kind="primaryFormSubmit"]:hover *,
+        div[data-testid="stFormSubmitButton"] button[kind="primary"]:hover * {
+            color: #ffffff !important;
+            fill: #ffffff !important;
+        }
+
+        /* ── Tabs in Dark Mode ─────────────────────────────────────── */
+        div[data-testid="stTabs"] button[role="tab"] {
+            color: #94a3b8 !important;
+            background-color: transparent !important;
+            border: none !important;
+        }
+
+        div[data-testid="stTabs"] button[role="tab"] * {
+            color: #94a3b8 !important;
+        }
+
+        div[data-testid="stTabs"] button[role="tab"]:hover {
+            color: #f1f5f9 !important;
+        }
+
+        div[data-testid="stTabs"] button[role="tab"]:hover * {
+            color: #f1f5f9 !important;
+        }
+
+        div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+            color: #38bdf8 !important;
+            border-bottom: 2px solid #38bdf8 !important;
+        }
+
+        div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] * {
+            color: #38bdf8 !important;
+            font-weight: 700 !important;
+        }
+
+        /* ── Active Pills & Segmented Controls in Dark Mode ────────── */
+        div[data-testid="stPills"] button[aria-selected="true"],
+        div[data-testid="stSegmentedControl"] button[aria-selected="true"] {
+            background-color: #2563eb !important;
+            border-color: #3b82f6 !important;
+            color: #ffffff !important;
+        }
+
+        div[data-testid="stPills"] button[aria-selected="true"] *,
+        div[data-testid="stSegmentedControl"] button[aria-selected="true"] * {
+            color: #ffffff !important;
+            font-weight: 600 !important;
+        }
+
+        /* ── Tables & DataFrames in Dark Mode (No White Flash) ─────── */
+        div[data-testid="stDataFrame"],
+        div[data-testid="stDataFrame"] > div,
+        div[data-testid="stDataFrameRoot"],
+        div[data-testid="stDataFrameResizable"],
+        div[class*="glideDataGrid"],
+        div[data-testid="stDataFrame"] iframe {
+            background-color: #141c2e !important;
+            border: 1px solid #1e2d45 !important;
+            border-radius: 8px !important;
+            color: #f1f5f9 !important;
+        }
+
+        div[data-testid="stDataFrame"] canvas {
+            filter: invert(0.92) hue-rotate(180deg) brightness(0.95) contrast(1.05);
+            border-radius: 6px !important;
+        }
+
+        div[data-testid="stDataFrame"] div[data-testid="stDataFrameResizable"] {
+            background-color: #141c2e !important;
+        }
+
+        div[data-testid="stDataFrame"] [data-testid="StyledFullScreenButton"],
+        div[data-testid="stDataFrame"] [data-testid="stDataFrameToolbar"] button,
+        div[data-testid="stDataFrame"] button {
+            background-color: #182234 !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #334155 !important;
+            border-radius: 4px !important;
+        }
+
+        div[data-testid="stDataFrame"] [data-testid="StyledFullScreenButton"]:hover,
+        div[data-testid="stDataFrame"] [data-testid="stDataFrameToolbar"] button:hover,
+        div[data-testid="stDataFrame"] button:hover {
+            background-color: #243048 !important;
+            color: #38bdf8 !important;
+            border-color: #38bdf8 !important;
+        }
+
+        div[data-testid="stDataFrame"] [data-testid="stDataFrameToolbar"] svg,
+        div[data-testid="stDataFrame"] [data-testid="stDataFrameToolbar"] button * {
+            color: #f1f5f9 !important;
+            fill: #f1f5f9 !important;
+        }
+
+        div[data-testid="stDataFrame"] input {
+            background-color: #182234 !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #334155 !important;
+        }
+
+        /* Custom and HTML Tables in Dark Mode */
+        .stitch-table-container,
+        div[data-testid="stTable"],
+        div[data-testid="stTable"] > div,
+        table.dataframe,
+        .dataframe {
+            background-color: #141c2e !important;
+            border: 1px solid #1e2d45 !important;
+            border-radius: 8px !important;
+            color: #f1f5f9 !important;
+        }
+
+        .stitch-table,
+        div[data-testid="stTable"] table,
+        table.dataframe,
+        .dataframe {
+            background-color: #141c2e !important;
+            color: #f1f5f9 !important;
+            width: 100% !important;
+            border-collapse: collapse !important;
+        }
+
+        .stitch-table th,
+        div[data-testid="stTable"] th,
+        table.dataframe th,
+        .dataframe th,
+        table th {
+            background-color: #182234 !important;
+            color: #f8fafc !important;
+            border-bottom: 1px solid #1e2d45 !important;
+            font-weight: 700 !important;
+        }
+
+        .stitch-table td,
+        div[data-testid="stTable"] td,
+        table.dataframe td,
+        .dataframe td,
+        table td {
+            background-color: #141c2e !important;
+            color: #cbd5e1 !important;
+            border-bottom: 1px solid #1e2d45 !important;
+        }
+
+        .stitch-table tr:nth-child(even) td,
+        div[data-testid="stTable"] tr:nth-child(even) td,
+        table.dataframe tr:nth-child(even) td {
+            background-color: #162032 !important;
+        }
+
+        .stitch-table tr:nth-child(odd) td,
+        div[data-testid="stTable"] tr:nth-child(odd) td,
+        table.dataframe tr:nth-child(odd) td {
+            background-color: #141c2e !important;
+        }
+
+        .stitch-table tr:hover td,
+        div[data-testid="stTable"] tr:hover td,
+        table.dataframe tr:hover td {
+            background-color: #1e2d45 !important;
+            color: #ffffff !important;
+        }
+
+        .stitch-table .null-val {
+            color: #64748b !important;
+        }
+
+        .stitch-table-footer {
+            color: #94a3b8 !important;
+        }
+
+        /* ── Inputs, Selectboxes, Dropdowns & Popovers in Dark Mode ── */
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+        div[data-testid="stMultiSelect"] div[data-baseweb="select"] > div,
+        div[data-testid="stTextInput"] input,
+        div[data-testid="stNumberInput"] input,
+        div[data-testid="stTextArea"] textarea,
+        div[data-testid="stDateInput"] input,
+        div[data-testid="stTimeInput"] input {
+            background-color: #141c2e !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #1e2d45 !important;
+        }
+
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div *,
+        div[data-testid="stMultiSelect"] div[data-baseweb="select"] > div *,
+        div[data-testid="stTextInput"] input *,
+        div[data-testid="stNumberInput"] input *,
+        div[data-testid="stTextArea"] textarea * {
+            color: #f1f5f9 !important;
+        }
+
+        span[data-baseweb="tag"],
+        div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+            background-color: #1e293b !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #334155 !important;
+        }
+
+        span[data-baseweb="tag"] * {
+            color: #f1f5f9 !important;
+        }
+
+        div[data-baseweb="popover"],
+        div[data-baseweb="menu"],
+        ul[data-baseweb="menu"],
+        div[data-testid="stPopoverBody"] {
+            background-color: #141c2e !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #1e2d45 !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        li[data-baseweb="menu-item"],
+        div[data-baseweb="option"] {
+            background-color: #141c2e !important;
+            color: #f1f5f9 !important;
+        }
+
+        li[data-baseweb="menu-item"]:hover,
+        div[data-baseweb="option"]:hover,
+        li[data-baseweb="menu-item"][aria-selected="true"],
+        div[data-baseweb="option"][aria-selected="true"] {
+            background-color: #1e293b !important;
+            color: #38bdf8 !important;
+        }
+
+        li[data-baseweb="menu-item"]:hover *,
+        div[data-baseweb="option"]:hover * {
+            color: #38bdf8 !important;
+        }
+
+        /* ── Expanders, Accordions & Summaries in Dark Mode ──────── */
+        div[data-testid="stExpander"],
+        div[data-testid="stExpander"] details,
+        details[data-testid="stExpander"] {
+            background-color: #141c2e !important;
+            border: 1px solid #1e2d45 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+            overflow: hidden !important;
+        }
+
+        div[data-testid="stExpander"] summary,
+        div[data-testid="stExpander"] details > summary,
+        details[data-testid="stExpander"] > summary,
+        [data-testid="stExpander"] summary {
+            background-color: #141c2e !important;
+            color: #f1f5f9 !important;
+            border: none !important;
+            border-bottom: 1px solid #1e2d45 !important;
+            padding: 11px 16px !important;
+            cursor: pointer !important;
+        }
+
+        div[data-testid="stExpander"] summary:hover,
+        div[data-testid="stExpander"] details > summary:hover,
+        details[data-testid="stExpander"] > summary:hover {
+            background-color: #182234 !important;
+            color: #38bdf8 !important;
+        }
+
+        div[data-testid="stExpander"] summary *,
+        div[data-testid="stExpander"] details > summary *,
+        details[data-testid="stExpander"] > summary * {
+            color: #f1f5f9 !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+        }
+
+        div[data-testid="stExpander"] summary:hover *,
+        div[data-testid="stExpander"] details > summary:hover *,
+        details[data-testid="stExpander"] > summary:hover * {
+            color: #38bdf8 !important;
+        }
+
+        div[data-testid="stExpander"] summary svg,
+        div[data-testid="stExpander"] [data-testid="stExpanderToggleIcon"] {
+            color: #94a3b8 !important;
+            fill: #94a3b8 !important;
+        }
+
+        div[data-testid="stExpanderDetails"],
+        div[data-testid="stExpander"] details > div,
+        div[data-testid="stExpander"] details > div:last-child {
+            background-color: #141c2e !important;
+            color: #f1f5f9 !important;
+            padding: 14px 16px !important;
+        }
+
+        /* ── Headings and Markdown in Dark Mode ─────────────────────── */
+        h1, h2, h3, h4, h5, h6,
+        div[data-testid="stHeadingWithActionElements"] h1,
+        div[data-testid="stHeadingWithActionElements"] h2,
+        div[data-testid="stHeadingWithActionElements"] h3,
+        div[data-testid="stHeadingWithActionElements"] *,
+        div[data-testid="stMarkdownContainer"] h1,
+        div[data-testid="stMarkdownContainer"] h2,
+        div[data-testid="stMarkdownContainer"] h3,
+        div[data-testid="stMarkdownContainer"] h4 {
+            color: #f1f5f9 !important;
+        }
+
+        div[data-testid="stCaptionContainer"],
+        div[data-testid="stCaptionContainer"] * {
+            color: #94a3b8 !important;
+        }
+
+        /* ── Radio & Checkbox Labels in Dark Mode ──────────────────── */
+        div[data-testid="stRadio"] label,
+        div[data-testid="stCheckbox"] label,
+        div[data-testid="stToggle"] label {
+            color: #cbd5e1 !important;
+        }
+
+        div[data-testid="stRadio"] label *,
+        div[data-testid="stCheckbox"] label *,
+        div[data-testid="stToggle"] label * {
+            color: #cbd5e1 !important;
+        }
+
+        /* ── All Cards and Containers in Dark Mode ──────────────────── */
+        .stitch-bento-box,
+        .stitch-health-card,
+        .stitch-sidebar-card,
+        .stitch-active-card,
+        .stitch-upload-card,
+        .ds-metric-card,
+        .ds-action-card,
+        .ds-insight-card,
+        .ds-wf-card,
+        .ds-ai-answer-card,
+        .ds-ai-suggested-card,
+        .pbi-chart-card,
+        .ds-context-bar {
+            background-color: #141c2e !important;
+            border-color: #1e2d45 !important;
+            color: #f1f5f9 !important;
+        }
+
+        .stitch-health-title,
+        .stitch-bento-val,
+        .stitch-sidebar-title,
+        .stitch-col-name,
+        .stitch-dataset-name,
+        .ds-context-bar-name {
+            color: #f1f5f9 !important;
+        }
+
+        .stitch-health-desc,
+        .stitch-bento-label,
+        .stitch-bento-sub,
+        .stitch-dataset-meta,
+        .ds-context-bar-meta {
+            color: #94a3b8 !important;
+        }
+
+        .stitch-pill {
+            background-color: #1e293b !important;
+            color: #94a3b8 !important;
+            border-color: #334155 !important;
+        }
+        """
+    else:
+        theme_block = """
+        /* ══════════════════════════════════════════════════════════════════════
+           LIGHT THEME EXPLICIT REINFORCEMENTS
+           ══════════════════════════════════════════════════════════════════════ */
+        .stApp, .main, body, section[data-testid="stMain"],
+        div[data-testid="stAppViewContainer"],
+        div[data-testid="stAppViewBlockContainer"],
+        div[data-testid="stMainBlockContainer"] {
+            background-color: #f4f7fb !important;
+            color: #0f172a !important;
+        }
+
+        /* Secondary buttons in Light Mode */
+        .stButton > button,
+        div[data-testid="stButton"] button,
+        button[data-testid="stBaseButton-secondary"],
+        button[data-testid="baseButton-secondary"],
+        button[data-testid="stBaseButton-minimal"],
+        button[data-testid="stBaseButton-tertiary"],
+        button[data-testid="stBaseButton-header"],
+        button[data-testid="stBaseButton-icon"],
+        .stButton > button[kind="secondary"],
+        .stButton > button:not([kind="primary"]),
+        div[data-testid="stDownloadButton"] button,
+        div[data-testid="stFormSubmitButton"] button:not([kind="primary"]),
+        div[data-testid="stFileUploader"] section button,
+        div[data-testid="stFileUploader"] button,
+        div[data-testid="stPills"] button:not([aria-selected="true"]),
+        div[data-testid="stSegmentedControl"] button:not([aria-selected="true"]),
+        div[data-testid="stPopover"] button,
+        div[data-testid="stButtonGroup"] button,
+        button[kind="secondary"],
+        button[kind="secondaryFormSubmit"],
+        div[data-testid="stLinkButton"] a {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+        }
+
+        .stButton > button *,
+        div[data-testid="stButton"] button *,
+        button[data-testid="stBaseButton-secondary"] *,
+        button[data-testid="baseButton-secondary"] *,
+        button[data-testid="stBaseButton-minimal"] *,
+        button[data-testid="stBaseButton-tertiary"] *,
+        button[data-testid="stBaseButton-header"] *,
+        button[data-testid="stBaseButton-icon"] *,
+        .stButton > button[kind="secondary"] *,
+        .stButton > button:not([kind="primary"]) *,
+        div[data-testid="stDownloadButton"] button *,
+        div[data-testid="stFormSubmitButton"] button:not([kind="primary"]) *,
+        div[data-testid="stFileUploader"] section button *,
+        div[data-testid="stFileUploader"] button *,
+        div[data-testid="stPills"] button:not([aria-selected="true"]) *,
+        div[data-testid="stSegmentedControl"] button:not([aria-selected="true"]) *,
+        div[data-testid="stPopover"] button *,
+        div[data-testid="stButtonGroup"] button *,
+        button[kind="secondary"] *,
+        button[kind="secondaryFormSubmit"] *,
+        div[data-testid="stLinkButton"] a * {
+            color: #0f172a !important;
+            fill: #0f172a !important;
+            font-weight: 600 !important;
+        }
+
+        .stButton > button:hover,
+        div[data-testid="stButton"] button:hover,
+        button[data-testid="stBaseButton-secondary"]:hover,
+        button[data-testid="baseButton-secondary"]:hover,
+        .stButton > button:not([kind="primary"]):hover,
+        div[data-testid="stDownloadButton"] button:hover,
+        div[data-testid="stFormSubmitButton"] button:not([kind="primary"]):hover {
+            background-color: #f1f5f9 !important;
+            border-color: #2563eb !important;
+            color: #2563eb !important;
+        }
+
+        .stButton > button:hover *,
+        div[data-testid="stButton"] button:hover *,
+        button[data-testid="stBaseButton-secondary"]:hover *,
+        button[data-testid="baseButton-secondary"]:hover *,
+        .stButton > button:not([kind="primary"]):hover * {
+            color: #2563eb !important;
+            fill: #2563eb !important;
+        }
+
+        /* Primary buttons in Light Mode */
+        .stButton > button[kind="primary"],
+        div[data-testid="stButton"] button[kind="primary"],
+        button[data-testid="stBaseButton-primary"],
+        button[data-testid="baseButton-primary"],
+        button[kind="primary"],
+        button[kind="primaryFormSubmit"] {
+            background-color: #2563eb !important;
+            border: 1px solid #1d4ed8 !important;
+            color: #ffffff !important;
+        }
+
+        .stButton > button[kind="primary"] *,
+        div[data-testid="stButton"] button[kind="primary"] *,
+        button[data-testid="stBaseButton-primary"] *,
+        button[data-testid="baseButton-primary"] *,
+        button[kind="primary"] * {
+            color: #ffffff !important;
+            fill: #ffffff !important;
+            font-weight: 600 !important;
+        }
+
+        /* Tables & DataFrames in Light Mode */
+        div[data-testid="stDataFrame"],
+        div[data-testid="stTable"],
+        .stitch-table-container {
+            background-color: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 8px !important;
+        }
+
+        .stitch-table th,
+        div[data-testid="stTable"] th {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+            border-bottom: 1px solid #cbd5e1 !important;
+        }
+
+        .stitch-table td,
+        div[data-testid="stTable"] td {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+
+        /* Expanders in Light Mode */
+        div[data-testid="stExpander"],
+        div[data-testid="stExpander"] details,
+        details[data-testid="stExpander"] {
+            background-color: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 8px !important;
+        }
+
+        div[data-testid="stExpander"] summary,
+        div[data-testid="stExpander"] details > summary,
+        details[data-testid="stExpander"] > summary {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+            border-bottom: 1px solid #cbd5e1 !important;
+        }
+
+        div[data-testid="stExpander"] summary *,
+        div[data-testid="stExpander"] details > summary *,
+        details[data-testid="stExpander"] > summary * {
+            color: #0f172a !important;
+            font-weight: 600 !important;
+        }
+
+        div[data-testid="stExpander"] summary:hover,
+        div[data-testid="stExpander"] details > summary:hover {
+            background-color: #f1f5f9 !important;
+            color: #2563eb !important;
+        }
+
+        .stitch-table tr:nth-child(even) td {
+            background-color: #f8fafc !important;
         }
         """
 
-    full_css = f"<style>\n{css_content}\n{theme_class_block}\n{dark_override}\n</style>"
+    full_css = f"<style>\n{css_content}\n{theme_block}\n</style>"
     st.markdown(full_css, unsafe_allow_html=True)
 
 
@@ -610,6 +1300,12 @@ def render_ai_context_trigger(
 
 ANALYTICAL_WORKFLOW_STEPS = [
     {
+        "page_key": "Overview",
+        "name": "Overview",
+        "description": "Executive dashboard and data health summary.",
+        "icon": "layout-dashboard"
+    },
+    {
         "page_key": "Dataset",
         "name": "Dataset",
         "description": "Upload, inspect, and manage dataset schema.",
@@ -618,95 +1314,129 @@ ANALYTICAL_WORKFLOW_STEPS = [
     {
         "page_key": "Data Quality",
         "name": "Data Quality",
-        "description": "Review missing values, duplicates, and potential data issues.",
+        "description": "Review missing values, duplicates, and data health metrics.",
         "icon": "shield-check"
     },
     {
         "page_key": "Data Preparation",
         "name": "Data Preparation",
-        "description": "Clean, transform, and prepare your dataset.",
+        "description": "Clean, transform, filter, and prepare your dataset.",
         "icon": "wrench"
     },
     {
         "page_key": "EDA",
         "name": "Analyze",
-        "description": "Explore statistical patterns and relationships.",
+        "description": "Explore statistical distributions, correlations, and patterns.",
         "icon": "search"
     },
     {
         "page_key": "Visualization",
         "name": "Visualization",
-        "description": "Create charts and visual representations of your findings.",
+        "description": "Create charts, visual rankings, and interactive graphics.",
         "icon": "bar-chart-3"
     },
     {
         "page_key": "Dashboard",
         "name": "Dashboard",
-        "description": "Combine key insights and charts into a unified dashboard.",
+        "description": "Combine key insights and charts into an executive dashboard.",
         "icon": "layout-dashboard"
     },
     {
         "page_key": "AI Analyst",
         "name": "AI Analyst",
-        "description": "Ask questions and generate AI-powered insights.",
+        "description": "Ask questions, investigate anomalies, and generate AI insights.",
         "icon": "sparkles"
+    },
+    {
+        "page_key": "Settings",
+        "name": "Settings",
+        "description": "Configure preferences, appearance, and manage workspace state.",
+        "icon": "settings"
     }
 ]
 
 
 def render_next_workflow_steps(current_page: Optional[str] = None) -> None:
     """
-    Render the dynamic bottom 'Next Workflow Steps' section across analytical modules.
-    Automatically generates up to 3 relevant destination cards:
+    Render the standardized bottom 'Next Workflow Steps' section across all modules.
+    Guarantees a consistent structure across every single page:
       - Button 1: Previous Module (if any)
       - Button 2: Immediate Next Module (Recommended, primary visual emphasis)
-      - Button 3: Second Next Module (if any)
+      - Button 3: Subsequent Next Module (if any)
     """
     if not current_page:
-        current_page = st.session_state.get("current_page", "Dataset")
+        current_page = st.session_state.get("current_page", "Overview")
 
-    # Resolve index in analytical workflow
-    curr_idx = -1
-    for idx, step in enumerate(ANALYTICAL_WORKFLOW_STEPS):
-        if current_page == step["page_key"] or current_page.lower() == step["name"].lower():
-            curr_idx = idx
-            break
+    # Handle Admin Analytics special route
+    if current_page == "Admin Analytics":
+        cards = [
+            {
+                "step": ANALYTICAL_WORKFLOW_STEPS[0],  # Overview
+                "role_badge": "PRIMARY WORKSPACE",
+                "btn_label": "← Return to Overview",
+                "is_recommended": True,
+                "btn_type": "primary"
+            },
+            {
+                "step": ANALYTICAL_WORKFLOW_STEPS[-1],  # Settings
+                "role_badge": "SYSTEM PREFERENCES",
+                "btn_label": "Go to Settings →",
+                "is_recommended": False,
+                "btn_type": "secondary"
+            }
+        ]
+    else:
+        # Resolve index in analytical workflow
+        curr_idx = -1
+        for idx, step in enumerate(ANALYTICAL_WORKFLOW_STEPS):
+            if current_page == step["page_key"] or current_page.lower() == step["name"].lower():
+                curr_idx = idx
+                break
 
-    if curr_idx == -1:
-        return
+        if curr_idx == -1:
+            return
 
-    # Compute up to 3 buttons dynamically
-    cards = []
+        # Compute up to 3 buttons dynamically
+        cards = []
 
-    # 1. Previous Module (if exists)
-    if curr_idx > 0:
-        cards.append({
-            "step": ANALYTICAL_WORKFLOW_STEPS[curr_idx - 1],
-            "role_badge": "PREVIOUS STEP",
-            "btn_label": f"← Return to {ANALYTICAL_WORKFLOW_STEPS[curr_idx - 1]['name']}",
-            "is_recommended": False,
-            "btn_type": "secondary"
-        })
+        # 1. Previous Module (if exists)
+        if curr_idx > 0:
+            cards.append({
+                "step": ANALYTICAL_WORKFLOW_STEPS[curr_idx - 1],
+                "role_badge": "PREVIOUS STEP",
+                "btn_label": f"← Return to {ANALYTICAL_WORKFLOW_STEPS[curr_idx - 1]['name']}",
+                "is_recommended": False,
+                "btn_type": "secondary"
+            })
 
-    # 2. Immediate Next Module (if exists - Recommended with primary emphasis)
-    if curr_idx < len(ANALYTICAL_WORKFLOW_STEPS) - 1:
-        cards.append({
-            "step": ANALYTICAL_WORKFLOW_STEPS[curr_idx + 1],
-            "role_badge": "RECOMMENDED NEXT",
-            "btn_label": f"Continue to {ANALYTICAL_WORKFLOW_STEPS[curr_idx + 1]['name']} →",
-            "is_recommended": True,
-            "btn_type": "primary"
-        })
+        # 2. Immediate Next Module (if exists - Recommended with primary emphasis)
+        if curr_idx < len(ANALYTICAL_WORKFLOW_STEPS) - 1:
+            cards.append({
+                "step": ANALYTICAL_WORKFLOW_STEPS[curr_idx + 1],
+                "role_badge": "RECOMMENDED NEXT",
+                "btn_label": f"Continue to {ANALYTICAL_WORKFLOW_STEPS[curr_idx + 1]['name']} →",
+                "is_recommended": True,
+                "btn_type": "primary"
+            })
 
-    # 3. Second Next Module (if exists)
-    if curr_idx < len(ANALYTICAL_WORKFLOW_STEPS) - 2:
-        cards.append({
-            "step": ANALYTICAL_WORKFLOW_STEPS[curr_idx + 2],
-            "role_badge": "SUBSEQUENT STEP",
-            "btn_label": f"Jump to {ANALYTICAL_WORKFLOW_STEPS[curr_idx + 2]['name']} →",
-            "is_recommended": False,
-            "btn_type": "secondary"
-        })
+        # 3. Second Next Module (if exists)
+        if curr_idx < len(ANALYTICAL_WORKFLOW_STEPS) - 2:
+            cards.append({
+                "step": ANALYTICAL_WORKFLOW_STEPS[curr_idx + 2],
+                "role_badge": "SUBSEQUENT STEP",
+                "btn_label": f"Jump to {ANALYTICAL_WORKFLOW_STEPS[curr_idx + 2]['name']} →",
+                "is_recommended": False,
+                "btn_type": "secondary"
+            })
+        elif curr_idx == len(ANALYTICAL_WORKFLOW_STEPS) - 1 and len(ANALYTICAL_WORKFLOW_STEPS) > 2:
+            # On last step (Settings), offer quick return to Overview
+            cards.append({
+                "step": ANALYTICAL_WORKFLOW_STEPS[0],
+                "role_badge": "RETURN HOME",
+                "btn_label": "Restart from Overview →",
+                "is_recommended": True,
+                "btn_type": "primary"
+            })
 
     if not cards:
         return
@@ -715,7 +1445,7 @@ def render_next_workflow_steps(current_page: Optional[str] = None) -> None:
 
     render_section_header(
         title="Next Workflow Steps",
-        subtitle="Continue your analysis journey through subsequent modules or review previous steps."
+        subtitle="Continue your analytical journey through subsequent modules or review previous steps."
     )
 
     cols = st.columns(len(cards), gap="medium")

@@ -82,7 +82,7 @@ def render_dashboard_page() -> None:
     metadata: Dict[str, Any] = st.session_state.get("dataset_metadata") or {}
     dataset_name = st.session_state.get("dataset_name", "dataset.csv")
     file_type = st.session_state.get("dataset_file_type", "CSV")
-    current_theme = st.session_state.get("theme", "Dark")
+    current_theme = st.session_state.get("theme", "Light")
 
     if df is None or df.empty:
         render_notification(

@@ -23,6 +23,7 @@ from modules.ui_components import (
     render_metric_card,
     render_notification,
     render_empty_state,
+    render_next_workflow_steps,
     get_icon_svg
 )
 
@@ -55,7 +56,7 @@ def _apply_theme_to_fig(fig: go.Figure, theme: str = "Dark", height: int = 280) 
 
 def render_admin_analytics_page() -> None:
     """Render the protected Admin Analytics Dashboard."""
-    current_theme = st.session_state.get("theme", "Dark")
+    current_theme = st.session_state.get("theme", "Light")
     user = get_current_user()
 
     # 1. Server-side Authorization Check
@@ -150,6 +151,11 @@ def render_admin_analytics_page() -> None:
 
     with tab_system:
         _render_tab_system_overview(data)
+
+    # ── Standardized Bottom Next Workflow Steps Section ──────────────────
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    render_next_workflow_steps("Admin Analytics")
+
 
 
 # =============================================================================

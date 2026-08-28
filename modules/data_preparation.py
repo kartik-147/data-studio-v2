@@ -647,7 +647,7 @@ def _render_tab_duplicates(working_df: pd.DataFrame) -> None:
 
     if dup_cnt > 0:
         st.markdown("#### Duplicate Records Preview")
-        st.dataframe(dup_info["duplicate_df"].head(50), use_container_width=True)
+        st.dataframe(dup_info["duplicate_df"], use_container_width=True)
 
         if st.button(f"Remove {dup_cnt:,} Duplicate Rows", key="btn_remove_dups", type="primary"):
             b_rows = len(working_df)

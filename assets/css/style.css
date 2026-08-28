@@ -389,47 +389,237 @@ div[data-testid="stMarkdownContainer"] p {
 }
 
 /* Global button styling */
-.stButton>button {
+.stButton > button,
+button[data-testid="stBaseButton-secondary"],
+button[data-testid="baseButton-secondary"],
+button[data-testid="stBaseButton-primary"],
+button[data-testid="baseButton-primary"],
+button[data-testid="stBaseButton-header"],
+button[data-testid="stBaseButton-tertiary"],
+button[data-testid="stBaseButton-minimal"],
+button[data-testid="stBaseButton-icon"],
+div[data-testid="stButton"] button,
+div[data-testid="stDownloadButton"] button,
+div[data-testid="stFormSubmitButton"] button,
+div[data-testid="stFileUploader"] section button,
+div[data-testid="stFileUploader"] button,
+div[data-testid="stPills"] button,
+div[data-testid="stSegmentedControl"] button,
+div[data-testid="stPopover"] button,
+div[data-testid="stButtonGroup"] button,
+div[data-testid="stLinkButton"] a {
   font-family: var(--font-sans) !important;
-  font-size: 15px !important;
-  font-weight: 550 !important;
-  border-radius: 7px !important;
-  padding: 7px 15px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  padding: 7px 16px !important;
   transition: all 0.15s ease !important;
   box-shadow: var(--shadow-xs) !important;
   white-space: nowrap !important;
+  height: auto !important;
+  min-height: 34px !important;
 }
 
-.stButton>button[kind="primary"],
-.stButton>button[data-testid="baseButton-primary"] {
-  background: var(--accent, #2563eb) !important;
-  border: 1px solid var(--accent-hover, #1d4ed8) !important;
+/* Primary buttons (Solid Blue with Pure White Text across themes) */
+.stButton > button[kind="primary"],
+.stButton > button[data-testid="stBaseButton-primary"],
+.stButton > button[data-testid="baseButton-primary"],
+button[data-testid="stBaseButton-primary"],
+button[data-testid="baseButton-primary"],
+button[kind="primary"],
+button[kind="primaryFormSubmit"],
+div[data-testid="stButton"] button[kind="primary"],
+div[data-testid="stFormSubmitButton"] button[kind="primary"] {
+  background-color: #2563eb !important;
+  border: 1px solid #1d4ed8 !important;
   color: #ffffff !important;
   font-weight: 600 !important;
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
 }
 
-.stButton>button[kind="primary"]:hover,
-.stButton>button[data-testid="baseButton-primary"]:hover {
-  background: var(--accent-hover, #1d4ed8) !important;
-  border-color: var(--accent-hover, #1d4ed8) !important;
+.stButton > button[kind="primary"] *,
+.stButton > button[data-testid="stBaseButton-primary"] *,
+.stButton > button[data-testid="baseButton-primary"] *,
+button[data-testid="stBaseButton-primary"] *,
+button[data-testid="baseButton-primary"] *,
+button[kind="primary"] *,
+button[kind="primaryFormSubmit"] *,
+div[data-testid="stButton"] button[kind="primary"] *,
+div[data-testid="stFormSubmitButton"] button[kind="primary"] * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.stButton > button[kind="primary"]:hover,
+.stButton > button[data-testid="stBaseButton-primary"]:hover,
+.stButton > button[data-testid="baseButton-primary"]:hover,
+button[data-testid="stBaseButton-primary"]:hover,
+button[data-testid="baseButton-primary"]:hover,
+button[kind="primary"]:hover,
+button[kind="primaryFormSubmit"]:hover,
+div[data-testid="stButton"] button[kind="primary"]:hover,
+div[data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
+  background-color: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
 }
 
-.stButton>button[kind="secondary"],
-.stButton>button[data-testid="baseButton-secondary"] {
-  background: #ffffff !important;
-  border: 1px solid #94a3b8 !important;
-  color: #0f172a !important;
+.stButton > button[kind="primary"]:hover *,
+.stButton > button[data-testid="stBaseButton-primary"]:hover *,
+.stButton > button[data-testid="baseButton-primary"]:hover *,
+button[data-testid="stBaseButton-primary"]:hover *,
+button[data-testid="baseButton-primary"]:hover *,
+button[kind="primary"]:hover *,
+button[kind="primaryFormSubmit"]:hover *,
+div[data-testid="stButton"] button[kind="primary"]:hover *,
+div[data-testid="stFormSubmitButton"] button[kind="primary"]:hover * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+/* Secondary / Default buttons */
+.stButton > button[kind="secondary"],
+.stButton > button[data-testid="stBaseButton-secondary"],
+.stButton > button[data-testid="baseButton-secondary"],
+.stButton > button:not([kind="primary"]),
+button[data-testid="stBaseButton-secondary"],
+button[data-testid="baseButton-secondary"],
+button[data-testid="stBaseButton-header"],
+button[data-testid="stBaseButton-tertiary"],
+button[data-testid="stBaseButton-minimal"],
+button[data-testid="stBaseButton-icon"],
+div[data-testid="stButton"] button:not([kind="primary"]),
+div[data-testid="stDownloadButton"] button,
+div[data-testid="stFormSubmitButton"] button:not([kind="primary"]),
+div[data-testid="stFileUploader"] section button,
+div[data-testid="stFileUploader"] button,
+div[data-testid="stPills"] button:not([aria-selected="true"]),
+div[data-testid="stSegmentedControl"] button:not([aria-selected="true"]),
+div[data-testid="stPopover"] button,
+div[data-testid="stButtonGroup"] button,
+div[data-testid="stLinkButton"] a,
+button[kind="secondary"],
+button[kind="secondaryFormSubmit"] {
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-primary) !important;
   font-weight: 600 !important;
 }
 
-.stButton>button[kind="secondary"]:hover,
-.stButton>button[data-testid="baseButton-secondary"]:hover {
-  background: #f1f5f9 !important;
-  border-color: #2563eb !important;
-  color: #2563eb !important;
+.stButton > button[kind="secondary"] *,
+.stButton > button[data-testid="stBaseButton-secondary"] *,
+.stButton > button[data-testid="baseButton-secondary"] *,
+.stButton > button:not([kind="primary"]) *,
+button[data-testid="stBaseButton-secondary"] *,
+button[data-testid="baseButton-secondary"] *,
+button[data-testid="stBaseButton-header"] *,
+button[data-testid="stBaseButton-tertiary"] *,
+button[data-testid="stBaseButton-minimal"] *,
+button[data-testid="stBaseButton-icon"] *,
+div[data-testid="stButton"] button:not([kind="primary"]) *,
+div[data-testid="stDownloadButton"] button *,
+div[data-testid="stFormSubmitButton"] button:not([kind="primary"]) *,
+div[data-testid="stFileUploader"] section button *,
+div[data-testid="stFileUploader"] button *,
+div[data-testid="stPills"] button:not([aria-selected="true"]) *,
+div[data-testid="stSegmentedControl"] button:not([aria-selected="true"]) *,
+div[data-testid="stPopover"] button *,
+div[data-testid="stButtonGroup"] button *,
+div[data-testid="stLinkButton"] a *,
+button[kind="secondary"] *,
+button[kind="secondaryFormSubmit"] * {
+  color: var(--text-primary) !important;
+  fill: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+.stButton > button[kind="secondary"]:hover,
+.stButton > button[data-testid="stBaseButton-secondary"]:hover,
+.stButton > button[data-testid="baseButton-secondary"]:hover,
+.stButton > button:not([kind="primary"]):hover,
+button[data-testid="stBaseButton-secondary"]:hover,
+button[data-testid="baseButton-secondary"]:hover,
+button[data-testid="stBaseButton-header"]:hover,
+button[data-testid="stBaseButton-tertiary"]:hover,
+button[data-testid="stBaseButton-minimal"]:hover,
+button[data-testid="stBaseButton-icon"]:hover,
+div[data-testid="stButton"] button:not([kind="primary"]):hover,
+div[data-testid="stDownloadButton"] button:hover,
+div[data-testid="stFormSubmitButton"] button:not([kind="primary"]):hover,
+div[data-testid="stFileUploader"] section button:hover,
+div[data-testid="stFileUploader"] button:hover,
+div[data-testid="stPills"] button:hover,
+div[data-testid="stSegmentedControl"] button:hover,
+div[data-testid="stPopover"] button:hover,
+div[data-testid="stButtonGroup"] button:hover,
+div[data-testid="stLinkButton"] a:hover,
+button[kind="secondary"]:hover,
+button[kind="secondaryFormSubmit"]:hover {
+  background-color: var(--surface-hover) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+.stButton > button[kind="secondary"]:hover *,
+.stButton > button[data-testid="stBaseButton-secondary"]:hover *,
+.stButton > button[data-testid="baseButton-secondary"]:hover *,
+.stButton > button:not([kind="primary"]):hover *,
+button[data-testid="stBaseButton-secondary"]:hover *,
+button[data-testid="baseButton-secondary"]:hover *,
+button[data-testid="stBaseButton-header"]:hover *,
+button[data-testid="stBaseButton-tertiary"]:hover *,
+button[data-testid="stBaseButton-minimal"]:hover *,
+button[data-testid="stBaseButton-icon"]:hover *,
+div[data-testid="stButton"] button:not([kind="primary"]):hover *,
+div[data-testid="stDownloadButton"] button:hover *,
+div[data-testid="stFormSubmitButton"] button:not([kind="primary"]):hover *,
+div[data-testid="stFileUploader"] section button:hover *,
+div[data-testid="stFileUploader"] button:hover *,
+div[data-testid="stPills"] button:hover *,
+div[data-testid="stSegmentedControl"] button:hover *,
+div[data-testid="stPopover"] button:hover *,
+div[data-testid="stButtonGroup"] button:hover *,
+div[data-testid="stLinkButton"] a:hover *,
+button[kind="secondary"]:hover *,
+button[kind="secondaryFormSubmit"]:hover * {
+  color: var(--accent) !important;
+  fill: var(--accent) !important;
+}
+
+/* Tabs */
+div[data-testid="stTabs"] button[role="tab"] {
+  color: var(--text-secondary) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
+  background-color: transparent !important;
+  border: none !important;
+  padding: 8px 16px !important;
+  transition: all 0.15s ease !important;
+}
+
+div[data-testid="stTabs"] button[role="tab"] * {
+  color: var(--text-secondary) !important;
+}
+
+div[data-testid="stTabs"] button[role="tab"]:hover {
+  color: var(--text-primary) !important;
+}
+
+div[data-testid="stTabs"] button[role="tab"]:hover * {
+  color: var(--text-primary) !important;
+}
+
+div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+  color: var(--accent) !important;
+  border-bottom: 2px solid var(--accent) !important;
+  font-weight: 700 !important;
+}
+
+div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] * {
+  color: var(--accent) !important;
+  font-weight: 700 !important;
 }
 
 /* ==========================================================================
@@ -1527,27 +1717,30 @@ div[data-testid="stMarkdownContainer"] p {
 }
 
 .main .stButton>button[kind="primary"] {
-  background-color: var(--accent) !important;
-  border-color: var(--accent) !important;
+  background-color: #2563eb !important;
+  border-color: #1d4ed8 !important;
   color: #ffffff !important;
   font-weight: 600 !important;
   box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25), 0 1px 2px rgba(37, 99, 235, 0.15) !important;
 }
 
+.main .stButton>button[kind="primary"] *,
 .main .stButton>button[kind="primary"] p,
 .main .stButton>button[kind="primary"] span {
   color: #ffffff !important;
   font-size: 15px !important;
+  font-weight: 600 !important;
 }
 
 .main .stButton>button[kind="primary"]:hover {
-  background-color: var(--accent-hover) !important;
-  border-color: var(--accent-hover) !important;
+  background-color: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.30) !important;
   transform: translateY(-1px) !important;
 }
 
+.main .stButton>button[kind="primary"]:hover *,
 .main .stButton>button[kind="primary"]:hover p,
 .main .stButton>button[kind="primary"]:hover span {
   color: #ffffff !important;
@@ -1684,22 +1877,111 @@ div[data-testid="stDataFrame"] th {
   border-bottom: 1px solid var(--border) !important;
 }
 
+/* Streamlit static and html tables */
+div[data-testid="stTable"] {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  background: var(--surface) !important;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+div[data-testid="stTable"] table {
+  background: var(--surface) !important;
+  color: var(--text-primary) !important;
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+div[data-testid="stTable"] th {
+  background: var(--surface-container) !important;
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+  font-size: 12.5px !important;
+  border-bottom: 1px solid var(--border) !important;
+  padding: 8px 12px !important;
+}
+
+div[data-testid="stTable"] td {
+  background: var(--surface) !important;
+  color: var(--text-secondary) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  padding: 8px 12px !important;
+}
+
+/* Streamlit Selectbox and Input Containers */
+div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  color: var(--text-primary) !important;
+}
+
 /* ==========================================================================
    EXPANDER, POPOVER, FILE UPLOADER
    ========================================================================== */
-[data-testid="stExpander"] {
-  background: var(--surface) !important;
+[data-testid="stExpander"],
+div[data-testid="stExpander"],
+div[data-testid="stExpander"] details,
+details[data-testid="stExpander"] {
+  background-color: var(--surface) !important;
   border: 1px solid var(--border) !important;
   border-radius: var(--radius-md) !important;
-  box-shadow: var(--shadow-md) !important;
-  overflow: hidden;
+  box-shadow: var(--shadow-sm) !important;
+  overflow: hidden !important;
 }
 
-[data-testid="stExpander"] summary {
+[data-testid="stExpander"] summary,
+div[data-testid="stExpander"] summary,
+div[data-testid="stExpander"] details > summary,
+details[data-testid="stExpander"] > summary {
+  background-color: var(--surface) !important;
+  color: var(--text-primary) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
   font-size: 13.5px !important;
   font-weight: 600 !important;
-  color: var(--text-primary) !important;
   padding: 11px 16px !important;
+  transition: background-color var(--transition-fast) !important;
+  cursor: pointer !important;
+}
+
+[data-testid="stExpander"] summary:hover,
+div[data-testid="stExpander"] summary:hover,
+div[data-testid="stExpander"] details > summary:hover,
+details[data-testid="stExpander"] > summary:hover {
+  background-color: var(--surface-hover) !important;
+  color: var(--accent) !important;
+}
+
+[data-testid="stExpander"] summary *,
+div[data-testid="stExpander"] summary *,
+div[data-testid="stExpander"] details > summary *,
+details[data-testid="stExpander"] > summary * {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+[data-testid="stExpander"] summary:hover *,
+div[data-testid="stExpander"] summary:hover *,
+div[data-testid="stExpander"] details > summary:hover *,
+details[data-testid="stExpander"] > summary:hover * {
+  color: var(--accent) !important;
+}
+
+[data-testid="stExpander"] summary svg,
+div[data-testid="stExpander"] summary svg,
+div[data-testid="stExpander"] [data-testid="stExpanderToggleIcon"] {
+  color: var(--text-secondary) !important;
+  fill: var(--text-secondary) !important;
+}
+
+div[data-testid="stExpanderDetails"],
+div[data-testid="stExpander"] details > div,
+div[data-testid="stExpander"] details > div:last-child {
+  background-color: var(--surface) !important;
+  color: var(--text-primary) !important;
+  padding: 14px 16px !important;
 }
 
 div[data-baseweb="popover"],
@@ -2731,13 +3013,13 @@ div[data-testid="stPlotlyChart"] {
 
 /* High-Density Data Table */
 .stitch-table-container {
-  border: 1px solid var(--border, #cbd5e1);
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow-x: auto;
-  background: var(--surface, #ffffff);
+  background: var(--surface);
   margin-top: 10px;
   margin-bottom: 8px;
-  box-shadow: var(--shadow-md, 0 2px 8px rgba(15, 23, 42, 0.08));
+  box-shadow: var(--shadow-md);
 }
 
 .stitch-table {
@@ -2746,17 +3028,19 @@ div[data-testid="stPlotlyChart"] {
   text-align: left;
   white-space: nowrap;
   font-size: 13px;
+  background: var(--surface);
+  color: var(--text-primary);
 }
 
 .stitch-table th {
-  background: var(--bg-secondary, #f8fafc);
-  color: var(--text-primary, #0f172a);
+  background: var(--surface-container);
+  color: var(--text-primary);
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 9px 14px;
-  border-bottom: 1px solid var(--border, #cbd5e1);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 2;
@@ -2767,6 +3051,7 @@ div[data-testid="stPlotlyChart"] {
   border-bottom: 1px solid var(--border);
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
+  background: var(--surface);
 }
 
 .stitch-table tr:nth-child(even) td {
@@ -2779,6 +3064,7 @@ div[data-testid="stPlotlyChart"] {
 
 .stitch-table tr:hover td {
   background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .stitch-table .null-val {
@@ -2796,15 +3082,15 @@ div[data-testid="stPlotlyChart"] {
 
 /* Dataset Health Card */
 .stitch-health-card {
-  border: 1px solid var(--border, #cbd5e1);
-  background: var(--surface, #ffffff);
+  border: 1px solid var(--border);
+  background: var(--surface);
   border-radius: 8px;
   padding: 18px;
   display: flex;
   align-items: flex-start;
   gap: 14px;
   margin-bottom: 18px;
-  box-shadow: var(--shadow-md, 0 2px 8px rgba(15, 23, 42, 0.08));
+  box-shadow: var(--shadow-md);
 }
 
 .stitch-health-icon-circle {
@@ -3038,12 +3324,23 @@ div[data-testid="stButton"] button[kind="primary"],
   transition: all 0.15s ease !important;
 }
 
+div[data-testid="stButton"] button[kind="primary"] *,
+.stButton > button[kind="primary"] * {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
 div[data-testid="stButton"] button[kind="primary"]:hover,
 .stButton > button[kind="primary"]:hover {
   background-color: var(--primary-hover, #1d4ed8) !important;
   border-color: var(--primary-hover, #1d4ed8) !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
+}
+
+div[data-testid="stButton"] button[kind="primary"]:hover *,
+.stButton > button[kind="primary"]:hover * {
+  color: #ffffff !important;
 }
 
 div[data-testid="stButton"] button[kind="secondary"],
@@ -3061,11 +3358,24 @@ div[data-testid="stButton"] button[kind="secondary"],
   transition: all 0.15s ease !important;
 }
 
+div[data-testid="stButton"] button[kind="secondary"] *,
+.stButton > button[kind="secondary"] *,
+.stButton > button:not([kind="primary"]) * {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
 div[data-testid="stButton"] button[kind="secondary"]:hover,
 .stButton > button[kind="secondary"]:hover,
 .stButton > button:not([kind="primary"]):hover {
   background-color: var(--surface-hover) !important;
   border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+div[data-testid="stButton"] button[kind="secondary"]:hover *,
+.stButton > button[kind="secondary"]:hover *,
+.stButton > button:not([kind="primary"]):hover * {
   color: var(--accent) !important;
 }
 

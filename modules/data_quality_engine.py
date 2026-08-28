@@ -94,10 +94,10 @@ def analyze_duplicates(df: pd.DataFrame) -> Dict[str, Any]:
     dup_pct = float((duplicate_rows_count / total_rows * 100)) if total_rows > 0 else 0.0
     unique_rows_count = total_rows - duplicate_rows_count
 
-    # Extract sample duplicate rows if present
+    # Extract duplicate rows if present
     duplicate_samples = None
     if duplicate_rows_count > 0:
-        duplicate_samples = df[df.duplicated(keep=False)].head(10)
+        duplicate_samples = df[df.duplicated(keep=False)]
 
     # Detect duplicate columns (identical values across distinct column headers)
     duplicate_columns = []

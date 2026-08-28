@@ -15,6 +15,7 @@ from modules.ui_components import (
     render_activity_list,
     render_workflow_timeline,
     render_next_step_banner,
+    render_next_workflow_steps,
     get_icon_svg,
 )
 from modules.config import (
@@ -365,4 +366,8 @@ def _render_active_dataset_state(stage_info: dict) -> None:
             subtitle="Recent analytical events and operations."
         )
         render_activity_list(max_items=8)
+
+    # ── Standardized Bottom Next Workflow Steps Section ──────────────────
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    render_next_workflow_steps("Overview")
 

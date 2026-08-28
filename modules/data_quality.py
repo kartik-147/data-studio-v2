@@ -57,7 +57,7 @@ def render_data_quality_page() -> None:
     metadata: Dict[str, Any] = st.session_state.get("dataset_metadata")
     dataset_name = st.session_state.get("dataset_name", "dataset.csv")
     file_type = st.session_state.get("dataset_file_type", "CSV")
-    current_theme = st.session_state.get("theme", "Dark")
+    current_theme = st.session_state.get("theme", "Light")
 
     if df is None or metadata is None or df.empty:
         render_page_header(
@@ -461,7 +461,7 @@ def _render_tab_duplicates(report: Dict[str, Any]) -> None:
     # Duplicate Row Samples
     samples = dup.get("duplicate_samples")
     if samples is not None and len(samples) > 0:
-        st.markdown("##### Duplicate Row Samples")
+        st.markdown(f"##### Duplicate Rows Preview ({len(samples):,} occurrences)")
         st.dataframe(samples, use_container_width=True, hide_index=False)
 
     # ── Fix action ────────────────────────────────────────────────────────────

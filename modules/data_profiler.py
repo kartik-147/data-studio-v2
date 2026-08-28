@@ -90,7 +90,7 @@ def render_dataset_page() -> None:
             with tab_types:
                 _render_semantic_datatypes_tab(df, metadata)
             with tab_missing:
-                _render_missing_and_duplicates_tab(metadata)
+                _render_missing_and_duplicates_tab(df, metadata)
 
         # ── Standardized Bottom Next Workflow Steps Section ──────────────────
         st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
@@ -593,7 +593,7 @@ def _render_semantic_datatypes_tab(df: pd.DataFrame, metadata: Dict[str, Any]) -
                 st.caption(f"No {type_name.lower()} columns detected.")
 
 
-def _render_missing_and_duplicates_tab(metadata: Dict[str, Any]) -> None:
+def _render_missing_and_duplicates_tab(df: pd.DataFrame, metadata: Dict[str, Any]) -> None:
     """Render missing data summary and duplicate row analysis."""
     c1, c2 = st.columns(2, gap="medium")
     with c1:
@@ -619,3 +619,13 @@ def _render_missing_and_duplicates_tab(metadata: Dict[str, Any]) -> None:
             st.success("No duplicate rows found. Every record is unique.")
         else:
             st.warning(f"{dup_cnt:,} duplicate rows detected ({dup_pct:.2f}%).")
+            if df is not None:
+                dup_mask = df.duplicated(keep=False)
+                dup_df = df[dup_mask]
+                if not dup_df.empty:
+                    st.markdown(f"**Duplicate Records Preview ({len(dup_df):,} occurrences):**")
+                    st.dataframe(dup_df, use_container_width=True, hide_index=False)
+                    if st.button("Deduplicate in Data Preparation →", key="prof_dup_prep_action_btn", type="primary", use_container_width=True):
+                        st.session_state["prep_suggested_action"] = "duplicates"
+                        st.session_state["current_page"] = "Data Preparation"
+                        st.rerun()
