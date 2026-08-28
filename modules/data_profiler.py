@@ -1,12 +1,17 @@
 """
-DATA STUDIO v2 — Dataset Upload and Dataset Workspace Module (Stitch Redesign)
+DATA STUDIO v2 — Dataset Upload and Dataset Workspace Module (Unified Redesign)
 =============================================================================
-Professional Dataset Workspace implementing the Stitch Design System:
-- 12-column analytical grid layout (8 cols left, 4 cols right)
-- High-density data table with zebra striping, sticky headers, and tabular figures
-- 2x2 Bento KPI grid for core dataset dimensions
-- Column Summary with semantic iconography and data type badges
-- Dataset Health and Next Steps action cards
+Professional Dataset Workspace providing visual, structural, and behavioral
+consistency with Data Quality, Data Preparation, EDA, and Visualization modules:
+- Standardized Page Header & Top Context Action Bar
+- 4-Card Horizontal Metric Summary Row (Rows, Columns, Completeness, Memory)
+- 5 Structured Analytical Tabs:
+    1. DATA PREVIEW & EXPLORER (Search, column subset selector, row slices, interactive table)
+    2. COLUMN SCHEMA & ATTRIBUTES (Semantic badges, nulls, distinct counts, sample previews)
+    3. STATISTICAL PROFILES (Numeric stats matrix, categorical breakdown, datetime ranges)
+    4. HEALTH & INTEGRITY (Completeness audit, duplicate inspection, quick repair routing)
+    5. UPLOAD & SAMPLE DATASETS (CSV/Excel upload, multi-sheet parser, sample datasets library)
+- Universal Standardized Bottom Next Workflow Steps
 - Full preservation of CSV/Excel parsing, session state, and Firebase logging
 """
 from typing import Optional, Dict, Any, List
@@ -16,15 +21,19 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 
-from modules.config import is_dataset_loaded
+from modules.config import is_dataset_loaded, mark_workflow_step
 from modules.auth import get_current_user
 from modules.firebase_service import log_dataset_upload
 from modules.ui_components import (
+    render_page_header,
+    render_section_header,
+    render_metric_card,
     render_notification,
-    get_type_badge_html,
+    render_empty_state,
     render_next_step_banner,
     render_ai_context_trigger,
-    render_next_workflow_steps
+    render_next_workflow_steps,
+    get_type_badge_html
 )
 from modules.data_loader import (
     load_csv,
@@ -34,98 +43,565 @@ from modules.data_loader import (
     get_available_sample_datasets,
     load_sample_dataset_by_key,
     set_active_dataset,
-    clear_dataset_state
+    clear_dataset_state,
+    create_dataset_metadata
 )
 
 
-
 def render_dataset_page() -> None:
-    """Main entry point for Dataset Workspace (Stitch Design System)."""
-    # ── Page Header ─────────────────────────────────────────────────────────
-    st.markdown(
-        textwrap.dedent("""
-        <div class="stitch-page-header">
-            <h1 class="stitch-page-title font-headline-md">Dataset</h1>
-            <p class="stitch-page-subtitle font-body-lg">Upload, inspect, and manage the dataset used across your workspace.</p>
-        </div>
-        """),
-        unsafe_allow_html=True
-    )
-
+    """Main entry point for Dataset Workspace."""
     df: Optional[pd.DataFrame] = st.session_state.get("dataset")
     metadata: Optional[Dict[str, Any]] = st.session_state.get("dataset_metadata")
     dataset_name: Optional[str] = st.session_state.get("dataset_name")
     file_type: str = st.session_state.get("dataset_file_type", "CSV") or "CSV"
 
-    # 12-Column Responsive Grid (8 col left, 4 col right)
-    col_left, col_right = st.columns([8, 4], gap="medium")
+    # 1. Standardized Page Header
+    render_page_header(
+        title="Dataset",
+        subtitle="Upload, inspect schema, explore statistical profiles, and manage active datasets.",
+        icon="database"
+    )
 
-    with col_left:
-        if df is None or metadata is None or not dataset_name:
-            # Upload box is shown only when no dataset is currently active
-            _render_upload_section(has_active_dataset=False)
-        else:
-            # When active dataset exists, show the full preview card and management tools
-            _render_active_dataset_preview_card(df, metadata, dataset_name, file_type)
+    # 2. Empty State: If no dataset is loaded, show dedicated Upload & Sample Data screen
+    if df is None or metadata is None or not dataset_name or df.empty:
+        _render_empty_upload_workspace()
+        return
 
-    with col_right:
-        if df is not None and metadata is not None:
-            _render_dataset_health_card(metadata)
-            _render_bento_kpis(metadata)
-            _render_column_summary_card(metadata)
-        else:
-            _render_empty_sidebar_guide()
+    # 3. Session Guard: Log dataset upload metadata once per dataset signature
+    mark_workflow_step("dataset", True)
+    current_sig = f"{dataset_name}_{metadata.get('total_rows', 0)}_{metadata.get('total_columns', 0)}_{metadata.get('memory_bytes', 0)}"
+    if st.session_state.get("logged_dataset_signature") != current_sig:
+        user_info = get_current_user()
+        log_dataset_upload(user_info, metadata, file_type=file_type)
+        st.session_state["logged_dataset_signature"] = current_sig
 
-    # ── Deep-Dive Technical Tabs (Retains 100% full profiling power) ─────────
-    if df is not None and metadata is not None:
-        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
-        with st.expander("Detailed Schema & Semantic Profiling (Advanced Inspection)", expanded=False):
-            tab_cols, tab_types, tab_missing = st.tabs([
-                "FULL COLUMN SCHEMA",
-                "SEMANTIC DATA TYPES",
-                "COMPLETENESS & DUPLICATES"
-            ])
-            with tab_cols:
-                _render_full_column_schema(metadata)
-            with tab_types:
-                _render_semantic_datatypes_tab(df, metadata)
-            with tab_missing:
-                _render_missing_and_duplicates_tab(df, metadata)
+    # 4. Standardized Top Context Bar
+    _render_dataset_context_bar(df, dataset_name, file_type, metadata)
 
-        # ── Standardized Bottom Next Workflow Steps Section ──────────────────
-        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-        render_next_workflow_steps("Dataset")
+    # 5. Horizontal 4-Card Metric Summary Row (Exact match to Quality & Prep)
+    _render_dataset_kpis(df, metadata)
 
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+
+    # 6. Main Unified 5-Tab System
+    tab_preview, tab_schema, tab_stats, tab_health, tab_upload = st.tabs([
+        "DATA PREVIEW & EXPLORER",
+        "COLUMN SCHEMA & ATTRIBUTES",
+        "STATISTICAL PROFILES",
+        "HEALTH & INTEGRITY",
+        "UPLOAD & SAMPLE DATASETS"
+    ])
+
+    with tab_preview:
+        _render_tab_preview(df, metadata, dataset_name)
+
+    with tab_schema:
+        _render_tab_schema(metadata)
+
+    with tab_stats:
+        _render_tab_stats(df, metadata)
+
+    with tab_health:
+        _render_tab_health(df, metadata)
+
+    with tab_upload:
+        _render_tab_upload(has_active_dataset=True)
+
+    # 7. Standardized Bottom Workflow Steps
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+    render_next_workflow_steps("Dataset")
 
 
 # =============================================================================
-# LEFT COLUMN: UPLOAD & ACTIVE DATASET PREVIEW
+# CONTEXT BAR & KPI METRIC CARDS
 # =============================================================================
 
-def _render_upload_section(has_active_dataset: bool = False) -> None:
-    """Render the Stitch dashed upload dropzone with CSV/Excel parsing and sample datasets."""
+def _render_dataset_context_bar(
+    df: pd.DataFrame,
+    dataset_name: str,
+    file_type: str,
+    metadata: Dict[str, Any]
+) -> None:
+    """Render compact top context bar with quick dataset actions."""
+    col_info, col_actions = st.columns([7, 5])
+
+    total_rows = metadata.get("total_rows", len(df))
+    total_cols = metadata.get("total_columns", len(df.columns))
+    mem_str = metadata.get("memory_formatted", "0 KB")
+
+    with col_info:
+        banner_html = (
+            f'<div class="ds-active-banner" style="margin-bottom: 12px; padding: 10px 16px;">'
+            f'<div class="ds-active-banner-left">'
+            f'<div class="ds-brand-badge" style="background: var(--accent);">{file_type[0]}</div>'
+            f'<div>'
+            f'<div class="ds-active-banner-name" style="font-size: 15px;">{html.escape(dataset_name)}</div>'
+            f'<div class="ds-active-banner-meta" style="font-size: 12px;">'
+            f'{total_rows:,} rows · {total_cols} columns · {file_type} · {mem_str} · '
+            f'<span class="ds-badge ds-badge-numeric" style="font-size: 11px;">Active Dataset</span>'
+            f'</div>'
+            f'</div>'
+            f'</div>'
+            f'</div>'
+        )
+        st.markdown(banner_html, unsafe_allow_html=True)
+
+    with col_actions:
+        st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
+        ac1, ac2, ac3 = st.columns([4, 4, 4])
+        with ac1:
+            with st.popover("Switch Data", use_container_width=True):
+                st.markdown("<span style='font-weight: 600; font-size: 13px;'>Switch Active Dataset</span>", unsafe_allow_html=True)
+                sample_catalog = get_available_sample_datasets()
+                if sample_catalog:
+                    sample_keys = list(sample_catalog.keys())
+                    sample_names = [sample_catalog[k]["name"] for k in sample_keys]
+                    sel_name = st.selectbox("Select Sample Dataset", options=sample_names, key="ctx_sample_sel")
+                    sel_key = next((k for k in sample_keys if sample_catalog[k]["name"] == sel_name), sample_keys[0])
+                    if st.button("Load Sample", key="ctx_load_sample_btn", type="primary", use_container_width=True):
+                        with st.spinner(f"Loading {sel_name}..."):
+                            s_df, s_err, s_type = load_sample_dataset_by_key(sel_key)
+                            if s_err:
+                                st.error(s_err)
+                            elif s_df is not None:
+                                set_active_dataset(s_df, sample_catalog[sel_key]["filename"], file_type=s_type)
+                                st.rerun()
+        with ac2:
+            with st.popover("Export / Clear", use_container_width=True):
+                st.markdown("<span style='font-weight: 600; font-size: 13px;'>Dataset Management</span>", unsafe_allow_html=True)
+                csv_data = df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    "Download CSV",
+                    data=csv_data,
+                    file_name=dataset_name if dataset_name.endswith(".csv") else f"{dataset_name}.csv",
+                    mime="text/csv",
+                    key="ctx_download_csv_btn",
+                    use_container_width=True
+                )
+                if st.button("Clear Dataset", key="ctx_clear_active_btn", use_container_width=True):
+                    clear_dataset_state()
+                    st.rerun()
+        with ac3:
+            if st.button("Audit Quality →", key="ctx_goto_quality_btn", use_container_width=True):
+                st.session_state["current_page"] = "Data Quality"
+                st.rerun()
+
+
+def _render_dataset_kpis(df: pd.DataFrame, metadata: Dict[str, Any]) -> None:
+    """Render 4-card metric row matching Data Quality and Data Preparation."""
+    total_rows = metadata.get("total_rows", len(df))
+    total_cols = metadata.get("total_columns", len(df.columns))
+    by_type = metadata.get("columns_by_type", {})
+    num_count = len(by_type.get("Numeric", []))
+    cat_count = len(by_type.get("Categorical", [])) + len(by_type.get("Text", []))
+    date_count = len(by_type.get("Date/Time", []))
+    bool_count = len(by_type.get("Boolean", []))
+
+    missing_cells = metadata.get("missing_cells", 0)
+    missing_pct = metadata.get("missing_percentage", 0.0)
+    completeness_pct = max(0.0, 100.0 - missing_pct)
+    mem_str = metadata.get("memory_formatted", "0 KB")
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        render_metric_card(
+            label="Total Records",
+            value=f"{total_rows:,}",
+            change="Full Row Count",
+            change_type="positive",
+            description="Active dataset observations",
+            status="Rows"
+        )
+    with c2:
+        breakdown_str = f"{num_count} Num · {cat_count} Cat"
+        if date_count > 0:
+            breakdown_str += f" · {date_count} Date"
+        render_metric_card(
+            label="Total Features",
+            value=f"{total_cols}",
+            change=breakdown_str,
+            change_type="neutral",
+            description="Schema dimensions",
+            status="Columns"
+        )
+    with c3:
+        comp_type = "positive" if missing_cells == 0 else ("neutral" if missing_pct < 5.0 else "negative")
+        render_metric_card(
+            label="Completeness Rate",
+            value=f"{completeness_pct:.1f}%",
+            change="Zero missing cells" if missing_cells == 0 else f"{missing_cells:,} null cells ({missing_pct:.1f}%)",
+            change_type=comp_type,
+            description="Data integrity index",
+            status="Completeness"
+        )
+    with c4:
+        render_metric_card(
+            label="Memory Footprint",
+            value=mem_str,
+            change="In-Memory RAM",
+            change_type="neutral",
+            description=f"{file_type_label(metadata)} loaded",
+            status="Storage"
+        )
+
+
+def file_type_label(metadata: Dict[str, Any]) -> str:
+    """Return formatted file type label."""
+    return st.session_state.get("dataset_file_type", "CSV")
+
+
+# =============================================================================
+# TAB 1: DATA PREVIEW & EXPLORER
+# =============================================================================
+
+def _render_tab_preview(df: pd.DataFrame, metadata: Dict[str, Any], dataset_name: str) -> None:
+    """Render full-width searchable, filterable interactive dataframe preview."""
+    all_columns = list(df.columns)
+
+    # Control Toolbar: Search, Column Filter, Row Limits
+    tool_c1, tool_c2, tool_c3 = st.columns([5, 5, 2], gap="small")
+
+    with tool_c1:
+        search_query = st.text_input(
+            "Search rows...",
+            placeholder="Type keyword to filter records across all columns...",
+            key="tab_prev_search_input",
+            label_visibility="collapsed"
+        )
+
+    with tool_c2:
+        selected_cols = st.multiselect(
+            "Select Columns to View",
+            options=all_columns,
+            default=all_columns,
+            key="tab_prev_col_filter",
+            label_visibility="collapsed",
+            placeholder="Filter visible columns..."
+        )
+
+    with tool_c3:
+        row_limit = st.selectbox(
+            "Rows to Display",
+            options=[15, 25, 50, 100, 250, "All"],
+            index=0,
+            key="tab_prev_row_limit",
+            label_visibility="collapsed"
+        )
+
+    # Apply column subsetting
+    display_cols = selected_cols if selected_cols else all_columns
+    filtered_df = df[display_cols]
+
+    # Apply text search filter
+    if search_query and search_query.strip():
+        query_str = search_query.strip().lower()
+        mask = filtered_df.astype(str).apply(lambda row: query_str in " ".join(row).lower(), axis=1)
+        filtered_df = filtered_df[mask]
+
+    # Apply row limits
+    total_matching = len(filtered_df)
+    if row_limit != "All":
+        preview_df = filtered_df.head(int(row_limit))
+    else:
+        preview_df = filtered_df
+
+    # Render Interactive DataFrame with full container width
+    st.dataframe(
+        preview_df,
+        use_container_width=True,
+        hide_index=False,
+        height=450
+    )
+
+    # Footer Slice Information Bar
+    f_c1, f_c2 = st.columns([8, 4])
+    with f_c1:
+        st.markdown(
+            f"<span class='font-mono-data' style='color: var(--text-muted); font-size: 12px;'>"
+            f"Displaying <strong>{len(preview_df):,}</strong> of <strong>{total_matching:,}</strong> matching rows · "
+            f"<strong>{len(display_cols)}</strong> of <strong>{len(all_columns)}</strong> columns visible"
+            f"</span>",
+            unsafe_allow_html=True
+        )
+    with f_c2:
+        st.markdown(
+            f"<div style='text-align: right;' class='font-mono-data'>"
+            f"<span style='color: var(--text-muted); font-size: 12px;'>Source: {html.escape(dataset_name)}</span>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
+
+# =============================================================================
+# TAB 2: COLUMN SCHEMA & ATTRIBUTES
+# =============================================================================
+
+def _render_tab_schema(metadata: Dict[str, Any]) -> None:
+    """Render comprehensive tabular schema with data types, nulls, and sample previews."""
+    details = metadata.get("column_details", [])
+    if not details:
+        st.info("No column schema details available.")
+        return
+
+    # Column type summary header pills
+    by_type = metadata.get("columns_by_type", {})
+    type_pills = []
+    type_colors = {
+        "Numeric": "ds-badge-numeric",
+        "Categorical": "ds-badge-string",
+        "Date/Time": "ds-badge-datetime",
+        "Boolean": "ds-badge-boolean",
+        "Text": "ds-badge-string"
+    }
+    for tname, tcols in by_type.items():
+        if tcols:
+            badge_cls = type_colors.get(tname, "ds-badge-neutral")
+            type_pills.append(f'<span class="ds-badge {badge_cls}">{len(tcols)} {tname}</span>')
+
     st.markdown(
-        textwrap.dedent("""
-        <div class="stitch-upload-card">
-            <div class="stitch-upload-icon-circle">
-                <span class="mat-icon" style="font-size: 26px;">cloud_upload</span>
-            </div>
-            <h2 class="stitch-upload-title font-headline-sm">Upload Dataset</h2>
-            <p class="stitch-upload-desc font-body-md">Drag and drop your CSV or Excel file here</p>
-        </div>
-        """),
+        f'<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">'
+        f'{"".join(type_pills)}'
+        f'</div>',
         unsafe_allow_html=True
     )
 
-    # Streamlit native file uploader placed cleanly below or inside controls
-    u_col1, u_col2 = st.columns([7, 5], gap="small")
+    # Search filter for schema columns
+    s_col1, s_col2 = st.columns([6, 6])
+    with s_col1:
+        col_search = st.text_input(
+            "Filter schema columns...",
+            placeholder="Search column names or data types...",
+            key="schema_col_search_input"
+        )
+    with s_col2:
+        type_filter = st.selectbox(
+            "Filter by Data Type",
+            options=["All Types", "Numeric", "Categorical", "Date/Time", "Boolean", "Text"],
+            key="schema_type_filter_sel"
+        )
+
+    # Build schema rows
+    filtered_details = details
+    if col_search and col_search.strip():
+        q = col_search.strip().lower()
+        filtered_details = [c for c in filtered_details if q in c["column_name"].lower() or q in c["detected_type"].lower()]
+
+    if type_filter != "All Types":
+        filtered_details = [c for c in filtered_details if c["detected_type"] == type_filter]
+
+    table_data = []
+    for c in filtered_details:
+        table_data.append({
+            "Column Name": c["column_name"],
+            "Semantic Type": c["detected_type"],
+            "Pandas Dtype": c["pandas_dtype"],
+            "Non-Null Count": f"{c['non_null_count']:,}",
+            "Missing Count": f"{c['missing_count']:,}",
+            "Missing %": f"{c['missing_percentage']:.2f}%",
+            "Unique Count": f"{c['unique_count']:,}",
+            "Sample Values": c["sample_preview"]
+        })
+
+    st.dataframe(
+        pd.DataFrame(table_data),
+        use_container_width=True,
+        hide_index=True,
+        height=400
+    )
+
+
+# =============================================================================
+# TAB 3: STATISTICAL PROFILES
+# =============================================================================
+
+def _render_tab_stats(df: pd.DataFrame, metadata: Dict[str, Any]) -> None:
+    """Render numeric descriptive statistics and categorical frequency breakdowns."""
+    numeric_cols = metadata.get("columns_by_type", {}).get("Numeric", [])
+    cat_cols = metadata.get("columns_by_type", {}).get("Categorical", []) + metadata.get("columns_by_type", {}).get("Text", [])
+    date_cols = metadata.get("columns_by_type", {}).get("Date/Time", [])
+
+    # 1. Numeric Summary Statistics Matrix
+    st.markdown("#### Numeric Summary Statistics")
+    if numeric_cols:
+        num_df = df[numeric_cols]
+        desc_df = num_df.describe().T
+        # Calculate extra statistical dimensions: Median, Skewness, Zeros Count
+        desc_df["median"] = num_df.median()
+        desc_df["skew"] = num_df.skew()
+        desc_df["zeros_count"] = (num_df == 0).sum()
+
+        formatted_stats = []
+        for col_name, row in desc_df.iterrows():
+            formatted_stats.append({
+                "Column": col_name,
+                "Count": f"{int(row['count']):,}",
+                "Mean": f"{row['mean']:.2f}",
+                "Std Dev": f"{row['std']:.2f}" if not pd.isna(row['std']) else "—",
+                "Min": f"{row['min']:.2f}",
+                "25%": f"{row['25%']:.2f}",
+                "Median (50%)": f"{row['median']:.2f}",
+                "75%": f"{row['75%']:.2f}",
+                "Max": f"{row['max']:.2f}",
+                "Skewness": f"{row['skew']:.2f}" if not pd.isna(row['skew']) else "—",
+                "Zeros": f"{int(row['zeros_count']):,}"
+            })
+
+        st.dataframe(pd.DataFrame(formatted_stats), use_container_width=True, hide_index=True)
+    else:
+        st.info("No numerical columns detected in this dataset.")
+
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+
+    # 2. Categorical & Text Frequency Breakdown
+    st.markdown("#### Categorical & Text Cardinality")
+    if cat_cols:
+        cat_stats = []
+        for col_name in cat_cols:
+            series = df[col_name].dropna()
+            total_cnt = len(series)
+            uniq_cnt = series.nunique()
+            if total_cnt > 0:
+                top_val = str(series.mode().iloc[0]) if not series.empty else "—"
+                top_freq = int(series.value_counts().iloc[0]) if not series.empty else 0
+                top_pct = (top_freq / total_cnt * 100) if total_cnt > 0 else 0.0
+                uniq_ratio = (uniq_cnt / total_cnt * 100) if total_cnt > 0 else 0.0
+            else:
+                top_val = "—"
+                top_freq = 0
+                top_pct = 0.0
+                uniq_ratio = 0.0
+
+            cat_stats.append({
+                "Column": col_name,
+                "Total Values": f"{total_cnt:,}",
+                "Distinct Categories": f"{uniq_cnt:,}",
+                "Uniqueness Ratio": f"{uniq_ratio:.1f}%",
+                "Top (Most Frequent)": top_val,
+                "Top Frequency": f"{top_freq:,} ({top_pct:.1f}%)"
+            })
+
+        st.dataframe(pd.DataFrame(cat_stats), use_container_width=True, hide_index=True)
+    else:
+        st.info("No categorical or text columns detected.")
+
+    # 3. Date / Time Temporal Ranges
+    if date_cols:
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("#### Temporal & Date Ranges")
+        date_stats = []
+        for col_name in date_cols:
+            try:
+                parsed_dates = pd.to_datetime(df[col_name], errors='coerce').dropna()
+                if not parsed_dates.empty:
+                    min_date = parsed_dates.min().strftime('%Y-%m-%d')
+                    max_date = parsed_dates.max().strftime('%Y-%m-%d')
+                    span_days = (parsed_dates.max() - parsed_dates.min()).days
+                    date_stats.append({
+                        "Column": col_name,
+                        "Valid Dates Count": f"{len(parsed_dates):,}",
+                        "Earliest Date": min_date,
+                        "Latest Date": max_date,
+                        "Date Span": f"{span_days:,} days"
+                    })
+            except Exception:
+                pass
+
+        if date_stats:
+            st.dataframe(pd.DataFrame(date_stats), use_container_width=True, hide_index=True)
+
+
+# =============================================================================
+# TAB 4: HEALTH & INTEGRITY
+# =============================================================================
+
+def _render_tab_health(df: pd.DataFrame, metadata: Dict[str, Any]) -> None:
+    """Render missing data summary, duplicate row audit, and direct repair links."""
+    h_col1, h_col2 = st.columns(2, gap="large")
+
+    missing_cnt = metadata.get("missing_cells", 0)
+    missing_pct = metadata.get("missing_percentage", 0.0)
+    missing_cols = [c for c in metadata.get("column_details", []) if c["missing_count"] > 0]
+
+    dup_cnt = metadata.get("duplicate_rows", 0)
+    dup_pct = metadata.get("duplicate_percentage", 0.0)
+
+    with h_col1:
+        st.markdown("#### Missing Values Audit")
+        if missing_cnt == 0:
+            st.success("✅ **100% Complete**: Zero missing values detected across all columns.")
+        else:
+            st.warning(f"⚠️ **{missing_cnt:,} missing cells** detected ({missing_pct:.2f}% of total data cells).")
+            st.markdown(f"**{len(missing_cols)} column(s)** contain missing values:")
+            st.dataframe(pd.DataFrame([
+                {
+                    "Column": c["column_name"],
+                    "Missing Count": f"{c['missing_count']:,}",
+                    "Missing %": f"{c['missing_percentage']:.2f}%",
+                    "Semantic Type": c["detected_type"]
+                }
+                for c in missing_cols
+            ]), use_container_width=True, hide_index=True)
+
+            if st.button("Impute in Data Preparation →", key="hlth_goto_prep_missing_btn", type="primary", use_container_width=True):
+                st.session_state["prep_suggested_action"] = "missing"
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
+
+    with h_col2:
+        st.markdown("#### Duplicate Records Audit")
+        if dup_cnt == 0:
+            st.success("✅ **100% Unique**: Every record in the dataset is unique.")
+        else:
+            st.warning(f"⚠️ **{dup_cnt:,} duplicate rows** found ({dup_pct:.2f}% of dataset).")
+            dup_mask = df.duplicated(keep=False)
+            dup_df = df[dup_mask]
+            if not dup_df.empty:
+                st.markdown(f"**Duplicate Records Preview ({len(dup_df):,} occurrences):**")
+                st.dataframe(dup_df.head(20), use_container_width=True, hide_index=False)
+
+            if st.button("Deduplicate in Data Preparation →", key="hlth_goto_prep_dup_btn", type="primary", use_container_width=True):
+                st.session_state["prep_suggested_action"] = "duplicates"
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
+
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    st.markdown("---")
     
+    # Comprehensive Audit Jump Banner
+    act_c1, act_c2 = st.columns([8, 4])
+    with act_c1:
+        st.markdown(
+            "**Need an in-depth 6-dimension data quality audit?**<br>"
+            "<span style='color: var(--text-secondary); font-size: 13px;'>"
+            "Inspect completeness, uniqueness, consistency, validity, and outlier distribution in the Data Quality module."
+            "</span>",
+            unsafe_allow_html=True
+        )
+    with act_c2:
+        if st.button("Open Full Data Quality Audit →", key="hlth_open_quality_module_btn", use_container_width=True):
+            st.session_state["current_page"] = "Data Quality"
+            st.rerun()
+
+
+# =============================================================================
+# TAB 5 / EMPTY STATE: UPLOAD & SAMPLE DATASETS
+# =============================================================================
+
+def _render_tab_upload(has_active_dataset: bool = True) -> None:
+    """Render upload file dropzone and sample datasets catalog."""
+    if has_active_dataset:
+        st.info("💡 Uploading or selecting a new dataset will replace the currently active workspace dataset.")
+
+    u_col1, u_col2 = st.columns([6, 6], gap="large")
+
     with u_col1:
+        st.markdown("#### Upload Dataset File")
         uploaded_file = st.file_uploader(
-            "Browse Files (CSV • XLSX • XLS)",
+            "Upload CSV or Excel file",
             type=["csv", "xlsx", "xls"],
-            key="stitch_dataset_file_uploader",
-            help="Upload CSV or Excel files up to 200 MB"
+            key="tab_upload_file_picker",
+            help="Drag and drop CSV or Excel files up to 200 MB"
         )
 
         if uploaded_file is not None:
@@ -138,494 +614,87 @@ def _render_upload_section(has_active_dataset: bool = False) -> None:
                     render_notification(title="Excel Inspection Failed", message=sheet_err, variant="error")
                 elif len(sheet_names) > 1:
                     st.info(f"Excel workbook contains {len(sheet_names)} worksheets:")
-                    selected_sheet = st.selectbox("Select Worksheet", options=sheet_names, key="stitch_excel_sheet_sel")
-                    if st.button("Load Selected Sheet", key="stitch_load_sheet_btn", type="primary", use_container_width=True):
+                    selected_sheet = st.selectbox("Select Worksheet", options=sheet_names, key="tab_excel_sheet_sel")
+                    if st.button("Load Selected Worksheet", key="tab_load_sheet_btn", type="primary", use_container_width=True):
                         with st.spinner("Parsing Excel worksheet..."):
                             parsed_df, err, ftype = load_dataset_file(uploaded_file, filename, sheet_name=selected_sheet)
                             if err:
                                 st.error(err)
                             elif parsed_df is not None:
                                 set_active_dataset(parsed_df, f"{filename} ({selected_sheet})", file_type="Excel")
+                                st.success("Dataset loaded successfully!")
                                 st.rerun()
                 else:
                     sheet_to_load = sheet_names[0] if sheet_names else None
-                    if st.button("Load Excel Dataset", key="stitch_load_single_excel_btn", type="primary", use_container_width=True):
+                    if st.button("Load Excel Dataset", key="tab_load_single_excel_btn", type="primary", use_container_width=True):
                         with st.spinner("Parsing Excel file..."):
                             parsed_df, err, ftype = load_dataset_file(uploaded_file, filename, sheet_name=sheet_to_load)
                             if err:
                                 st.error(err)
                             elif parsed_df is not None:
                                 set_active_dataset(parsed_df, filename, file_type="Excel")
+                                st.success("Dataset loaded successfully!")
                                 st.rerun()
             else:
-                # CSV
-                if st.button("Load Uploaded CSV", key="stitch_load_csv_btn", type="primary", use_container_width=True):
+                if st.button("Load Uploaded CSV", key="tab_load_csv_btn", type="primary", use_container_width=True):
                     with st.spinner("Decoding CSV dataset..."):
                         parsed_df, err, ftype = load_dataset_file(uploaded_file, filename)
                         if err:
                             st.error(err)
                         elif parsed_df is not None:
                             set_active_dataset(parsed_df, filename, file_type="CSV")
+                            st.success("Dataset loaded successfully!")
                             st.rerun()
 
     with u_col2:
-        # Sample dataset quick loader
+        st.markdown("#### Sample Datasets Library")
+        st.markdown(
+            "<span style='color: var(--text-secondary); font-size: 13px;'>"
+            "Select from pre-configured sample datasets to explore Data Studio instantly."
+            "</span>",
+            unsafe_allow_html=True
+        )
+
         sample_catalog = get_available_sample_datasets()
         if sample_catalog:
             sample_keys = list(sample_catalog.keys())
             sample_names = [sample_catalog[k]["name"] for k in sample_keys]
-            
+
             selected_sample_name = st.selectbox(
-                "Or load sample data",
+                "Choose Sample Dataset",
                 options=sample_names,
-                key="stitch_sample_dataset_sel"
+                key="tab_sample_dataset_sel"
             )
             selected_sample_key = next((k for k in sample_keys if sample_catalog[k]["name"] == selected_sample_name), sample_keys[0])
-            
-            if st.button("Load Sample Dataset", key="stitch_load_sample_btn", use_container_width=True):
+            selected_info = sample_catalog[selected_sample_key]
+
+            st.markdown(
+                f"<div style='background: var(--surface-container); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin: 12px 0;'>"
+                f"<div style='font-weight: 600; color: var(--text-primary); font-size: 14px;'>{selected_info['name']}</div>"
+                f"<div style='color: var(--text-secondary); font-size: 12.5px; margin-top: 4px;'>{selected_info.get('description', 'Pre-configured business intelligence dataset.')}</div>"
+                f"<div style='color: var(--text-muted); font-size: 11.5px; margin-top: 6px;' class='font-mono-data'>File: {selected_info['filename']}</div>"
+                f"</div>",
+                unsafe_allow_html=True
+            )
+
+            if st.button("Load This Sample Dataset", key="tab_load_sample_btn", type="primary", use_container_width=True):
                 with st.spinner(f"Loading {selected_sample_name}..."):
                     s_df, s_err, s_type = load_sample_dataset_by_key(selected_sample_key)
                     if s_err:
                         st.error(s_err)
                     elif s_df is not None:
-                        set_active_dataset(s_df, sample_catalog[selected_sample_key]["filename"], file_type=s_type)
+                        set_active_dataset(s_df, selected_info["filename"], file_type=s_type)
+                        st.success(f"{selected_sample_name} loaded successfully!")
                         st.rerun()
 
-    st.markdown("<p class='font-mono-data' style='text-align: center; color: var(--text-muted); margin-top: 4px; margin-bottom: 24px;'>CSV • XLSX • XLS supported</p>", unsafe_allow_html=True)
 
-
-def _render_active_dataset_preview_card(
-    df: pd.DataFrame,
-    metadata: Dict[str, Any],
-    dataset_name: str,
-    file_type: str
-) -> None:
-    """Render the active dataset overview card with live search and high-density tabular preview."""
-    # Session Guard: Log dataset upload metadata once per dataset signature
-    current_sig = f"{dataset_name}_{metadata.get('total_rows', 0)}_{metadata.get('total_columns', 0)}_{metadata.get('memory_bytes', 0)}"
-    if st.session_state.get("logged_dataset_signature") != current_sig:
-        user_info = get_current_user()
-        log_dataset_upload(user_info, metadata, file_type=file_type)
-        st.session_state["logged_dataset_signature"] = current_sig
-
-    rows_cnt = metadata.get("total_rows", len(df))
-    cols_cnt = metadata.get("total_columns", len(df.columns))
-    mem_str = metadata.get("memory_formatted", "0 KB")
-    meta_str = f"{rows_cnt:,} rows &nbsp;|&nbsp; {cols_cnt} columns &nbsp;|&nbsp; {mem_str} &nbsp;|&nbsp; Active Dataset"
-    footer_total_str = f"{rows_cnt:,}"
-
-    # Card Top Header Row
-    top_c1, top_c2 = st.columns([10, 2])
-    with top_c1:
-        st.markdown(
-            textwrap.dedent(f"""
-            <div class="stitch-dataset-title-row">
-                <span class="mat-icon" style="color: var(--accent); font-size: 22px;">table_chart</span>
-                <h2 class="stitch-dataset-name font-headline-sm">{html.escape(dataset_name)}</h2>
-                <span class="stitch-badge-active font-mono-data">
-                    <span style="font-size: 8px;">●</span> Active Dataset
-                </span>
-            </div>
-            <div class="stitch-dataset-meta font-mono-data">
-                {meta_str}
-            </div>
-            """),
-            unsafe_allow_html=True
-        )
-
-    with top_c2:
-        with st.popover("⋮", help="Dataset options"):
-            st.markdown("<span class='font-label-md'>Dataset Options</span>", unsafe_allow_html=True)
-            if st.button("Clear Dataset", key="stitch_clear_active_ds_btn", use_container_width=True):
-                clear_dataset_state()
-                st.rerun()
-            csv_data = df.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                "Export CSV",
-                data=csv_data,
-                file_name=dataset_name if dataset_name.endswith(".csv") else f"{dataset_name}.csv",
-                mime="text/csv",
-                key="stitch_download_csv_btn",
-                use_container_width=True
-            )
-
-    st.markdown("<hr style='border:none; border-top: 1px solid var(--border); margin: 12px 0 16px 0;'>", unsafe_allow_html=True)
-
-    # Sub-header: DATASET PREVIEW & Search rows input
-    prev_hdr_col, search_col = st.columns([6, 6])
-    with prev_hdr_col:
-        st.markdown(
-            "<h3 class='font-label-md' style='color: var(--text-primary); margin: 8px 0 0 0;'>DATASET PREVIEW</h3>",
-            unsafe_allow_html=True
-        )
-    with search_col:
-        search_query = st.text_input(
-            "Search rows...",
-            placeholder="Search rows...",
-            key="stitch_row_search_input",
-            label_visibility="collapsed"
-        )
-
-    # Filter rows based on search query
-    filtered_df = df
-    if search_query:
-        query_str = search_query.strip().lower()
-        mask = filtered_df.astype(str).apply(lambda row: query_str in " ".join(row).lower(), axis=1)
-        filtered_df = filtered_df[mask]
-
-    # Display Top Rows in High-Density Table
-    preview_limit = 5
-    preview_slice = filtered_df.head(preview_limit)
-
-    # Construct HTML Table matching Stitch CSS
-    headers = list(preview_slice.columns)
-    table_rows_html = []
-
-    for _, row in preview_slice.iterrows():
-        cells_html = []
-        for col_name in headers:
-            val = row[col_name]
-            if pd.isna(val) or val is None or str(val).strip() == "":
-                formatted_val = '<span class="null-val">null</span>'
-            else:
-                if isinstance(val, float) and val.is_integer():
-                    val_str = str(int(val))
-                else:
-                    val_str = str(val)
-                # Check if numerical/currency for right alignment
-                is_num = isinstance(val, (int, float, np.number)) or val_str.startswith("$") or val_str.replace(",", "").replace(".", "").isdigit()
-                align_style = "text-align: right;" if is_num else "text-align: left;"
-                formatted_val = f'<span style="{align_style}">{html.escape(val_str)}</span>'
-            cells_html.append(f"<td>{formatted_val}</td>")
-        
-        table_rows_html.append(f"<tr>{''.join(cells_html)}</tr>")
-
-    headers_th = "".join([f"<th>{html.escape(str(h))}</th>" for h in headers])
-    tbody_content = "".join(table_rows_html)
-
-    footer_display_total = f"{len(filtered_df):,}" if search_query else f"{rows_cnt:,}"
-
-    table_markup = (
-        f'<div class="stitch-table-container">'
-        f'<table class="stitch-table">'
-        f'<thead><tr>{headers_th}</tr></thead>'
-        f'<tbody>{tbody_content}</tbody>'
-        f'</table>'
-        f'</div>'
-        f'<div class="stitch-table-footer font-mono-data">'
-        f'Showing 1-{len(preview_slice)} of {footer_display_total} rows'
-        f'</div>'
-    )
-    st.markdown(table_markup, unsafe_allow_html=True)
-
-
-# =============================================================================
-# RIGHT COLUMN: HEALTH, BENTO KPIS, COLUMN SUMMARY & NEXT STEPS
-# =============================================================================
-
-def _render_dataset_health_card(metadata: Dict[str, Any]) -> None:
-    """Render the Dataset Health status card with direct navigation link."""
-    missing_cells = metadata.get("missing_cells", 0)
-    has_issues = missing_cells > 0
-
-    if has_issues:
-        status_title = "Needs attention"
-        status_desc = f"{missing_cells:,} missing cells detected. Review quality report."
-        icon_name = "error_outline"
-        icon_color = "#ef4444"
-        icon_bg = "rgba(239, 68, 68, 0.10)"
-    else:
-        status_title = "Ready for analysis"
-        status_desc = "Dataset integrity checks passed. Schema matches expected format."
-        icon_name = "task_alt"
-        icon_color = "#10b981"
-        icon_bg = "rgba(16, 185, 129, 0.10)"
-
-    st.markdown(
-        textwrap.dedent(f"""
-        <div class="stitch-health-card">
-            <div class="stitch-health-icon-circle" style="background: {icon_bg}; color: {icon_color};">
-                <span class="mat-icon" style="font-size: 22px;">{icon_name}</span>
-            </div>
-            <div style="flex: 1;">
-                <h3 class="stitch-health-title font-headline-sm">{status_title}</h3>
-                <p class="stitch-health-desc font-body-md">{status_desc}</p>
-            </div>
-        </div>
-        """),
-        unsafe_allow_html=True
+def _render_empty_upload_workspace() -> None:
+    """Render full empty state screen when no dataset is loaded."""
+    render_empty_state(
+        title="No Dataset Loaded",
+        description="Upload a CSV or Excel file, or choose from our sample dataset library to begin your analytical workflow.",
+        icon="database"
     )
 
-    if st.button("VIEW FULL DATA QUALITY →", key="stitch_goto_quality_btn", use_container_width=True):
-        st.session_state["current_page"] = "Data Quality"
-        st.rerun()
-
-
-def _render_bento_kpis(metadata: Dict[str, Any]) -> None:
-    """Render 2x2 Bento Grid KPIs: Rows, Columns, Numeric, Missing Values."""
-    total_rows = metadata.get("total_rows", 0)
-    total_cols = metadata.get("total_columns", 0)
-    numeric_count = len(metadata.get("columns_by_type", {}).get("Numeric", []))
-    missing_cnt = metadata.get("missing_cells", 0)
-    missing_pct = metadata.get("missing_percentage", 0.0)
-    rows_val = f"{total_rows:,}"
-    cols_val = str(total_cols)
-    num_val = str(numeric_count)
-    miss_val = f"{missing_cnt:,}"
-    miss_sub = f"({missing_pct:.1f}%)"
-    miss_class = "error" if missing_cnt > 0 else ""
-
-    st.markdown(
-        textwrap.dedent(f"""
-        <div class="stitch-bento-grid">
-            <div class="stitch-bento-box">
-                <span class="stitch-bento-label font-label-md">Rows</span>
-                <span class="stitch-bento-val font-headline-lg">{rows_val}</span>
-            </div>
-            <div class="stitch-bento-box">
-                <span class="stitch-bento-label font-label-md">Columns</span>
-                <span class="stitch-bento-val font-headline-lg">{cols_val}</span>
-            </div>
-            <div class="stitch-bento-box">
-                <span class="stitch-bento-label font-label-md">Numeric</span>
-                <span class="stitch-bento-val font-headline-lg">{num_val}</span>
-            </div>
-            <div class="stitch-bento-box">
-                <span class="stitch-bento-label font-label-md">Missing Values</span>
-                <div style="display: flex; align-items: baseline; gap: 4px;">
-                    <span class="stitch-bento-val {miss_class} font-headline-lg">{miss_val}</span>
-                    <span class="stitch-bento-sub font-mono-data">{miss_sub}</span>
-                </div>
-            </div>
-        </div>
-        """),
-        unsafe_allow_html=True
-    )
-
-
-def _get_column_icon_name(col_name: str, detected_type: str) -> str:
-    """Return appropriate Material Symbol icon name for a given column name and type."""
-    col_lower = col_name.lower()
-    if "id" in col_lower or "key" in col_lower or "code" in col_lower:
-        return "key"
-    if "age" in col_lower or "count" in col_lower or "qty" in col_lower or "num" in col_lower:
-        return "tag"
-    if "income" in col_lower or "price" in col_lower or "salary" in col_lower or "sales" in col_lower or "revenue" in col_lower:
-        return "payments"
-    if "gender" in col_lower or "category" in col_lower or "type" in col_lower:
-        return "category"
-    if "date" in col_lower or "time" in col_lower or "year" in col_lower:
-        return "calendar_today"
-    if "loc" in col_lower or "city" in col_lower or "state" in col_lower or "country" in col_lower:
-        return "location_on"
-    
-    # Fallback by detected semantic type
-    if detected_type == "Numeric":
-        return "tag"
-    elif detected_type == "Date/Time":
-        return "calendar_today"
-    elif detected_type == "Boolean":
-        return "check_box"
-    return "key"
-
-
-def _render_column_summary_card(metadata: Dict[str, Any]) -> None:
-    """Render the Column Summary card with semantic type pills, icons, and null indicators."""
-    details = metadata.get("column_details", [])
-    
-    # Header with title and view all toggle
-    hdr_c1, hdr_c2 = st.columns([7, 5])
-    with hdr_c1:
-        st.markdown(
-            "<h3 class='stitch-sidebar-title font-label-md' style='margin-top: 6px;'>COLUMN SUMMARY</h3>",
-            unsafe_allow_html=True
-        )
-    with hdr_c2:
-        show_all = st.checkbox("View All", key="stitch_toggle_all_cols", value=False)
-
-    display_cols = details if show_all else details[:4]
-    items_html = []
-    for col in display_cols:
-        col_name = col["column_name"]
-        detected_type = col["detected_type"]
-        missing_count = col["missing_count"]
-        icon_name = _get_column_icon_name(col_name, detected_type)
-        if detected_type == "Numeric":
-            pill_type = "INTEGER" if "int" in col["pandas_dtype"].lower() else "FLOAT"
-            pill_class = "stitch-pill-numeric"
-        elif detected_type == "Date/Time":
-            pill_type = "DATETIME"
-            pill_class = "stitch-pill-datetime"
-        elif detected_type == "Boolean":
-            pill_type = "BOOLEAN"
-            pill_class = "stitch-pill-boolean"
-        else:
-            pill_type = "STRING"
-            pill_class = "stitch-pill-string"
-
-        nulls_class = "has-nulls" if missing_count > 0 else ""
-
-        item_row = (
-            f'<div class="stitch-col-item">'
-            f'<div class="stitch-col-left">'
-            f'<span class="mat-icon stitch-step-icon" style="font-size: 16px;">{icon_name}</span>'
-            f'<span class="stitch-col-name font-mono-data" title="{html.escape(col_name)}">{html.escape(col_name)}</span>'
-            f'</div>'
-            f'<span class="stitch-pill {pill_class} font-mono-data">{pill_type}</span>'
-            f'<span class="stitch-col-nulls {nulls_class} font-mono-data">{missing_count}</span>'
-            f'</div>'
-        )
-        items_html.append(item_row)
-
-    legend_html = (
-        '<div style="display: flex; justify-content: space-between; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border);" class="font-mono-data">'
-        '<span style="color: var(--text-muted); font-size: 11px;">Name</span>'
-        '<div style="display: flex; gap: 28px; color: var(--text-muted); font-size: 11px;">'
-        '<span>Type</span>'
-        '<span style="width: 24px; text-align: right;">Nulls</span>'
-        '</div>'
-        '</div>'
-    )
-
-    card_content = (
-        f'<div class="stitch-sidebar-card">'
-        f'{"".join(items_html)}'
-        f'{legend_html}'
-        f'</div>'
-    )
-    st.markdown(card_content, unsafe_allow_html=True)
-
-
-def _render_next_steps_card() -> None:
-    """Render the Next Steps workflow guidance card with 1-click navigation."""
-    st.markdown(
-        textwrap.dedent("""
-        <div class="stitch-sidebar-card">
-            <h3 class="stitch-sidebar-title font-label-md" style="border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 10px;">
-                WORKFLOW NEXT STEP
-            </h3>
-            <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">
-                Dataset uploaded successfully.<br>
-                <strong style="color: var(--text-primary);">Recommended next step:</strong><br>
-                Check your dataset quality for missing values, duplicates, and potential issues.
-            </p>
-        </div>
-        """),
-        unsafe_allow_html=True
-    )
-
-    if st.button("CONTINUE TO DATA QUALITY →", key="stitch_step_quality_primary_btn", type="primary", use_container_width=True):
-        st.session_state["current_page"] = "Data Quality"
-        st.rerun()
-
-    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-    render_ai_context_trigger("Ask AI about this data", intent="dataset_profile", key="ds_ai_ask_btn")
-
-
-
-def _render_empty_sidebar_guide() -> None:
-    """Render helpful starting guide on right column when no dataset is loaded."""
-    st.markdown(
-        textwrap.dedent("""
-        <div class="stitch-sidebar-card">
-            <h3 class="stitch-sidebar-title font-label-md" style="margin-bottom: 8px;">GETTING STARTED</h3>
-            <p class="font-body-md" style="color: var(--text-secondary); margin-bottom: 12px;">
-                Upload a CSV or Excel file on the left or select a sample dataset to unlock Data Studio's analytics suite.
-            </p>
-            <ul style="padding-left: 18px; color: var(--text-secondary); font-size: 13px; line-height: 1.6;">
-                <li>Automatic schema and type detection</li>
-                <li>Missing value & duplicate audits</li>
-                <li>Exploratory data analysis & charting</li>
-                <li>AI-powered natural language insights</li>
-            </ul>
-        </div>
-        """),
-        unsafe_allow_html=True
-    )
-
-
-# =============================================================================
-# DEEP DIVE TECHNICAL TABS
-# =============================================================================
-
-def _render_full_column_schema(metadata: Dict[str, Any]) -> None:
-    """Render comprehensive tabular breakdown of all columns, types, and stats."""
-    details = metadata.get("column_details", [])
-    if not details:
-        st.info("No column schema details available.")
-        return
-
-    table_data = []
-    for c in details:
-        table_data.append({
-            "Column": c["column_name"],
-            "Semantic Type": c["detected_type"],
-            "Dtype": c["pandas_dtype"],
-            "Non-Null Count": f"{c['non_null_count']:,}",
-            "Missing Count": f"{c['missing_count']:,}",
-            "Missing %": f"{c['missing_percentage']:.2f}%",
-            "Unique Count": f"{c['unique_count']:,}",
-            "Sample Preview": c["sample_preview"]
-        })
-
-    st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
-
-
-def _render_semantic_datatypes_tab(df: pd.DataFrame, metadata: Dict[str, Any]) -> None:
-    """Render classification breakdown across all columns."""
-    by_type = metadata.get("columns_by_type", {})
-    for type_name in ["Numeric", "Categorical", "Date/Time", "Text", "Boolean"]:
-        cols = by_type.get(type_name, [])
-        with st.expander(f"{type_name} Columns ({len(cols)})", expanded=len(cols) > 0):
-            if cols:
-                items = []
-                for c in cols:
-                    sample_vals = df[c].dropna().head(3).tolist()
-                    sample_str = ", ".join([str(v) for v in sample_vals]) if sample_vals else "—"
-                    items.append({
-                        "Column": c,
-                        "Pandas Dtype": str(df[c].dtype),
-                        "Unique Values": f"{df[c].nunique():,}",
-                        "Sample Values": sample_str
-                    })
-                st.dataframe(pd.DataFrame(items), use_container_width=True, hide_index=True)
-            else:
-                st.caption(f"No {type_name.lower()} columns detected.")
-
-
-def _render_missing_and_duplicates_tab(df: pd.DataFrame, metadata: Dict[str, Any]) -> None:
-    """Render missing data summary and duplicate row analysis."""
-    c1, c2 = st.columns(2, gap="medium")
-    with c1:
-        st.markdown("#### Missing Values Breakdown")
-        missing_cnt = metadata.get("missing_cells", 0)
-        missing_pct = metadata.get("missing_percentage", 0.0)
-        if missing_cnt == 0:
-            st.success("Zero missing values detected across all columns.")
-        else:
-            st.warning(f"{missing_cnt:,} missing cells ({missing_pct:.2f}% of dataset).")
-            missing_cols = [c for c in metadata.get("column_details", []) if c["missing_count"] > 0]
-            if missing_cols:
-                st.dataframe(pd.DataFrame([
-                    {"Column": c["column_name"], "Missing": c["missing_count"], "Missing %": f"{c['missing_percentage']:.2f}%"}
-                    for c in missing_cols
-                ]), use_container_width=True, hide_index=True)
-
-    with c2:
-        st.markdown("#### Duplicate Rows Check")
-        dup_cnt = metadata.get("duplicate_rows", 0)
-        dup_pct = metadata.get("duplicate_percentage", 0.0)
-        if dup_cnt == 0:
-            st.success("No duplicate rows found. Every record is unique.")
-        else:
-            st.warning(f"{dup_cnt:,} duplicate rows detected ({dup_pct:.2f}%).")
-            if df is not None:
-                dup_mask = df.duplicated(keep=False)
-                dup_df = df[dup_mask]
-                if not dup_df.empty:
-                    st.markdown(f"**Duplicate Records Preview ({len(dup_df):,} occurrences):**")
-                    st.dataframe(dup_df, use_container_width=True, hide_index=False)
-                    if st.button("Deduplicate in Data Preparation →", key="prof_dup_prep_action_btn", type="primary", use_container_width=True):
-                        st.session_state["prep_suggested_action"] = "duplicates"
-                        st.session_state["current_page"] = "Data Preparation"
-                        st.rerun()
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    _render_tab_upload(has_active_dataset=False)
