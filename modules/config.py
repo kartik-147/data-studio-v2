@@ -24,22 +24,57 @@ NAV_PAGE_ICONS: Dict[str, str] = {
     "Activity": "activity",
 }
 
-# Canonical Navigation Groups and Pages
+# Canonical Navigation Groups and Pages (Organized by Functional Domain)
 NAV_GROUPS: Dict[str, List[str]] = {
-    "WORKSPACE": [
+    "DATA FOUNDATION": [
         "Overview",
         "Dataset",
         "Data Quality",
+    ],
+    "TRANSFORM & EXPLORE": [
         "Data Preparation",
         "EDA",
+    ],
+    "VISUALS & INTELLIGENCE": [
         "Visualization",
         "Dashboard",
         "AI Analyst",
     ],
-    "SYSTEM": [
+    "SYSTEM & TELEMETRY": [
         "Settings",
         "Admin Analytics"
     ]
+}
+
+FUNCTIONAL_CATEGORIES: Dict[str, Dict[str, Any]] = {
+    "DATA FOUNDATION": {
+        "title": "Data Foundation & Health",
+        "description": "Multi-format ingestion, schema classification, memory profiling, and 5-dimension quality audits.",
+        "icon": "database",
+        "badge": "FOUNDATION",
+        "pages": ["Overview", "Dataset", "Data Quality"]
+    },
+    "TRANSFORM & EXPLORE": {
+        "title": "Transform & Exploratory Analysis",
+        "description": "Interactive missing value imputation, outlier handling, type conversions, and statistical distribution tests.",
+        "icon": "wrench",
+        "badge": "TRANSFORM",
+        "pages": ["Data Preparation", "EDA"]
+    },
+    "VISUALS & INTELLIGENCE": {
+        "title": "Visuals & AI Intelligence",
+        "description": "25-chart BI studio, automated executive dashboards, and multi-turn conversational AI reasoning.",
+        "icon": "sparkles",
+        "badge": "INTELLIGENCE",
+        "pages": ["Visualization", "Dashboard", "AI Analyst"]
+    },
+    "SYSTEM & TELEMETRY": {
+        "title": "System & Telemetry",
+        "description": "Appearance preferences, memory controls, and admin telemetry monitoring.",
+        "icon": "settings",
+        "badge": "SYSTEM",
+        "pages": ["Settings", "Admin Analytics"]
+    }
 }
 
 ALL_PAGES: List[str] = [
@@ -51,61 +86,71 @@ PAGE_METADATA: Dict[str, Dict[str, str]] = {
         "title": "Overview",
         "subtitle": "Intelligent control center, workspace summary, and workflow progress.",
         "icon": "home",
-        "group": "WORKSPACE"
+        "group": "DATA FOUNDATION",
+        "category_badge": "FOUNDATION"
     },
     "Dataset": {
-        "title": "Dataset",
+        "title": "Dataset Workspace",
         "subtitle": "Upload, inspect, and profile your dataset before analysis.",
         "icon": "database",
-        "group": "WORKSPACE"
+        "group": "DATA FOUNDATION",
+        "category_badge": "FOUNDATION"
     },
     "Data Quality": {
-        "title": "Data Quality",
+        "title": "Data Quality Intelligence",
         "subtitle": "Understand the health, completeness, and reliability of your dataset.",
         "icon": "shield-check",
-        "group": "WORKSPACE"
+        "group": "DATA FOUNDATION",
+        "category_badge": "FOUNDATION"
     },
     "Data Preparation": {
         "title": "Data Preparation",
         "subtitle": "Interactive cleaning, type conversions, missing value handling, and export.",
         "icon": "wrench",
-        "group": "WORKSPACE"
+        "group": "TRANSFORM & EXPLORE",
+        "category_badge": "TRANSFORM"
     },
     "EDA": {
-        "title": "Analyze Data",
+        "title": "Analyze Data (EDA)",
         "subtitle": "Descriptive statistics, skewness, kurtosis, correlation matrices, and outlier detection.",
         "icon": "search",
-        "group": "WORKSPACE"
+        "group": "TRANSFORM & EXPLORE",
+        "category_badge": "EXPLORE"
     },
     "Visualization": {
-        "title": "Visualize Data",
-        "subtitle": "Interactive multi-dimensional chart builder with smart visual recommendations.",
+        "title": "Visualization Studio",
+        "subtitle": "Interactive 25-chart BI builder with smart visual recommendations and vector exports.",
         "icon": "bar-chart-3",
-        "group": "WORKSPACE"
+        "group": "VISUALS & INTELLIGENCE",
+        "category_badge": "VISUALS"
     },
     "Dashboard": {
-        "title": "Dashboard",
+        "title": "Executive Dashboard",
         "subtitle": "Automatically generated insights, key metrics, and executive KPIs.",
         "icon": "layout-dashboard",
-        "group": "WORKSPACE"
+        "group": "VISUALS & INTELLIGENCE",
+        "category_badge": "INTELLIGENCE"
     },
     "AI Analyst": {
-        "title": "AI Analyst",
+        "title": "AI Analyst Workspace",
         "subtitle": "Natural language data exploration, automated insights, and question answering.",
         "icon": "sparkles",
-        "group": "WORKSPACE"
+        "group": "VISUALS & INTELLIGENCE",
+        "category_badge": "AI"
     },
     "Settings": {
         "title": "Settings",
         "subtitle": "Workspace configuration, appearance preferences, and session management.",
         "icon": "settings",
-        "group": "SYSTEM"
+        "group": "SYSTEM & TELEMETRY",
+        "category_badge": "SYSTEM"
     },
     "Admin Analytics": {
         "title": "Admin Analytics",
         "subtitle": "Administrative control panel, cloud activity logs, and system metrics.",
         "icon": "shield",
-        "group": "SYSTEM"
+        "group": "SYSTEM & TELEMETRY",
+        "category_badge": "ADMIN"
     }
 }
 

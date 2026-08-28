@@ -185,30 +185,45 @@ def _render_no_dataset_state() -> None:
 
     with col_preview:
         render_section_header(
-            title="Platform Capabilities",
-            subtitle="What you can do once your data is connected."
+            title="Functional Architecture",
+            subtitle="Three unified analytical pillars from ingestion to intelligence."
         )
 
-        caps = [
-            ("database", "Dataset Workspace", "Schema inspection, memory profiling, and type detection"),
-            ("shield-check", "Data Quality Audit", "Completeness, duplicates, validity, and composite health score"),
-            ("wrench", "Data Preparation", "Missing value imputation, type casting, filtering, and derivations"),
-            ("search", "Analyze (EDA)", "Summary statistics, distributions, skewness, and correlation matrix"),
-            ("bar-chart-3", "Visualize Findings", "Interactive chart builder across 12 chart types and 6 families"),
-            ("layout-dashboard", "Executive Dashboard", "Auto-generated KPIs, trends, categorical comparisons, and insights"),
-            ("sparkles", "AI Analyst", "Natural language data exploration and automated narratives")
+        pillars = [
+            (
+                "database",
+                "1. DATA FOUNDATION & HEALTH",
+                "Dataset Workspace & Data Quality",
+                "Multi-encoding parser, 5-type semantic classification, memory profiling, and deterministic 0–100 quality scoring.",
+                "ds-badge-neutral"
+            ),
+            (
+                "wrench",
+                "2. TRANSFORM & EXPLORE",
+                "Data Preparation & EDA Studio",
+                "Interactive missing value imputation, outlier clipping, type casting, normality tests, and PCA dimensionality reduction.",
+                "ds-badge-numeric"
+            ),
+            (
+                "sparkles",
+                "3. VISUALS & AI INTELLIGENCE",
+                "25-Chart Studio, Dashboard & AI Analyst",
+                "25 vector chart types, auto-generated executive KPI dashboards, multi-turn AI chat, and root-cause driver investigations.",
+                "ds-badge-categorical"
+            )
         ]
 
-        for icon_name, cap_title, cap_desc in caps:
-            icon_svg = get_icon_svg(icon_name, 14)
+        for icon_name, p_tag, p_title, p_desc, badge_cls in pillars:
+            icon_svg = get_icon_svg(icon_name, 15)
             st.markdown(
                 f"""
-                <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 10px;">
-                    <div style="color: var(--accent); margin-top: 2px;">{icon_svg}</div>
-                    <div>
-                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">{cap_title}</div>
-                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 1px;">{cap_desc}</div>
+                <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 10px; box-shadow: var(--shadow-xs);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                        <span class="ds-badge {badge_cls}" style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.5px;">{p_tag}</span>
+                        <div style="color: var(--accent);">{icon_svg}</div>
                     </div>
+                    <div style="font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px;">{p_title}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.45;">{p_desc}</div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -298,32 +313,38 @@ def _render_active_dataset_state(stage_info: dict) -> None:
 
     with col_left:
         render_section_header(
-            title="Analytical Quick Actions",
+            title="Functional Workspace Hub",
             subtitle="Jump directly to any specialized analysis module."
         )
 
-        qa_col1, qa_col2, qa_col3 = st.columns(3)
+        qa_col1, qa_col2, qa_col3 = st.columns(3, gap="small")
         with qa_col1:
-            if st.button("🛡  Data Quality", key="ov_qa_qual", use_container_width=True):
-                st.session_state["current_page"] = "Data Quality"
+            st.markdown("<div style='font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;'>1. Foundation</div>", unsafe_allow_html=True)
+            if st.button("🗄️ Dataset Workspace", key="ov_qa_ds", use_container_width=True):
+                st.session_state["current_page"] = "Dataset"
                 st.rerun()
-            if st.button("🔍  Analyze (EDA)", key="ov_qa_eda", use_container_width=True):
-                st.session_state["current_page"] = "EDA"
+            if st.button("🛡️ Data Quality Audit", key="ov_qa_qual", use_container_width=True):
+                st.session_state["current_page"] = "Data Quality"
                 st.rerun()
 
         with qa_col2:
-            if st.button("🔧  Data Preparation", key="ov_qa_prep", use_container_width=True):
+            st.markdown("<div style='font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;'>2. Transform & Explore</div>", unsafe_allow_html=True)
+            if st.button("🔧 Data Preparation", key="ov_qa_prep", use_container_width=True):
                 st.session_state["current_page"] = "Data Preparation"
                 st.rerun()
-            if st.button("📊  Visualize Data", key="ov_qa_viz", use_container_width=True):
-                st.session_state["current_page"] = "Visualization"
+            if st.button("🔍 Analyze Data (EDA)", key="ov_qa_eda", use_container_width=True):
+                st.session_state["current_page"] = "EDA"
                 st.rerun()
 
         with qa_col3:
-            if st.button("▥  Dashboard", key="ov_qa_dash", use_container_width=True):
+            st.markdown("<div style='font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;'>3. Visuals & AI</div>", unsafe_allow_html=True)
+            if st.button("📊 Visualization Studio", key="ov_qa_viz", use_container_width=True):
+                st.session_state["current_page"] = "Visualization"
+                st.rerun()
+            if st.button("▥ Dashboard Studio", key="ov_qa_dash", use_container_width=True):
                 st.session_state["current_page"] = "Dashboard"
                 st.rerun()
-            if st.button("✦  AI Analyst", key="ov_qa_ai", use_container_width=True):
+            if st.button("✨ AI Analyst", key="ov_qa_ai", use_container_width=True):
                 st.session_state["current_page"] = "AI Analyst"
                 st.rerun()
 
