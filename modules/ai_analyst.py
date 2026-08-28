@@ -153,16 +153,33 @@ def _render_ai_context_bar(
         ac1, ac2 = st.columns([6, 6])
         with ac1:
             with st.popover("⚙️ AI Configuration", use_container_width=True):
-                st.markdown("<span style='font-weight: 600; font-size: 13px;'>Generative AI API Settings</span>", unsafe_allow_html=True)
-                st.caption("Add a Google Gemini (free) or OpenAI API key to unlock natural language responses in any language.")
+                st.markdown("<div style='font-weight: 600; font-size: 13.5px; margin-bottom: 2px;'>Generative AI Settings</div>", unsafe_allow_html=True)
+                st.caption("Connect Google Gemini (free at aistudio.google.com) or OpenAI to unlock open-ended conversational intelligence.")
 
                 cur_key, cur_prov = get_ai_api_key()
+
+                if cur_key:
+                    st.markdown(
+                        f"<div style='background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: #10b981; margin-bottom: 10px;'>"
+                        f"✨ <strong>{cur_prov.capitalize()} LLM Active</strong>"
+                        f"</div>",
+                        unsafe_allow_html=True
+                    )
+                else:
+                    st.markdown(
+                        "<div style='background: rgba(100, 116, 139, 0.1); border: 1px solid rgba(100, 116, 139, 0.2); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;'>"
+                        "⚡ <strong>Offline Analytics Engine Active</strong>"
+                        "</div>",
+                        unsafe_allow_html=True
+                    )
+
                 input_key = st.text_input(
                     "API Key",
                     value="",
                     type="password",
-                    placeholder="•••••••• (Key Active)" if cur_key else "Paste Gemini / OpenAI Key...",
-                    key="pop_ai_key_input"
+                    placeholder="•••••••• (Key Active)" if cur_key else "Paste Gemini (AIzaSy...) or OpenAI Key...",
+                    key="pop_ai_key_input",
+                    help="Keys are stored securely in session memory only."
                 )
                 sel_prov = st.selectbox(
                     "Provider",
@@ -178,21 +195,27 @@ def _render_ai_context_bar(
                             set_ai_api_key(input_key.strip(), sel_prov.lower())
                             st.toast(f"{sel_prov} API Key saved successfully!")
                             st.rerun()
-                        elif cur_key:
-                            st.toast("Existing API key remains active.")
                         else:
-                            st.session_state["ai_api_key"] = None
-                            st.toast("Using offline Analytics Engine mode.")
-                            st.rerun()
+                            st.toast("Please enter an API key to save.")
                 with btn_c2:
                     if st.button("Test Key", key="pop_test_key_btn", use_container_width=True):
                         test_k = input_key.strip() or cur_key or ""
-                        with st.spinner("Testing API connection..."):
-                            ok, msg = test_ai_connection(test_k, sel_prov.lower())
-                            if ok:
-                                st.success(msg)
-                            else:
-                                st.error(msg)
+                        if not test_k:
+                            st.warning("Please enter or save an API key to test.")
+                        else:
+                            with st.spinner("Testing API connection..."):
+                                ok, msg = test_ai_connection(test_k, sel_prov.lower())
+                                if ok:
+                                    st.success(msg)
+                                else:
+                                    st.error(msg)
+
+                if cur_key:
+                    st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+                    if st.button("Remove Key (Use Offline Engine)", key="pop_clear_key_btn", use_container_width=True):
+                        set_ai_api_key(None, "gemini")
+                        st.toast("Switched to built-in Analytics Engine.")
+                        st.rerun()
         with ac2:
             if st.button("Clear Chat History", key="ctx_clear_chat_btn", use_container_width=True):
                 st.session_state["ai_chat_history"] = []

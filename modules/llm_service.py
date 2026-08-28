@@ -72,11 +72,19 @@ def get_ai_api_key() -> Tuple[Optional[str], str]:
     Retrieve active API key and provider from session state, st.secrets (recursively), or environment.
     Returns (api_key, provider_name).
     """
-    # 1. Session State (User entered directly in UI)
-    session_key = st.session_state.get("ai_api_key")
     provider = st.session_state.get("ai_provider", "gemini").lower()
-    if session_key and str(session_key).strip():
-        return str(session_key).strip(), provider
+
+    # If user explicitly cleared or chose offline mode in this session
+    if st.session_state.get("ai_api_key_cleared") is True:
+        return None, provider
+
+    # 1. Session State (User entered directly in UI)
+    if "ai_api_key" in st.session_state:
+        session_key = st.session_state.get("ai_api_key")
+        if session_key and str(session_key).strip():
+            return str(session_key).strip(), provider
+        elif session_key is None:
+            return None, provider
 
     # 2. Streamlit Cloud Secrets (st.secrets) — deep recursive search
     try:
@@ -99,10 +107,15 @@ def get_ai_api_key() -> Tuple[Optional[str], str]:
     return None, provider
 
 
-def set_ai_api_key(api_key: str, provider: str = "gemini") -> None:
-    """Store the user-supplied API key in session state."""
-    st.session_state["ai_api_key"] = api_key.strip()
-    st.session_state["ai_provider"] = provider.lower()
+def set_ai_api_key(api_key: Optional[str], provider: str = "gemini") -> None:
+    """Store or clear the user-supplied API key in session state."""
+    if api_key and str(api_key).strip():
+        st.session_state["ai_api_key"] = str(api_key).strip()
+        st.session_state["ai_provider"] = provider.lower()
+        st.session_state["ai_api_key_cleared"] = False
+    else:
+        st.session_state["ai_api_key"] = None
+        st.session_state["ai_api_key_cleared"] = True
 
 
 # ─────────────────────────────────────────────────────────────────────────────
