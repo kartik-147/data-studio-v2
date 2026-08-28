@@ -290,7 +290,7 @@ def _render_chat_tab(df: pd.DataFrame, metadata: Dict[str, Any], dataset_name: s
 
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
-    # Render turns in reverse chronological order (newest on top) or standard order
+    # Render turns in reverse chronological order (newest on top)
     for t_idx, turn in enumerate(reversed(history)):
         q = turn.get("question", "")
         ans = turn.get("answer", "")
@@ -302,54 +302,53 @@ def _render_chat_tab(df: pd.DataFrame, metadata: Dict[str, Any], dataset_name: s
         # User Question Bubble
         st.markdown(
             f"""
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-                <div style="background: var(--surface-container-high); border: 1px solid var(--border); border-radius: 12px 12px 2px 12px; padding: 10px 16px; max-width: 80%;">
-                    <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 2px;">YOU</div>
-                    <div style="font-size: 14px; color: var(--text-primary); font-weight: 500;">{html.escape(q)}</div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 12px; margin-bottom: 8px;">
+                <div style="background: var(--surface-container-high); border: 1px solid var(--border); border-radius: 12px 12px 2px 12px; padding: 8px 14px; max-width: 80%;">
+                    <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">YOU</div>
+                    <div style="font-size: 13.5px; color: var(--text-primary); font-weight: 500;">{html.escape(q)}</div>
                 </div>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-        # AI Answer Card
-        source_badge_style = "background: rgba(139, 92, 246, 0.15); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.3);" if is_llm else "background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);"
+        # AI Answer Card in Container
+        source_badge_style = "background: rgba(139, 92, 246, 0.12); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.25);" if is_llm else "background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25);"
         source_badge_tag = "GENERATIVE AI LLM" if is_llm else "ANALYTICS ENGINE"
         source_icon = get_icon_svg("sparkles" if is_llm else "cpu", 11)
 
-        st.markdown(
-            f"""
-            <div class="ds-ai-answer-card" style="margin-bottom: 24px;">
-                <div style="margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-                    <span class="ds-ai-answer-source" style="{source_badge_style}">
+        with st.container(border=True):
+            st.markdown(
+                f"""
+                <div style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="{source_badge_style} display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;">
                         {source_icon}&nbsp; {source_badge_tag} · {html.escape(source)}
                     </span>
                 </div>
-                <div class="ds-ai-answer-text" style="font-size: 14px; line-height: 1.65;">
-            """,
-            unsafe_allow_html=True
-        )
-        st.markdown(ans)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # Attached Dataframe if available
-        if table_df is not None and isinstance(table_df, pd.DataFrame) and not table_df.empty:
-            st.dataframe(table_df, use_container_width=True, hide_index=False)
-
-        # Follow-up Suggestions
-        if followups:
-            st.markdown(
-                "<div style='font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 12px; margin-bottom: 6px;'>Suggested Follow-Ups:</div>",
+                """,
                 unsafe_allow_html=True
             )
-            f_cols = st.columns(len(followups), gap="small")
-            for f_i, f_text in enumerate(followups):
-                with f_cols[f_i]:
-                    if st.button(f_text, key=f"fu_btn_{t_idx}_{f_i}", use_container_width=True):
-                        _execute_ai_query(f_text, df, metadata)
-                        st.rerun()
 
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(ans)
+
+            # Attached Dataframe if available
+            if table_df is not None and isinstance(table_df, pd.DataFrame) and not table_df.empty:
+                st.dataframe(table_df, use_container_width=True, hide_index=False)
+
+            # Follow-up Suggestions
+            if followups:
+                st.markdown(
+                    "<div style='font-size: 11.5px; font-weight: 600; color: var(--text-muted); margin-top: 12px; margin-bottom: 6px;'>Suggested Follow-Ups:</div>",
+                    unsafe_allow_html=True
+                )
+                f_cols = st.columns(min(len(followups), 3), gap="small")
+                for f_i, f_text in enumerate(followups[:3]):
+                    with f_cols[f_i]:
+                        if st.button(f_text, key=f"fu_btn_{t_idx}_{f_i}", use_container_width=True):
+                            _execute_ai_query(f_text, df, metadata)
+                            st.rerun()
+
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
 
 def _execute_ai_query(query: str, df: pd.DataFrame, metadata: Dict[str, Any]) -> None:

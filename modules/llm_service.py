@@ -452,10 +452,12 @@ def _answer_question_deterministic(q: str, df: pd.DataFrame, metadata: Dict[str,
         sample_questions.append("• *'Are there missing values or duplicate rows?'*")
         sample_questions.append("• *'What are the column names and data types?'*")
 
+        sample_text = "\n\n".join(sample_questions)
+
         answer = (
             f"👋 Hello! I am your AI Analyst for **'{dataset_name}'** ({len(df):,} rows × {len(df.columns)} columns).\n\n"
-            f"You can ask me questions about your dataset, for example:\n"
-            + "\n".join(sample_questions) + "\n\n"
+            f"You can ask me questions about your dataset, for example:\n\n"
+            f"{sample_text}\n\n"
             f"💡 **Tip**: Enter your Google Gemini API key in **⚙️ AI Configuration** above to unlock free-form conversational answers in any language!"
         )
         return {
