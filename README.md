@@ -1,35 +1,28 @@
 # 📊 DATA STUDIO v2
 
-> **A modern, deterministic data exploration, automated analytics, and data quality profiling platform built with Python, Streamlit, and Firebase Firestore.**
+> **A modern, deterministic data exploration, automated analytics, visualization studio, and data quality intelligence platform built with Python, Streamlit, Plotly, and Firebase Firestore.**
 
-Inspired by the design aesthetics and engineering rigor of **Linear**, **Stripe**, **Mixpanel**, and **Notion**, Data Studio v2 empowers data scientists, business analysts, and engineering teams to upload, profile, audit, and visualize datasets instantly with zero manual boilerplate.
+Inspired by the design aesthetics and engineering rigor of **Linear**, **Stripe**, **Mixpanel**, and **Notion**, Data Studio v2 empowers data scientists, business analysts, and engineering teams to ingest, profile, clean, analyze, visualize, and ask questions of tabular datasets in real-time with zero manual boilerplate.
 
 ---
 
 ## 💡 Executive Summary
 
-### 1. What is this Web App?
-**Data Studio v2** is a cloud-ready, self-service data intelligence web application that transforms raw, unorganized tabular files (CSV, Excel) into structured analytical workspaces, automated executive dashboards, and transparent data quality scorecards in milliseconds.
+### 1. What is Data Studio v2?
+**Data Studio v2** is an enterprise-grade, cloud-ready data analytics web application that transforms raw, messy tabular files (CSV, Excel) into structured analytical workspaces, automated executive dashboards, 25-chart BI visualization suites, deterministic quality scorecards, and AI-powered natural language insights in milliseconds.
 
-### 2. Why Did We Make It?
-- **The Problem**: Traditional data analysis requires repetitive, manual Python/Pandas boilerplate (writing missing value checks, data type casting, summary statistics, correlation heatmaps) or expensive, heavyweight enterprise BI tools (Tableau, PowerBI) that require complex setup and data pipeline configurations.
-- **The Solution**: Data Studio v2 provides a unified, deterministic environment where uploading a single file instantly triggers automated schema profiling, data health scoring across 5 dimensions, dynamic executive visualizations, and privacy-first cloud activity auditing.
+### 2. Why Was It Built?
+- **The Problem**: Traditional data workflows require repetitive, manual Python/Pandas scripts (missing value checks, type casting, outlier detection, distribution plots, correlation heatmaps) or cumbersome, heavyweight enterprise BI tools (Tableau, PowerBI) that require extensive infrastructure setup and data pipeline engineering.
+- **The Solution**: Data Studio v2 provides a unified, deterministic environment where uploading a single file instantly unlocks automatic schema profiling, 5-dimension health audits, 25 interactive chart types, full ETL preparation with history rollback, multi-turn AI data chat, and privacy-first cloud telemetry.
 
-### 3. How is It Useful For Us?
+### 3. Key Value & Benefits
 - ⚡ **10x Faster Exploratory Data Analysis (EDA)**: Eliminates hours of writing repetitive Pandas profiling scripts.
-- 🛡️ **Deterministic Data Quality Audits**: Surfaces missing rates, duplicates, constant columns, mixed data types, out-of-bound values, and outliers before bad data corrupts production pipelines.
-- 🔒 **Privacy-First & Secure**: User datasets stay strictly in ephemeral application memory; cloud databases (Firebase Firestore) record only high-level structural metadata (schema, dimensions, data types), never raw records.
-- 📈 **Executive-Ready Dashboards**: Automatically detects primary KPIs, feature distributions, and correlation matrices formatted in clean, theme-adaptive vector graphics.
-- 👥 **Enterprise Admin Visibility**: Provides application owners with a dedicated, protected analytics dashboard to track platform usage, active users, and ingestion volumes in real time.
-
-### 4. What Does This Web App Do?
-1. **Multi-Format Ingestion**: Parses CSV and multi-sheet Excel files with multi-encoding fallback (`utf-8`, `latin1`, `cp1252`).
-2. **Semantic Type Classification**: Distinguishes between **Numeric**, **Categorical**, **Date/Time**, **Text**, and **Boolean** columns while preserving high-cardinality IDs.
-3. **Dynamic Dashboard Generation**: Computes primary KPIs, 2x2 visual insight grids, and Pearson correlation matrices on the fly.
-4. **Deterministic 0–100 Data Quality Scoring**: Evaluates dataset health across Completeness, Uniqueness, Consistency, Validity, and Outlier Health.
-5. **Secure Authentication**: Bcrypt 12-round salted password hashing, duplicate prevention, and one-click guest demo sandboxing.
-6. **Cloud Activity Logging**: Automatically tracks logins, sessions, and dataset upload metadata to Google Cloud Firestore with zero duplicate events.
-7. **Protected Admin Analytics**: Real-time administrative portal with date filters, user directories, upload logs, and schema frequency distributions.
+- 🛡️ **Deterministic 0–100 Data Quality Scoring**: Evaluates dataset health across Completeness, Uniqueness, Consistency, Validity, and Outlier Health.
+- 🎨 **Unified 25-Chart Visualization Studio**: Interactive 2-column BI studio with instant customization, facets, color palettes, and PNG/SVG/HTML vector exports.
+- 🧹 **Interactive Data Preparation & Cleaning**: 1-click missing value imputation, outlier handling, type conversions, column derivation, and instant rollback.
+- 🤖 **Multilingual AI Analyst**: Multi-turn data conversation powered by Google Gemini (2.0 Flash / 1.5 Flash / 1.5 Pro) or OpenAI with a built-in zero-key mathematical NLP query engine.
+- 🔒 **Privacy-First & Secure**: User datasets stay strictly in ephemeral memory; cloud databases (Firebase Firestore) record only high-level structural metadata, never raw records.
+- 👥 **Enterprise Admin Visibility**: Protected administrative portal with date filters, user directories, upload logs, and schema frequency telemetry in real time.
 
 ---
 
@@ -37,20 +30,22 @@ Inspired by the design aesthetics and engineering rigor of **Linear**, **Stripe*
 
 | Technology | Role & Purpose |
 | :--- | :--- |
-| **Python 3.10+** | Core computational runtime and statistical backend |
-| **Streamlit (v1.35+)** | Reactive single-page application framework and UI routing |
-| **Firebase Admin SDK & Firestore** | Cloud activity logging, user tracking, and administrative analytics |
-| **Pandas (v2.0+) & NumPy (v1.24+)** | High-performance tabular data manipulation, memory profiling, and vector calculations |
-| **Plotly (v5.20+)** | Interactive, theme-adaptive, high-contrast vector charts and heatmaps |
+| **Python 3.10+** | Core computational runtime, statistical calculation engine, and backend logic |
+| **Streamlit (v1.35+)** | Reactive single-page web framework, component tree, and dynamic routing |
+| **Pandas (v2.0+) & NumPy (v1.24+)** | High-performance tabular manipulation, memory profiling, and vector calculations |
+| **Plotly (v5.20+)** | Interactive, theme-adaptive, high-contrast vector charts, heatmaps, and 3D plots |
+| **SciPy (v1.12+) & Statsmodels** | Distribution testing, Shapiro-Wilk/D'Agostino normality audits, and regression modeling |
+| **Google Gemini API & OpenAI API** | Multilingual generative AI reasoning, automated insights, and narrative storytelling |
+| **Firebase Admin SDK & Firestore** | Cloud activity logging, user tracking, and administrative telemetry |
 | **OpenPyXL (v3.1+) & xlrd (v1.2+)** | Multi-sheet Excel workbook parsing and sheet inspection |
 | **Bcrypt (v4.1+)** | 12-round salted password hashing and timing-attack-safe credential verification |
-| **Vanilla CSS3** | Custom design system, typography hierarchy, and universal Light/Dark mode tokens |
+| **Vanilla CSS3** | Custom design system, BaseWeb UI popovers, and universal Light/Dark mode tokens |
 
 ---
 
 ## 🏛️ System Architecture
 
-Data Studio v2 follows a strict layered architecture with clear separation of concerns between presentation, computational engines, cloud logging, session state, and persistence layers.
+Data Studio v2 follows a strict modular architecture with clean separation of concerns between presentation views, computational engines, cloud telemetry, session management, and persistence layers.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -70,25 +65,29 @@ Data Studio v2 follows a strict layered architecture with clear separation of co
                             ▼                                ▼
                  ┌─────────────────────┐          ┌─────────────────────┐
                  │   modules/auth.py   │          │ modules/ui_component│
-                 │ - bcrypt (12 rounds)│          │ - Sidebar Navigator │
-                 │ - Session Guard     │          │ - Theme Switcher    │
-                 │ - Login Tracker     │          │ - User Identity Bar │
+                 │ - bcrypt (12 rounds)│          │ - Top Navigation    │
+                 │ - Session Guard     │          │ - Theme Engine      │
+                 │ - Activity Tracker  │          │ - Workflow Stepper  │
                  └──────────┬──────────┘          └──────────┬──────────┘
                             │                                │
                             ▼                                ▼
         ┌──────────────────────────────────────┐  ┌──────────────────────────────────────┐
-        │        AUTHENTICATION PERSISTENCE    │  │           ACTIVE WORKSPACE           │
+        │        AUTHENTICATION PERSISTENCE    │  │         MODULAR WORKSPACE SUITE      │
         │                                      │  │                                      │
         │ - user_data/users_db.json            │  │ 1. Overview       (overview.py)      │
-        │ - modules/user_storage.py            │  │ 2. Dashboard      (dashboard.py)     │
-        └──────────────────┬───────────────────┘  │ 3. Dataset        (data_profiler.py) │
-                           │                      │ 4. Data Quality   (data_quality.py)  │
-                           │                      │ 5. Settings       (settings.py)      │
-                           │                      │ 6. Admin Portal   (admin_analytic.py)│
+        │ - modules/user_storage.py            │  │ 2. Dataset        (data_profiler.py) │
+        └──────────────────┬───────────────────┘  │ 3. Data Quality   (data_quality.py)  │
+                           │                      │ 4. Data Prep      (data_preparation) │
+                           │                      │ 5. Analyze (EDA)  (eda_tools.py)     │
+                           │                      │ 6. Visualize      (visualization.py) │
+                           │                      │ 7. Dashboard      (dashboard.py)     │
+                           │                      │ 8. AI Analyst     (ai_analyst.py)    │
+                           │                      │ 9. Settings       (settings.py)      │
+                           │                      │ 10. Admin Portal  (admin_analytics)  │
                            │                      └──────────────────┬───────────────────┘
                            ▼                                         │
         ┌──────────────────────────────────────┐                     │
-        │       CLOUD ACTIVITY & ANALYTICS     │                     │
+        │       CLOUD ACTIVITY & TELEMETRY     │                     │
         │     (modules/firebase_service.py)    │                     │
         │                                      │                     │
         │ ├── users Collection                 │                     ▼
@@ -96,9 +95,11 @@ Data Studio v2 follows a strict layered architecture with clear separation of co
         │ └── dataset_uploads (Metadata Only)  │  │         COMPUTATIONAL ENGINES        │
         └──────────────────┬───────────────────┘  │                                      │
                            ▲                      │ - data_loader.py (ETL & Classifier)  │
-                           │                      │ - dashboard_engine.py (KPIs & Visual)│
-                           └──────────────────────┤ - data_quality_engine.py (5-Dim QA)  │
-                               (Guarded Logging)  └──────────────────────────────────────┘
+                           │                      │ - data_quality_engine.py (5-Dim QA)  │
+                           └──────────────────────┤ - eda_engine.py (Stats & Insights)   │
+                               (Guarded Logging)  │ - visualization_engine.py (25 Charts)│
+                                                  │ - llm_service.py (Gemini & NLP Engine)
+                                                  └──────────────────────────────────────┘
 ```
 
 ---
@@ -108,40 +109,47 @@ Data Studio v2 follows a strict layered architecture with clear separation of co
 ```
 data-studio-v2/
 │
-├── app.py                      # Application entry point, dynamic sidebar, & route dispatcher
+├── app.py                      # Application entry point, dynamic sidebar navigation & route dispatcher
 ├── requirements.txt            # Project dependencies (pinned for stability)
 ├── README.md                   # Complete architectural & platform documentation
-├── .gitignore                  # Git exclusion rules (credentials & secrets protected)
+├── .gitignore                  # Git exclusion rules (credentials & environment protected)
 │
-├── modules/                    # Modular UI views and computational processing engines
+├── modules/                    # Modular UI workspaces and computational processing engines
 │   ├── __init__.py             # Package descriptor
-│   ├── config.py               # Canonical routes, metadata models & session state defaults
-│   ├── firebase_service.py     # Firebase Admin SDK singleton, logging & admin query engine
-│   ├── user_storage.py         # Local user repository interface with atomic writes
-│   ├── auth.py                 # Bcrypt password hashing, session guards & user auth
+│   ├── config.py               # Canonical routes, metadata models, session defaults & workflow helpers
+│   ├── ui_components.py        # Reusable design system cards, headers, BaseWeb CSS & navigation steppers
+│   ├── auth.py                 # Bcrypt password hashing, session guards & user authentication
 │   ├── login_page.py           # Full-screen login, account registration & guest demo interface
-│   ├── data_loader.py          # CSV/XLSX multi-sheet parsing & semantic type classifier
-│   ├── data_profiler.py        # Dataset Workspace with overview, preview, schema, & types
-│   ├── dashboard_engine.py     # Analytical column prioritization & Plotly chart generators
-│   ├── dashboard.py            # Automatic dynamic executive dashboard view
+│   ├── user_storage.py         # Local user repository interface with atomic file writes
+│   ├── firebase_service.py     # Firebase Admin SDK singleton, logging & admin query engine
+│   │
+│   ├── data_loader.py          # Multi-encoding CSV/XLSX parser & semantic 5-type classifier
+│   ├── data_profiler.py        # Dataset Workspace (Preview, Columns, Stat Profiles, Integrity)
 │   ├── data_quality_engine.py  # Deterministic 5-dimension quality auditor & scoring engine
-│   ├── data_quality.py         # Quality workspace with hero score & 6 diagnostic tabs
-│   ├── admin_analytics.py      # Protected admin dashboard for user activity & upload telemetry
-│   ├── overview.py             # Platform welcome hub & dataset upload landing view
-│   ├── data_preparation.py     # Data cleaning & transformation view (Roadmap)
-│   ├── eda_tools.py            # Exploratory Data Analysis & statistics view (Roadmap)
-│   ├── visualization.py        # Interactive visualization builder (Roadmap)
-│   ├── ai_analyst.py           # Natural language data assistant view (Roadmap)
-│   ├── ui_components.py        # Reusable design system cards, headers, & CSS injector
-│   └── settings.py             # Workspace preferences & theme toggles
+│   ├── data_quality.py         # Quality workspace with hero score, gauge & 5 diagnostic tabs
+│   ├── data_preparation.py     # Data cleaning, missing value imputation, outlier clipping & export
+│   │
+│   ├── eda_engine.py           # Statistical calculation engine (Distributions, Correlations, PCA, Outliers)
+│   ├── eda_tools.py            # Exploratory Data Analysis studio with 5 analytical diagnostic tabs
+│   ├── visualization_engine.py # High-contrast, theme-adaptive Plotly generator (25 Chart Types)
+│   ├── visualization.py        # 2-Column BI Visualization Studio with instant customization & exports
+│   ├── dashboard_engine.py     # Primary KPI detection & automatic executive dashboard generator
+│   ├── dashboard.py            # Dynamic executive dashboard view with 2x2 grid & KPI summary cards
+│   │
+│   ├── llm_service.py          # Google Gemini & OpenAI API caller + Deterministic NLP Query Engine
+│   ├── ai_analyst.py           # Interactive AI Workspace (Chat Q&A, Root-Cause Investigation, Story)
+│   ├── admin_analytics.py      # Protected admin dashboard for user activity & telemetry monitoring
+│   ├── overview.py             # Platform welcome hub, feature showcase & dataset upload landing view
+│   └── settings.py             # Workspace preferences, theme toggles & session memory management
 │
 ├── assets/
 │   └── css/
-│       └── style.css           # Design tokens, typography hierarchy, & dark/light themes
+│       └── style.css           # Design tokens, typography hierarchy, universal dark/light mode styles
 │
 ├── sample_data/
-│   ├── saas_sales_data.csv     # Sample SaaS recurring revenue & retention dataset
-│   └── ecommerce_orders.csv    # Sample global e-commerce retail transaction dataset
+│   ├── saas_sales_data.csv     # Sample SaaS recurring revenue, churn & retention dataset
+│   ├── ecommerce_orders.csv    # Sample global e-commerce retail transaction dataset
+│   └── customer_demographics.csv # Sample demographic, income & categorical dataset
 │
 ├── user_data/                  # Local user database repository (git-ignored)
 │   └── users_db.json
@@ -151,69 +159,106 @@ data-studio-v2/
 │   ├── test_module3.py         # Dashboard and KPI engine test suite
 │   ├── test_module4.py         # Data quality scoring & audit test suite
 │   ├── test_module5.py         # Authentication and bcrypt security test suite
-│   └── test_firebase_analytics.py # Cloud tracking, deduplication, & admin auth test suite
+│   ├── test_firebase_analytics.py # Cloud tracking, deduplication & admin auth test suite
+│   ├── test_visualization_engine.py # Comprehensive 25-chart visualization test suite
+│   └── test_ai_analyst.py      # AI Analyst natural language engine & story generator test suite
 │
 └── .streamlit/
-    ├── config.toml             # Streamlit server and theme configuration
+    ├── config.toml             # Streamlit server, port, CORS, and base theme configuration
     └── secrets.toml            # (Local development only - git-ignored)
 ```
 
 ---
 
-## 🔍 Detailed Module Explanations
+## 🔍 Detailed Module Guide
 
-### 🔹 Module 1 — Foundation & Design System
-- **Design Tokens**: Standardized CSS variables for surfaces, borders, and typography (`assets/css/style.css`).
-- **Lucide Vector Icons**: Lightweight SVG paths embedded directly into HTML with zero external font dependencies.
-- **Universal Theme Engine**: Seamless switching between **Dark Mode** (Obsidian/Slate `#0b0f19`) and **Light Mode** (Soft Off-White `#f8fafc`).
-- **Standardized UI Components**: Reusable `render_page_header`, `render_section_header`, `render_metric_card`, `render_notification`, and `render_skeleton_loader`.
+### 🔹 Module 1 — Foundation, Design System & Theme Engine
+- **Curated Palette**: Standardized CSS variables for surfaces, borders, text, and brand accents (`assets/css/style.css`).
+- **BaseWeb Dark Mode Popovers**: Injected BaseWeb portal overrides ensuring selectboxes, multiselect tags, and dropdowns have high contrast in Dark Mode.
+- **Lucide Vector Icons**: Lightweight SVG icons rendered inline with zero external webfont dependencies.
+- **Universal Theme Switcher**: Seamless toggling between **Dark Mode** (Obsidian Slate `#0b0f19`) and **Light Mode** (Crisp Off-White `#f8fafc`).
+- **Standardized Navigation Stepper**: Universal bottom workflow buttons (`render_next_workflow_steps`) across every module to guide users naturally through the analytical journey.
 
-### 🔹 Module 2 — Dataset Ingestion & Workspace
-- **Multi-Encoding Engine**: Robust fallback parser attempting `utf-8`, `latin1`, and `cp1252` encoding.
-- **Excel Multi-Sheet Support**: Detects and exposes worksheets in multi-sheet Excel files for targeted loading.
-- **Semantic Data Classifier**: Automatically assigns columns into 5 semantic categories:
-  - **Numeric**: Continuous metrics, counts, monetary values.
+### 🔹 Module 2 — Dataset Workspace & Profiler (`modules/data_profiler.py`)
+- **Multi-Encoding Parser**: Ingests CSV and Excel files with automatic fallback across `utf-8`, `latin1`, and `cp1252`.
+- **Excel Multi-Sheet Explorer**: Dynamically enumerates sheets in multi-page workbooks for targeted loading.
+- **Semantic 5-Type Classifier**: Automatically infers column semantics:
+  - **Numeric**: Continuous metrics, monetary values, counts.
   - **Categorical**: Discrete classes, status flags, regions.
-  - **Date/Time**: Temporal timestamps and date strings.
-  - **Text**: Free-form textual descriptions and unique identifiers.
-  - **Boolean**: Binary flags (`true/false`, `0/1`, `yes/no`, `active/inactive`).
-- **4-Tab Exploration Workspace**:
-  - `OVERVIEW`: Summary cards, type distribution chips, and dimension breakdown.
-  - `PREVIEW`: Scrollable interactive data table with adjustable row preview limits.
-  - `COLUMNS`: Column-by-column inventory of completeness, uniqueness, and memory size.
-  - `DATA TYPES`: Inferred vs Pandas dtypes and schema type breakdowns.
+  - **Date/Time**: Temporal timestamps and ISO date strings.
+  - **Text**: Free-form text and unique identifiers.
+  - **Boolean**: Binary flags (`true/false`, `0/1`, `yes/no`).
+- **5 Structured Workspace Tabs**:
+  1. `DATA PREVIEW & EXPLORER`: Searchable, filterable interactive table with adjustable sample sizes.
+  2. `COLUMN SCHEMA & ATTRIBUTES`: Complete inventory of completeness, uniqueness, and memory footprint.
+  3. `STATISTICAL PROFILES`: Metric summaries, mean, median, IQR bounds, and cardinality.
+  4. `HEALTH & INTEGRITY`: Quick snapshot of missing cells and duplicate rates.
+  5. `UPLOAD & SAMPLE DATASETS`: Switch datasets or load pre-bundled sample datasets with 1 click.
 
-### 🔹 Module 3 — Automatic Dataset Dashboard
-- **Dynamic Executive KPIs**: Identifies the dataset's primary numeric metric (e.g. Total Revenue, Volume) and computes aggregates, medians, and spreads.
-- **Visual Insights Grid**: 2x2 layout of automated distributions, categorical breakdown bars, and time-series trends.
-- **Correlation Heatmap**: Pearson correlation matrix identifying strong linear relationships between numeric features.
-- **Deterministic Factual Insights**: Algorithmic bullet points highlighting dominant categories, high-variability metrics, and data distributions.
-
-### 🔹 Module 4 — Data Quality Audit Engine
+### 🔹 Module 3 — Data Quality Intelligence (`modules/data_quality.py`)
 - **Deterministic 0–100 Health Score**: Evaluates dataset hygiene across 5 mathematically weighted dimensions:
-  1. **Completeness (30%)**: Missing value ratios and empty column penalties.
-  2. **Uniqueness (20%)**: Duplicate rows and identical column detection.
-  3. **Consistency (20%)**: Constant features (zero variance) and mixed data types.
-  4. **Validity (15%)**: Blank whitespace strings, invalid negative numbers, and out-of-range values.
-  5. **Outlier Health (15%)**: Interquartile range (IQR) detection on numeric distributions.
-- **6 Diagnostic Tabs**: `OVERVIEW`, `MISSING VALUES`, `DUPLICATES`, `DATA CONSISTENCY`, `VALIDITY`, `OUTLIERS`.
-- **Read-Only Invariant**: Audits datasets without altering underlying session data.
+  1. **Completeness (30%)**: Missing value counts, null rates, and blank field penalties.
+  2. **Uniqueness (20%)**: Duplicate rows and identical redundant columns.
+  3. **Consistency (20%)**: Constant zero-variance features and mixed data types.
+  4. **Validity (15%)**: Whitespace strings, invalid negative numbers, and out-of-range values.
+  5. **Outlier Health (15%)**: Interquartile range (IQR 1.5×) anomaly rates.
+- **Hero Score Display**: Visual score gauge with color-coded grade badges (A+ to F).
+- **5 Diagnostic Audit Tabs**: Deep-dive inspection tables for missing value matrices, duplicate rows, column consistency, validation rules, and statistical outlier bounds.
 
-### 🔹 Module 5 — Authentication & Security
-- **Bcrypt Password Security**: 12-round salted bcrypt hashing. Plaintext passwords are never saved.
-- **Account Registration & Validation**: Email regex formatting, minimum 8-character password enforcement, and duplicate account prevention.
-- **Guest Demo Sandboxing**: Single-click guest access enabling exploration without registration.
+### 🔹 Module 4 — Interactive Data Preparation & Cleaning (`modules/data_preparation.py`)
+- **Missing Value Handling**: Impute missing cells via Mean, Median, Mode, Constant Value, or drop null rows/columns.
+- **Outlier Remediation**: Cap outliers at IQR bounds (winsorization) or remove anomalous rows.
+- **Type Conversions**: Cast column data types (e.g. String to DateTime, Float to Integer, String to Categorical).
+- **Column Derivations**: Create new mathematical features, text extractions, and standardized transformations.
+- **Deduplication**: Remove exact duplicate rows with 1 click.
+- **Audit Log & Rollback**: Complete step-by-step transformation history with instant undo/reset capability.
+- **Cleaned Data Export**: Download cleaned datasets in CSV or Excel format.
+
+### 🔹 Module 5 — Exploratory Data Analysis (EDA) Studio (`modules/eda_tools.py`)
+- **5 Diagnostic Analysis Tabs**:
+  1. `UNIVARIATE DISTRIBUTIONS`: Histograms, KDE curves, box plots, and normality test scores (Shapiro-Wilk / D'Agostino).
+  2. `BIVARIATE & MULTIVARIATE`: Scatter plots, hue group coloring, trendlines, and joint distribution hexbins.
+  3. `CORRELATION MATRIX`: Interactive Pearson/Spearman correlation heatmaps and strongest pair extractors.
+  4. `OUTLIER ANALYSIS`: IQR anomaly detection with interactive scatter boundary plots.
+  5. `DIMENSIONALITY REDUCTION`: PCA 2D/3D projection plots showing variance explained.
+- **Automated Statistical Insights**: Algorithmic observations detailing high-skew features, dominant categories, and multicollinearity warnings.
+
+### 🔹 Module 6 — 25-Chart Visualization Studio (`modules/visualization.py`)
+- **2-Column BI Studio Layout**: Left control builder panel + right live interactive canvas.
+- **25 Theme-Adaptive Chart Types**:
+  - *Comparisons & Distributions*: Bar Chart, Grouped Bar, Stacked Bar, Histogram, Box Plot, Violin Plot.
+  - *Trends & Time-Series*: Line Chart, Multi-Line, Area Chart, Stacked Area, Step Line.
+  - *Relationships & Correlation*: Scatter Plot, Bubble Chart, Correlation Heatmap, Density Heatmap, 3D Scatter.
+  - *Proportions & Parts-to-Whole*: Pie Chart, Donut Chart, Treemap, Sunburst Chart, Funnel Chart.
+  - *Financial, Geographical & Specialized*: Candlestick, Radar Chart, Waterfall Chart, Choropleth Map.
+- **Customization Controls**: Color palette picker (Indigo, Emerald, Cyberpunk, Sunset, etc.), facet splits, aggregation functions (Sum, Mean, Median, Min, Max), custom chart heights, and opacity sliders.
+- **Multi-Format Vector Export**: Export charts to PNG, SVG, or interactive standalone HTML.
+
+### 🔹 Module 7 — Automatic Dataset Dashboard (`modules/dashboard.py`)
+- **Dynamic Executive KPIs**: Identifies the dataset's primary numeric metric (e.g. Total Revenue, Active Users) and displays high-impact metric cards.
+- **2x2 Visual Insights Grid**: Four automated charts visualizing distribution, category share, and temporal trends.
+- **Correlation Overview**: Compact correlation matrix highlighting significant statistical relationships.
+- **Automated Summary Bullets**: Clear, fact-checked bullet points summarizing dataset shape, primary category drivers, and distribution variance.
+
+### 🔹 Module 8 — AI Analyst Workspace (`modules/ai_analyst.py` & `modules/llm_service.py`)
+- **3 Analytical Modes**:
+  1. `AI DATA CHAT & Q&A`: Multi-turn conversational interface with Enter-key submission, 1-click suggested prompts, follow-up buttons, and embedded data tables.
+  2. `ROOT-CAUSE INVESTIGATION`: Target metric vs comparison dimension driver analysis with grouped bar charts, correlation drivers, and confidence scoring.
+  3. `EXECUTIVE DATA STORY`: 7-chapter automated narrative briefing summarizing data context, health, preparation, EDA patterns, statistical relationships, outliers, and next steps with 1-click Markdown export.
+- **Multi-Model Generative AI**: Native integration with Google Gemini (`gemini-2.0-flash`, `gemini-1.5-flash`, `gemini-1.5-pro`) and OpenAI (`gpt-4o-mini`) supporting multilingual inquiries in any language (English, Hindi, Spanish, etc.).
+- **Deterministic Natural Language Query Engine**: High-performance offline fallback that computes real mathematical answers directly from dataset memory without requiring an API key.
+
+### 🔹 Module 9 — Authentication & Security (`modules/auth.py`)
+- **Bcrypt 12-Round Password Hashing**: Industry-standard salted cryptographic hashing.
+- **Account Registration & Validation**: Email regex formatting and duplicate prevention.
+- **Guest Demo Sandboxing**: 1-click instant guest access for immediate exploration without signup.
 - **Session Isolation**: Complete session state purge upon signing out.
 
-### 🔹 Module 6 — Firebase Activity Logging & Admin Analytics
-- **Cloud Telemetry**: Records user logins and dataset upload events to **Firebase Firestore**.
-- **Privacy-First Metadata Logging**: Strictly records dataset dimensions, column names, detected data types, missing percentages, and file sizes. **Zero row data or cell contents are ever sent to Firestore.**
-- **Session Deduplication Guards**: Dedicated session state flags (`login_event_logged`, `logged_dataset_signature`) prevent duplicate Firestore writes during normal Streamlit reruns.
-- **Server-Side Admin Authorization**: Protects the **Admin Analytics** view by validating the active user's email against the configured admin secret.
-- **Executive Admin Portal**:
-  - Top 6 KPIs: Registered Users, Total Logins, Total Uploads, Active Users, Today's Logins, Today's Uploads.
-  - Interactive Format Distribution & Ingestion Averages charts.
-  - 4 Audit Tables: `RECENT ACTIVITY` (chronological feed), `USER DIRECTORY`, `DATASET UPLOADS`, and `SCHEMA ANALYTICS`.
+### 🔹 Module 10 — Firebase Activity Logging & Admin Analytics (`modules/admin_analytics.py`)
+- **Cloud Telemetry**: Records user logins and dataset upload events to **Google Cloud Firestore**.
+- **Privacy-First Metadata Logging**: Strictly records dataset dimensions, column names, detected data types, missing percentages, and file sizes. **Zero row records or cell values are ever transmitted to Firestore.**
+- **Session Deduplication**: Dedicated session state flags prevent duplicate Firestore writes during normal Streamlit reruns.
+- **Protected Admin Dashboard**: Real-time administrative portal with date range filters, KPI metrics, user directories, upload logs, and format distribution charts.
 
 ---
 
@@ -226,6 +271,12 @@ Configure your secrets in the Streamlit Cloud Dashboard (**App Settings &rarr; S
 ```toml
 [admin]
 email = "admin@example.com"
+
+# Optional: Google Gemini API Key for AI Analyst Generative Mode
+GEMINI_API_KEY = "AIzaSy..."
+
+# Optional: OpenAI API Key for AI Analyst
+OPENAI_API_KEY = "sk-..."
 
 [firebase]
 type = "service_account"
@@ -268,10 +319,25 @@ pip install -r requirements.txt
 
 ### 4. Run Automated Test Suites
 ```bash
+# Ingestion and schema profiling
 python scratch/test_module2.py
+
+# Dashboard and KPI engine
 python scratch/test_module3.py
+
+# Data quality scoring & 5-dimension audit
 python scratch/test_module4.py
+
+# Authentication and bcrypt security
 python scratch/test_module5.py
+
+# 25-Chart visualization studio engine
+python scratch/test_visualization_engine.py
+
+# AI Analyst NLP engine & story generator
+python scratch/test_ai_analyst.py
+
+# Firebase cloud telemetry & admin auth
 python scratch/test_firebase_analytics.py
 ```
 
@@ -284,9 +350,7 @@ Navigate to `http://localhost:8501` in your browser.
 
 ---
 
-## 🔮 Upcoming Roadmap Modules
+## 📄 License & Acknowledgements
 
-- [ ] **Module 7 — Data Preparation & Transformation**: Missing value imputation, type casting, outlier removal, and export to CSV/Excel.
-- [ ] **Module 8 — Exploratory Data Analysis (EDA)**: Descriptive statistics, skewness, kurtosis, and distribution plots.
-- [ ] **Module 9 — Interactive Visualization Builder**: Multi-axis custom chart designer and facet plots.
-- [ ] **Module 10 — AI Analyst Assistant**: Natural language querying for automated dataset question answering.
+- **License**: MIT Open Source License.
+- **Built with**: Streamlit, Plotly, Pandas, Google Gemini API, and Firebase Firestore.
