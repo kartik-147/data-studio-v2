@@ -4422,3 +4422,129 @@ button:disabled {
   cursor: not-allowed !important;
   box-shadow: none !important;
 }
+
+/* ==========================================================================
+   HARDWARE ACCELERATION & FLUID PERFORMANCE TOKENS
+   ========================================================================== */
+.ds-metric-card,
+.ds-insight-card,
+.ds-welcome-hero,
+.ds-active-banner,
+div[data-testid="stMetric"],
+div[data-testid="stContainer"] {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+/* Plotly fluid scaling & responsive boundary */
+.js-plotly-plot,
+.plotly,
+.plot-container,
+.main-svg {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: var(--radius-md);
+}
+
+/* Dataframe smooth scroll container */
+div[data-testid="stDataFrame"] {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN BREAKPOINTS
+   ========================================================================== */
+
+/* ── Tablet Breakpoint (≤ 1024px) ────────────────────────────────────────── */
+@media screen and (max-width: 1024px) {
+  .ds-page-title {
+    font-size: 20px !important;
+  }
+  
+  .ds-metric-value {
+    font-size: 20px !important;
+  }
+  
+  div[data-testid="column"] {
+    min-width: 0 !important;
+  }
+  
+  .ds-welcome-greeting {
+    font-size: 18px !important;
+  }
+}
+
+/* ── Mobile & Compact Tablet Breakpoint (≤ 768px) ────────────────────────── */
+@media screen and (max-width: 768px) {
+  .ds-page-header {
+    padding-bottom: 8px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .ds-page-title-row {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .ds-page-title {
+    font-size: 18px !important;
+  }
+
+  .ds-page-subtitle {
+    font-size: 12px !important;
+  }
+
+  /* Metric cards compact layout */
+  .ds-metric-card {
+    padding: 10px 12px !important;
+  }
+
+  .ds-metric-value {
+    font-size: 18px !important;
+  }
+
+  .ds-metric-label {
+    font-size: 11px !important;
+  }
+
+  /* Active dataset banner stacking */
+  .ds-active-banner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+  }
+
+  /* Forms and button stretch on mobile */
+  .stButton > button,
+  div[data-testid="stButton"] button {
+    font-size: 12px !important;
+    padding: 6px 10px !important;
+  }
+
+  /* AI Chat bubbles */
+  .ai-chat-user-bubble {
+    max-width: 90% !important;
+    font-size: 12.5px !important;
+  }
+}
+
+/* ── Ultra-Compact Mobile (≤ 480px) ──────────────────────────────────────── */
+@media screen and (max-width: 480px) {
+  .ds-page-title {
+    font-size: 16px !important;
+  }
+  
+  .ds-welcome-greeting {
+    font-size: 16px !important;
+  }
+  
+  .stButton > button,
+  div[data-testid="stButton"] button {
+    font-size: 11px !important;
+    padding: 5px 8px !important;
+  }
+}

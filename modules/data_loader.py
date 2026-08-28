@@ -436,6 +436,7 @@ def get_available_sample_datasets() -> Dict[str, Dict[str, Any]]:
     return {k: v for k, v in catalog.items() if os.path.exists(v["path"])}
 
 
+@st.cache_data(show_spinner=False)
 def load_sample_dataset_by_key(dataset_key: str) -> Tuple[Optional[pd.DataFrame], Optional[str], str]:
     """Load a cataloged sample dataset by key."""
     catalog = get_available_sample_datasets()

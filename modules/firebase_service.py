@@ -297,6 +297,7 @@ def _parse_iso_timestamp(ts_val: Any) -> Optional[datetime.datetime]:
     return None
 
 
+@st.cache_data(ttl=20, show_spinner=False)
 def fetch_admin_analytics(date_filter: str = "All Time") -> Dict[str, Any]:
     """
     Retrieve and compute administrative metrics, distributions, and activity feeds.

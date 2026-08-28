@@ -75,8 +75,14 @@ def render_data_quality_page() -> None:
             st.rerun()
         return
 
-    # 3. Perform Comprehensive Quality Audit
-    audit_report = analyze_data_quality(df, metadata)
+    # 3. Perform Comprehensive Quality Audit (Session-Cached for instant responsiveness)
+    sig = f"{id(df)}_{len(df)}_{len(df.columns)}_{metadata.get('upload_timestamp', '')}"
+    if st.session_state.get("_cached_quality_sig") == sig and st.session_state.get("_cached_quality_audit"):
+        audit_report = st.session_state["_cached_quality_audit"]
+    else:
+        audit_report = analyze_data_quality(df, metadata)
+        st.session_state["_cached_quality_sig"] = sig
+        st.session_state["_cached_quality_audit"] = audit_report
     mark_workflow_step("quality", True)
 
     # 4. Standardized Page Header

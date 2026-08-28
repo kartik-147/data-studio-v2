@@ -282,6 +282,28 @@ def _render_dataset_overview_kpis(df: pd.DataFrame, metadata: Dict[str, Any]) ->
         )
 
 
+def _get_cached_summary_stats(df: pd.DataFrame, numeric_cols: List[str]) -> pd.DataFrame:
+    """Retrieve cached summary statistics or compute deterministically."""
+    sig = f"{id(df)}_{len(df)}_{len(df.columns)}_stats"
+    if st.session_state.get("_eda_stats_sig") == sig and st.session_state.get("_eda_stats_df") is not None:
+        return st.session_state["_eda_stats_df"]
+    res = compute_summary_statistics(df, numeric_cols)
+    st.session_state["_eda_stats_sig"] = sig
+    st.session_state["_eda_stats_df"] = res
+    return res
+
+
+def _get_cached_correlation_matrix(df: pd.DataFrame, numeric_cols: List[str], method: str = "pearson") -> pd.DataFrame:
+    """Retrieve cached correlation matrix or compute deterministically."""
+    sig = f"{id(df)}_{len(df)}_{len(df.columns)}_corr_{method}"
+    if st.session_state.get("_eda_corr_sig") == sig and st.session_state.get("_eda_corr_df") is not None:
+        return st.session_state["_eda_corr_df"]
+    res = compute_correlation_matrix(df, numeric_cols, method=method)
+    st.session_state["_eda_corr_sig"] = sig
+    st.session_state["_eda_corr_df"] = res
+    return res
+
+
 # =============================================================================
 # TAB 1: SUMMARY STATISTICS
 # =============================================================================
@@ -303,8 +325,8 @@ def _render_tab_summary_statistics(df: pd.DataFrame, metadata: Dict[str, Any]) -
         )
         return
 
-    # Compute stats
-    summary_df = compute_summary_statistics(df, numeric_cols)
+    # Compute stats (Session-Cached)
+    summary_df = _get_cached_summary_stats(df, numeric_cols)
 
     # Highlight metrics row
     h1, h2, h3, h4 = st.columns(4)
@@ -458,8 +480,8 @@ def _render_tab_correlation(df: pd.DataFrame, metadata: Dict[str, Any], theme: s
         st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
         show_matrix_table = st.checkbox("Show Correlation Matrix Table", value=False, key="corr_show_table_toggle")
 
-    # Compute correlation matrix
-    corr_matrix = compute_correlation_matrix(df, numeric_cols, method=corr_method.lower())
+    # Compute correlation matrix (Session-Cached)
+    corr_matrix = _get_cached_correlation_matrix(df, numeric_cols, method=corr_method.lower())
 
     if corr_matrix.empty or len(corr_matrix.columns) < 2:
         render_notification(
