@@ -197,65 +197,74 @@ def build_dataset_llm_context(df: pd.DataFrame, metadata: Dict[str, Any]) -> str
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# GEMINI API CALLER (DYNAMIC DISCOVERY & MULTI-MODEL AUTO-FALLBACK)
+# GEMINI API CALLER (MULTI-VERSION & MULTI-MODEL DYNAMIC DISCOVERY)
 # ─────────────────────────────────────────────────────────────────────────────
 
-_GEMINI_MODEL_CACHE: Dict[str, str] = {}
+def _get_gemini_candidate_endpoints(api_key: str) -> List[Tuple[str, str]]:
+    """Discover or build list of valid (api_version, model_name) endpoints for Gemini."""
+    discovered: List[Tuple[str, str]] = []
 
+    # 1. Try ListModels on v1beta and v1
+    for api_ver in ["v1beta", "v1"]:
+        try:
+            list_url = f"https://generativelanguage.googleapis.com/{api_ver}/models?key={api_key}"
+            req = urllib.request.Request(
+                list_url,
+                headers={"User-Agent": "DataStudio/2.0"},
+                method="GET"
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                for m in data.get("models", []):
+                    methods = m.get("supportedGenerationMethods", [])
+                    if "generateContent" in methods:
+                        m_name = m.get("name", "").replace("models/", "")
+                        if m_name:
+                            discovered.append((api_ver, m_name))
+        except Exception:
+            continue
 
-def _resolve_gemini_model(api_key: str) -> str:
-    """Dynamically resolve the best active Gemini model supported by the API key."""
-    if api_key in _GEMINI_MODEL_CACHE:
-        return _GEMINI_MODEL_CACHE[api_key]
-
-    list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
-    preferred_order = [
+    preferred_models = [
         "gemini-2.5-flash",
         "gemini-2.0-flash",
         "gemini-2.0-flash-lite",
         "gemini-1.5-flash",
-        "gemini-1.5-flash-latest",
+        "gemini-1.5-flash-8b",
         "gemini-1.5-pro",
-        "gemini-pro",
+        "gemini-pro"
     ]
 
-    try:
-        req = urllib.request.Request(
-            list_url,
-            headers={"User-Agent": "DataStudio/2.0"},
-            method="GET"
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            available = [
-                m.get("name", "").replace("models/", "")
-                for m in data.get("models", [])
-                if "generateContent" in m.get("supportedGenerationMethods", [])
-            ]
-            for pref in preferred_order:
-                if pref in available:
-                    _GEMINI_MODEL_CACHE[api_key] = pref
-                    return pref
-            if available:
-                _GEMINI_MODEL_CACHE[api_key] = available[0]
-                return available[0]
-    except urllib.error.HTTPError as e:
-        err_body = e.read().decode("utf-8", errors="replace")
-        try:
-            err_json = json.loads(err_body)
-            err_msg = err_json.get("error", {}).get("message", str(e))
-        except Exception:
-            err_msg = str(e)
-        raise RuntimeError(f"Gemini API Error: {err_msg}")
-    except Exception:
-        pass
+    endpoints: List[Tuple[str, str]] = []
+    # Add discovered matching preference
+    for pref in preferred_models:
+        for ver, mod in discovered:
+            if mod == pref and (ver, mod) not in endpoints:
+                endpoints.append((ver, mod))
 
-    return "gemini-2.0-flash"
+    # Add any remaining discovered models
+    for ver, mod in discovered:
+        if (ver, mod) not in endpoints:
+            endpoints.append((ver, mod))
+
+    # Standard fallback endpoints across v1beta and v1
+    fallbacks = [
+        ("v1beta", "gemini-2.5-flash"),
+        ("v1beta", "gemini-2.0-flash"),
+        ("v1beta", "gemini-1.5-flash"),
+        ("v1", "gemini-1.5-flash"),
+        ("v1", "gemini-pro"),
+        ("v1beta", "gemini-pro"),
+    ]
+    for fb in fallbacks:
+        if fb not in endpoints:
+            endpoints.append(fb)
+
+    return endpoints
 
 
 def _call_gemini_api(prompt: str, context: str, api_key: str) -> Dict[str, Any]:
     """
-    Call Google Gemini API with dynamic model discovery and automatic multi-model fallback.
+    Call Google Gemini API with dynamic multi-version discovery and automatic fallback.
     """
     system_instruction = (
         "You are an expert, multilingual AI Data Analyst embedded in Data Studio v2. "
@@ -272,7 +281,7 @@ def _call_gemini_api(prompt: str, context: str, api_key: str) -> Dict[str, Any]:
     try:
         import google.generativeai as genai
         genai.configure(api_key=api_key)
-        sdk_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"]
+        sdk_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash", "gemini-pro"]
         for m_name in sdk_models:
             try:
                 model = genai.GenerativeModel(
@@ -288,28 +297,43 @@ def _call_gemini_api(prompt: str, context: str, api_key: str) -> Dict[str, Any]:
     except Exception:
         pass
 
-    # 2. REST API call with dynamically resolved active model
-    resolved_model = _resolve_gemini_model(api_key)
-    candidate_models = [resolved_model, "gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"]
-    seen = set()
-    models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
-
+    # 2. REST API call with dynamically resolved active endpoints
+    endpoints_to_try = _get_gemini_candidate_endpoints(api_key)
     last_err = None
-    for mod_name in models_to_try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{mod_name}:generateContent?key={api_key}"
-        payload = {
-            "contents": [
-                {
-                    "parts": [
-                        {"text": f"{system_instruction}\n\n--- DATASET CONTEXT ---\n{context}\n\n--- USER QUESTION ---\n{prompt}"}
-                    ]
+
+    for api_ver, mod_name in endpoints_to_try:
+        url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{mod_name}:generateContent?key={api_key}"
+        if api_ver == "v1beta":
+            payload = {
+                "systemInstruction": {
+                    "parts": [{"text": system_instruction}]
+                },
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": f"--- ACTIVE DATASET CONTEXT ---\n{context}\n\n--- USER QUESTION ---\n{prompt}"}
+                        ]
+                    }
+                ],
+                "generationConfig": {
+                    "temperature": 0.3,
+                    "maxOutputTokens": 2048
                 }
-            ],
-            "generationConfig": {
-                "temperature": 0.3,
-                "maxOutputTokens": 2048
             }
-        }
+        else:
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": f"{system_instruction}\n\n--- ACTIVE DATASET CONTEXT ---\n{context}\n\n--- USER QUESTION ---\n{prompt}"}
+                        ]
+                    }
+                ],
+                "generationConfig": {
+                    "temperature": 0.3,
+                    "maxOutputTokens": 2048
+                }
+            }
 
         try:
             req = urllib.request.Request(
@@ -323,8 +347,12 @@ def _call_gemini_api(prompt: str, context: str, api_key: str) -> Dict[str, Any]:
             )
             with urllib.request.urlopen(req, timeout=25) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
-                raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-                return _parse_llm_response(raw_text, f"Google Gemini ({mod_name})")
+                candidates = data.get("candidates", [])
+                if candidates and "content" in candidates[0]:
+                    parts = candidates[0]["content"].get("parts", [])
+                    if parts and "text" in parts[0]:
+                        raw_text = parts[0]["text"]
+                        return _parse_llm_response(raw_text, f"Google Gemini ({mod_name})")
         except urllib.error.HTTPError as e:
             err_body = e.read().decode("utf-8", errors="replace")
             try:
