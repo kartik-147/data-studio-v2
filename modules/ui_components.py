@@ -157,6 +157,13 @@ def load_css(theme: str = "Light") -> None:
             color: #f1f5f9 !important;
         }
 
+        /* Sidebar in Dark Mode */
+        section[data-testid="stSidebar"],
+        [data-testid="stSidebar"] {
+            background-color: #141c2e !important;
+            border-right: 1px solid #1e2d45 !important;
+        }
+
         /* ── All Secondary / Standard Buttons in Dark Mode ─────────── */
         .stButton > button,
         div[data-testid="stButton"] button,

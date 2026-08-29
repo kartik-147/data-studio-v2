@@ -192,29 +192,23 @@ body,
 }
 
 /* ==========================================================================
-   REMOVE / HIDE STREAMLIT SIDEBAR PERMANENTLY (TOP NAVBAR ARCHITECTURE)
+   STREAMLIT HEADER & SIDEBAR CONTROLS
    ========================================================================== */
-section[data-testid="stSidebar"],
-[data-testid="stSidebar"],
-div[data-testid="stSidebarNav"],
-div[data-testid="stSidebarCollapsedControl"],
-div[data-testid="collapsedControl"],
-button[data-testid="stSidebarCollapseButton"] {
+/* Hide Streamlit default auto multi-page file list (our custom categorized nav is used) */
+div[data-testid="stSidebarNav"] {
   display: none !important;
-  width: 0 !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-  opacity: 0 !important;
 }
 
 header[data-testid="stHeader"] {
-  display: none !important;
-  height: 0 !important;
+  background: transparent !important;
+  height: 36px !important;
+  z-index: 99 !important;
 }
 
-div[data-testid="stToolbar"] {
+/* Hide default deploy and toolbar buttons, keep sidebar controls accessible */
+.stDeployButton,
+div[data-testid="stToolbarActions"],
+#MainMenu {
   display: none !important;
 }
 
@@ -222,11 +216,7 @@ footer {
   display: none !important;
 }
 
-#MainMenu {
-  display: none !important;
-}
-
-/* Hide default Streamlit decorations */
+/* Hide default Streamlit top decoration bar */
 div[data-testid="stDecoration"] {
   display: none !important;
 }
