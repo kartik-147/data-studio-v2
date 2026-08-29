@@ -296,8 +296,16 @@ def _render_tab_preview(df: pd.DataFrame, metadata: Dict[str, Any], dataset_name
     # Apply text search filter
     if search_query and search_query.strip():
         query_str = search_query.strip().lower()
-        mask = filtered_df.astype(str).apply(lambda row: query_str in " ".join(row).lower(), axis=1)
-        filtered_df = filtered_df[mask]
+        if not filtered_df.empty and len(filtered_df.columns) > 0:
+            mask = pd.Series(False, index=filtered_df.index, dtype=bool)
+            for i in range(len(filtered_df.columns)):
+                col_series = filtered_df.iloc[:, i]
+                col_mask = col_series.astype(str).str.lower().str.contains(query_str, regex=False, na=False)
+                col_mask = col_mask & (~col_series.isna())
+                mask = mask | col_mask
+            filtered_df = filtered_df[mask]
+        else:
+            filtered_df = filtered_df.iloc[0:0]
 
     # Apply row limits
     total_matching = len(filtered_df)

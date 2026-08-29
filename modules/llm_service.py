@@ -197,13 +197,65 @@ def build_dataset_llm_context(df: pd.DataFrame, metadata: Dict[str, Any]) -> str
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# GEMINI API CALLER (MULTI-MODEL AUTO-FALLBACK)
+# GEMINI API CALLER (DYNAMIC DISCOVERY & MULTI-MODEL AUTO-FALLBACK)
 # ─────────────────────────────────────────────────────────────────────────────
+
+_GEMINI_MODEL_CACHE: Dict[str, str] = {}
+
+
+def _resolve_gemini_model(api_key: str) -> str:
+    """Dynamically resolve the best active Gemini model supported by the API key."""
+    if api_key in _GEMINI_MODEL_CACHE:
+        return _GEMINI_MODEL_CACHE[api_key]
+
+    list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+    preferred_order = [
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite",
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-pro",
+        "gemini-pro",
+    ]
+
+    try:
+        req = urllib.request.Request(
+            list_url,
+            headers={"User-Agent": "DataStudio/2.0"},
+            method="GET"
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            available = [
+                m.get("name", "").replace("models/", "")
+                for m in data.get("models", [])
+                if "generateContent" in m.get("supportedGenerationMethods", [])
+            ]
+            for pref in preferred_order:
+                if pref in available:
+                    _GEMINI_MODEL_CACHE[api_key] = pref
+                    return pref
+            if available:
+                _GEMINI_MODEL_CACHE[api_key] = available[0]
+                return available[0]
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode("utf-8", errors="replace")
+        try:
+            err_json = json.loads(err_body)
+            err_msg = err_json.get("error", {}).get("message", str(e))
+        except Exception:
+            err_msg = str(e)
+        raise RuntimeError(f"Gemini API Error: {err_msg}")
+    except Exception:
+        pass
+
+    return "gemini-2.0-flash"
+
 
 def _call_gemini_api(prompt: str, context: str, api_key: str) -> Dict[str, Any]:
     """
-    Call Google Gemini API with automatic multi-model fallback across SDK and REST.
-    Tries 2.0-flash, 1.5-flash, 1.5-pro, and gemini-2.5-flash endpoints.
+    Call Google Gemini API with dynamic model discovery and automatic multi-model fallback.
     """
     system_instruction = (
         "You are an expert, multilingual AI Data Analyst embedded in Data Studio v2. "
@@ -220,7 +272,7 @@ def _call_gemini_api(prompt: str, context: str, api_key: str) -> Dict[str, Any]:
     try:
         import google.generativeai as genai
         genai.configure(api_key=api_key)
-        sdk_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+        sdk_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"]
         for m_name in sdk_models:
             try:
                 model = genai.GenerativeModel(
@@ -236,18 +288,15 @@ def _call_gemini_api(prompt: str, context: str, api_key: str) -> Dict[str, Any]:
     except Exception:
         pass
 
-    # 2. Fallback: Direct HTTP REST with multi-model fallback
-    candidate_endpoints = [
-        ("v1beta", "gemini-2.0-flash"),
-        ("v1beta", "gemini-1.5-flash"),
-        ("v1beta", "gemini-1.5-flash-latest"),
-        ("v1", "gemini-1.5-flash"),
-        ("v1beta", "gemini-1.5-pro"),
-    ]
+    # 2. REST API call with dynamically resolved active model
+    resolved_model = _resolve_gemini_model(api_key)
+    candidate_models = [resolved_model, "gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"]
+    seen = set()
+    models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
 
     last_err = None
-    for api_ver, mod_name in candidate_endpoints:
-        url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{mod_name}:generateContent?key={api_key}"
+    for mod_name in models_to_try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{mod_name}:generateContent?key={api_key}"
         payload = {
             "contents": [
                 {
@@ -258,7 +307,7 @@ def _call_gemini_api(prompt: str, context: str, api_key: str) -> Dict[str, Any]:
             ],
             "generationConfig": {
                 "temperature": 0.3,
-                "maxOutputTokens": 1024
+                "maxOutputTokens": 2048
             }
         }
 
@@ -802,6 +851,7 @@ def ask_ai_analyst(
     2. If no API key is set or offline, falls back to deterministic Analytics Engine.
     """
     api_key, provider = get_ai_api_key()
+    fallback_reason = None
 
     if api_key:
         context = build_dataset_llm_context(df, metadata)
@@ -811,11 +861,13 @@ def ask_ai_analyst(
             else:
                 return _call_gemini_api(question, context, api_key)
         except Exception as e:
-            err_msg = str(e)
-            st.warning(f"AI LLM query encountered an issue ({err_msg}). Falling back to Analytics Engine.")
+            fallback_reason = str(e)
 
     # Self-contained fallback to deterministic rule-based engine (ZERO circular imports)
-    return _answer_question_deterministic(question, df, metadata)
+    result = _answer_question_deterministic(question, df, metadata)
+    if fallback_reason:
+        result["fallback_warning"] = f"AI LLM query encountered an issue ({fallback_reason}). Fell back to built-in Analytics Engine."
+    return result
 
 
 def test_ai_connection(api_key: Optional[str] = None, provider: str = "gemini") -> Tuple[bool, str]:

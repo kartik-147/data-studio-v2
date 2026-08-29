@@ -36,6 +36,8 @@ from modules.eda_engine import (
     generate_eda_insights,
     generate_categorical_barchart,
 )
+from modules.auth import get_current_user
+from modules.firebase_service import is_admin_user
 from modules.llm_service import (
     ask_ai_analyst,
     get_ai_api_key,
@@ -121,7 +123,10 @@ def _render_ai_context_bar(
     metadata: Dict[str, Any]
 ) -> None:
     """Render compact context bar with active AI engine indicator and config popover."""
-    col_info, col_actions = st.columns([7, 5])
+    user = get_current_user()
+    is_admin = is_admin_user(user)
+
+    col_info, col_actions = st.columns([7, 5] if is_admin else [9, 3])
 
     api_key, provider = get_ai_api_key()
     has_llm = bool(api_key)
@@ -150,73 +155,80 @@ def _render_ai_context_bar(
 
     with col_actions:
         st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
-        ac1, ac2 = st.columns([6, 6])
-        with ac1:
-            with st.popover("⚙️ AI Configuration", use_container_width=True):
-                st.markdown("<div style='font-weight: 600; font-size: 13.5px; margin-bottom: 2px;'>Generative AI Settings</div>", unsafe_allow_html=True)
-                st.caption("Connect Google Gemini (free at aistudio.google.com) or OpenAI to unlock open-ended conversational intelligence.")
+        if is_admin:
+            ac1, ac2 = st.columns([6, 6])
+            with ac1:
+                with st.popover("⚙️ AI Configuration", use_container_width=True):
+                    st.markdown("<div style='font-weight: 600; font-size: 13.5px; margin-bottom: 2px;'>Generative AI Settings</div>", unsafe_allow_html=True)
+                    st.caption("Connect Google Gemini (free at aistudio.google.com) or OpenAI to unlock open-ended conversational intelligence.")
 
-                cur_key, cur_prov = get_ai_api_key()
+                    cur_key, cur_prov = get_ai_api_key()
 
-                if cur_key:
-                    st.markdown(
-                        f"<div style='background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: #10b981; margin-bottom: 10px;'>"
-                        f"✨ <strong>{cur_prov.capitalize()} LLM Active</strong>"
-                        f"</div>",
-                        unsafe_allow_html=True
+                    if cur_key:
+                        st.markdown(
+                            f"<div style='background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: #10b981; margin-bottom: 10px;'>"
+                            f"✨ <strong>{cur_prov.capitalize()} LLM Active</strong>"
+                            f"</div>",
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.markdown(
+                            "<div style='background: rgba(100, 116, 139, 0.1); border: 1px solid rgba(100, 116, 139, 0.2); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;'>"
+                            "⚡ <strong>Offline Analytics Engine Active</strong>"
+                            "</div>",
+                            unsafe_allow_html=True
+                        )
+
+                    input_key = st.text_input(
+                        "API Key",
+                        value="",
+                        type="password",
+                        placeholder="•••••••• (Key Active)" if cur_key else "Paste Gemini (AIzaSy...) or OpenAI Key...",
+                        key="pop_ai_key_input",
+                        help="Keys are stored securely in session memory only."
                     )
-                else:
-                    st.markdown(
-                        "<div style='background: rgba(100, 116, 139, 0.1); border: 1px solid rgba(100, 116, 139, 0.2); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;'>"
-                        "⚡ <strong>Offline Analytics Engine Active</strong>"
-                        "</div>",
-                        unsafe_allow_html=True
+                    sel_prov = st.selectbox(
+                        "Provider",
+                        options=["Gemini", "OpenAI"],
+                        index=0 if cur_prov == "gemini" else 1,
+                        key="pop_ai_provider_sel"
                     )
 
-                input_key = st.text_input(
-                    "API Key",
-                    value="",
-                    type="password",
-                    placeholder="•••••••• (Key Active)" if cur_key else "Paste Gemini (AIzaSy...) or OpenAI Key...",
-                    key="pop_ai_key_input",
-                    help="Keys are stored securely in session memory only."
-                )
-                sel_prov = st.selectbox(
-                    "Provider",
-                    options=["Gemini", "OpenAI"],
-                    index=0 if cur_prov == "gemini" else 1,
-                    key="pop_ai_provider_sel"
-                )
+                    btn_c1, btn_c2 = st.columns(2)
+                    with btn_c1:
+                        if st.button("Save Key", key="pop_save_key_btn", type="primary", use_container_width=True):
+                            if input_key.strip():
+                                set_ai_api_key(input_key.strip(), sel_prov.lower())
+                                st.toast(f"{sel_prov} API Key saved successfully!")
+                                st.rerun()
+                            else:
+                                st.toast("Please enter an API key to save.")
+                    with btn_c2:
+                        if st.button("Test Key", key="pop_test_key_btn", use_container_width=True):
+                            test_k = input_key.strip() or cur_key or ""
+                            if not test_k:
+                                st.warning("Please enter or save an API key to test.")
+                            else:
+                                with st.spinner("Testing API connection..."):
+                                    ok, msg = test_ai_connection(test_k, sel_prov.lower())
+                                    if ok:
+                                        st.success(msg)
+                                    else:
+                                        st.error(msg)
 
-                btn_c1, btn_c2 = st.columns(2)
-                with btn_c1:
-                    if st.button("Save Key", key="pop_save_key_btn", type="primary", use_container_width=True):
-                        if input_key.strip():
-                            set_ai_api_key(input_key.strip(), sel_prov.lower())
-                            st.toast(f"{sel_prov} API Key saved successfully!")
+                    if cur_key:
+                        st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+                        if st.button("Remove Key (Use Offline Engine)", key="pop_clear_key_btn", use_container_width=True):
+                            set_ai_api_key(None, "gemini")
+                            st.toast("Switched to built-in Analytics Engine.")
                             st.rerun()
-                        else:
-                            st.toast("Please enter an API key to save.")
-                with btn_c2:
-                    if st.button("Test Key", key="pop_test_key_btn", use_container_width=True):
-                        test_k = input_key.strip() or cur_key or ""
-                        if not test_k:
-                            st.warning("Please enter or save an API key to test.")
-                        else:
-                            with st.spinner("Testing API connection..."):
-                                ok, msg = test_ai_connection(test_k, sel_prov.lower())
-                                if ok:
-                                    st.success(msg)
-                                else:
-                                    st.error(msg)
-
-                if cur_key:
-                    st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
-                    if st.button("Remove Key (Use Offline Engine)", key="pop_clear_key_btn", use_container_width=True):
-                        set_ai_api_key(None, "gemini")
-                        st.toast("Switched to built-in Analytics Engine.")
-                        st.rerun()
-        with ac2:
+            with ac2:
+                if st.button("Clear Chat History", key="ctx_clear_chat_btn", use_container_width=True):
+                    st.session_state["ai_chat_history"] = []
+                    st.session_state["ai_ask_input"] = ""
+                    st.toast("Chat history cleared.")
+                    st.rerun()
+        else:
             if st.button("Clear Chat History", key="ctx_clear_chat_btn", use_container_width=True):
                 st.session_state["ai_chat_history"] = []
                 st.session_state["ai_ask_input"] = ""
@@ -358,6 +370,10 @@ def _render_chat_tab(df: pd.DataFrame, metadata: Dict[str, Any], dataset_name: s
             if table_df is not None and isinstance(table_df, pd.DataFrame) and not table_df.empty:
                 st.dataframe(table_df, use_container_width=True, hide_index=False)
 
+            # Fallback Notice if LLM failed
+            if turn.get("fallback_warning"):
+                st.caption(f"⚠️ *{turn['fallback_warning']}*")
+
             # Follow-up Suggestions
             if followups:
                 st.markdown(
@@ -378,15 +394,18 @@ def _execute_ai_query(query: str, df: pd.DataFrame, metadata: Dict[str, Any]) ->
     """Execute AI query and append to conversation history."""
     with st.spinner("AI Analyst is examining dataset and preparing response..."):
         result = ask_ai_analyst(query, df, metadata)
+        if result.get("fallback_warning"):
+            st.toast(result["fallback_warning"], icon="⚠️")
         turn_data = {
             "question": query,
             "answer": result.get("answer", ""),
             "source": result.get("source", "Analytics Engine"),
             "is_llm": result.get("is_llm", False),
             "table": result.get("table"),
-            "followups": result.get("followups", [])
+            "followups": result.get("followups", []),
+            "fallback_warning": result.get("fallback_warning")
         }
-        st.session_state["ai_chat_history"].append(turn_data)
+        st.session_state.setdefault("ai_chat_history", []).append(turn_data)
         log_activity(f"AI Analyst: asked '{query[:50]}'", "sparkles")
 
 
