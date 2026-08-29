@@ -4548,3 +4548,292 @@ div[data-testid="stDataFrame"] {
     padding: 5px 8px !important;
   }
 }
+
+/* ==========================================================================
+   LEFT SIDEBAR ARCHITECTURE (240–260px Professional Fixed Sidebar)
+   ========================================================================== */
+section[data-testid="stSidebar"] {
+  width: 250px !important;
+  min-width: 240px !important;
+  max-width: 260px !important;
+  background-color: var(--surface) !important;
+  border-right: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-xs) !important;
+}
+
+section[data-testid="stSidebar"] > div:first-child {
+  padding: 16px 12px 24px 12px !important;
+}
+
+/* Sidebar Brand Header */
+.ds-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 14px 6px;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 10px;
+}
+
+.ds-sidebar-brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border: 1px solid var(--accent-subtle-border);
+}
+
+.ds-sidebar-brand-title {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.ds-sidebar-brand-version {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-container-low);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  margin-left: auto;
+}
+
+/* Group Headers */
+.ds-sidebar-group-title {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 10px 8px 4px 8px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  user-select: none;
+}
+
+/* Sidebar Nav Buttons Override */
+section[data-testid="stSidebar"] div[data-testid="stButton"] {
+  margin-bottom: 2px !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stButton"] button {
+  width: 100% !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  font-family: var(--font-sans) !important;
+  border-radius: 5px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  padding: 0 10px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: var(--text-secondary) !important;
+  box-shadow: none !important;
+  transition: var(--transition-fast) !important;
+  gap: 8px !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {
+  background: var(--surface-hover) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-light) !important;
+}
+
+/* Active Nav Item (Streamlit Primary Button in Sidebar) */
+section[data-testid="stSidebar"] div[data-testid="stButton"] button[kind="primary"] {
+  background: var(--accent-subtle) !important;
+  color: var(--accent) !important;
+  border: 1px solid var(--accent-subtle-border) !important;
+  border-left: 3px solid var(--accent) !important;
+  font-weight: 600 !important;
+}
+
+/* Sidebar Footer */
+.ds-sidebar-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ds-sidebar-user-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 5px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-light);
+  margin-bottom: 6px;
+}
+
+.ds-sidebar-user-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-sidebar-user-status {
+  font-size: 9.5px;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   COMPACT TOP HEADER ARCHITECTURE (56–64px Context Bar)
+   ========================================================================== */
+.ds-top-header {
+  height: 52px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  margin-bottom: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+}
+
+.ds-top-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.ds-top-header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ds-top-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.ds-top-header-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.ds-top-header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1.5;
+}
+
+.ds-top-header-context {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.ds-top-header-context.ds-context-loaded {
+  background: var(--surface-container-low);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.ds-status-dot {
+  color: #10b981;
+  font-size: 8px;
+}
+
+.ds-context-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ds-context-divider {
+  color: var(--text-muted);
+}
+
+.ds-context-stats {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-top-header-context.ds-context-empty {
+  background: var(--surface-container-low);
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+}
+
+.ds-top-header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 1;
+}
+
+.ds-top-header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ds-user-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ds-role-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+}
+
+.ds-role-admin {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+.ds-role-member {
+  background: rgba(14, 165, 233, 0.10);
+  color: #0284c7;
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.ds-role-guest {
+  background: rgba(217, 119, 6, 0.10);
+  color: #d97706;
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}

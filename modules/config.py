@@ -11,69 +11,72 @@ APP_VERSION = "v2.0"
 
 # Icon mapping for navigation items
 NAV_PAGE_ICONS: Dict[str, str] = {
-    "Overview": "home",
-    "Dashboard": "layout-dashboard",
     "Dataset": "database",
-    "Data Quality": "shield-check",
+    "Overview": "layout-dashboard",
     "Data Preparation": "wrench",
-    "EDA": "search",
+    "Data Quality": "shield-check",
+    "Analyze": "activity",
+    "EDA": "activity",
     "Visualization": "bar-chart-3",
+    "Dashboard": "panels-top-left",
     "AI Analyst": "sparkles",
+    "Data Story": "book-open",
     "Settings": "settings",
-    "Admin Analytics": "layers",
+    "Admin Analytics": "shield",
     "Activity": "activity",
 }
 
-# Canonical Navigation Groups and Pages (Organized by Functional Domain)
+# Canonical Navigation Groups and Pages (Organized by Professional Hierarchy)
 NAV_GROUPS: Dict[str, List[str]] = {
-    "DATA FOUNDATION": [
-        "Overview",
+    "WORKSPACE": [
         "Dataset",
-        "Data Quality",
-    ],
-    "TRANSFORM & EXPLORE": [
+        "Overview",
         "Data Preparation",
-        "EDA",
-    ],
-    "VISUALS & INTELLIGENCE": [
+        "Data Quality",
+        "Analyze",
         "Visualization",
         "Dashboard",
-        "AI Analyst",
     ],
-    "SYSTEM & TELEMETRY": [
+    "INTELLIGENCE": [
+        "AI Analyst",
+        "Data Story",
+    ],
+    "SYSTEM": [
         "Settings",
+    ],
+    "ADMINISTRATION": [
         "Admin Analytics"
     ]
 }
 
 FUNCTIONAL_CATEGORIES: Dict[str, Dict[str, Any]] = {
-    "DATA FOUNDATION": {
-        "title": "Data Foundation & Health",
-        "description": "Multi-format ingestion, schema classification, memory profiling, and 5-dimension quality audits.",
+    "WORKSPACE": {
+        "title": "Analytical Workspace",
+        "description": "Dataset management, data preparation, quality audit, exploratory analysis, visualization, and dashboards.",
         "icon": "database",
-        "badge": "FOUNDATION",
-        "pages": ["Overview", "Dataset", "Data Quality"]
+        "badge": "WORKSPACE",
+        "pages": ["Dataset", "Overview", "Data Preparation", "Data Quality", "Analyze", "Visualization", "Dashboard"]
     },
-    "TRANSFORM & EXPLORE": {
-        "title": "Transform & Exploratory Analysis",
-        "description": "Interactive missing value imputation, outlier handling, type conversions, and statistical distribution tests.",
-        "icon": "wrench",
-        "badge": "TRANSFORM",
-        "pages": ["Data Preparation", "EDA"]
-    },
-    "VISUALS & INTELLIGENCE": {
-        "title": "Visuals & AI Intelligence",
-        "description": "25-chart BI studio, automated executive dashboards, and multi-turn conversational AI reasoning.",
+    "INTELLIGENCE": {
+        "title": "Intelligence & Insights",
+        "description": "Conversational AI Analyst and multi-chapter executive data storytelling.",
         "icon": "sparkles",
         "badge": "INTELLIGENCE",
-        "pages": ["Visualization", "Dashboard", "AI Analyst"]
+        "pages": ["AI Analyst", "Data Story"]
     },
-    "SYSTEM & TELEMETRY": {
-        "title": "System & Telemetry",
-        "description": "Appearance preferences, memory controls, and admin telemetry monitoring.",
+    "SYSTEM": {
+        "title": "System Preferences",
+        "description": "Platform settings, theme management, and configurations.",
         "icon": "settings",
         "badge": "SYSTEM",
-        "pages": ["Settings", "Admin Analytics"]
+        "pages": ["Settings"]
+    },
+    "ADMINISTRATION": {
+        "title": "Administration",
+        "description": "System telemetry, user audit trails, and platform analytics.",
+        "icon": "shield",
+        "badge": "ADMIN",
+        "pages": ["Admin Analytics"]
     }
 }
 
@@ -82,74 +85,88 @@ ALL_PAGES: List[str] = [
 ]
 
 PAGE_METADATA: Dict[str, Dict[str, str]] = {
+    "Dataset": {
+        "title": "Dataset",
+        "subtitle": "Ingest, inspect, profile, and manage active datasets.",
+        "icon": "database",
+        "group": "WORKSPACE",
+        "category_badge": "WORKSPACE"
+    },
     "Overview": {
         "title": "Overview",
         "subtitle": "Intelligent control center, workspace summary, and workflow progress.",
-        "icon": "home",
-        "group": "DATA FOUNDATION",
-        "category_badge": "FOUNDATION"
-    },
-    "Dataset": {
-        "title": "Dataset Workspace",
-        "subtitle": "Upload, inspect, and profile your dataset before analysis.",
-        "icon": "database",
-        "group": "DATA FOUNDATION",
-        "category_badge": "FOUNDATION"
-    },
-    "Data Quality": {
-        "title": "Data Quality Intelligence",
-        "subtitle": "Understand the health, completeness, and reliability of your dataset.",
-        "icon": "shield-check",
-        "group": "DATA FOUNDATION",
-        "category_badge": "FOUNDATION"
+        "icon": "layout-dashboard",
+        "group": "WORKSPACE",
+        "category_badge": "WORKSPACE"
     },
     "Data Preparation": {
         "title": "Data Preparation",
-        "subtitle": "Interactive cleaning, type conversions, missing value handling, and export.",
+        "subtitle": "Interactive cleaning, type conversions, missing value handling, and transformation.",
         "icon": "wrench",
-        "group": "TRANSFORM & EXPLORE",
-        "category_badge": "TRANSFORM"
+        "group": "WORKSPACE",
+        "category_badge": "WORKSPACE"
+    },
+    "Data Quality": {
+        "title": "Data Quality",
+        "subtitle": "Assess completeness, consistency, and reliability of your dataset.",
+        "icon": "shield-check",
+        "group": "WORKSPACE",
+        "category_badge": "WORKSPACE"
+    },
+    "Analyze": {
+        "title": "Analyze",
+        "subtitle": "Statistical distributions, correlation matrices, skewness, and outlier detection.",
+        "icon": "activity",
+        "group": "WORKSPACE",
+        "category_badge": "WORKSPACE"
     },
     "EDA": {
-        "title": "Analyze Data (EDA)",
-        "subtitle": "Descriptive statistics, skewness, kurtosis, correlation matrices, and outlier detection.",
-        "icon": "search",
-        "group": "TRANSFORM & EXPLORE",
-        "category_badge": "EXPLORE"
+        "title": "Analyze",
+        "subtitle": "Statistical distributions, correlation matrices, skewness, and outlier detection.",
+        "icon": "activity",
+        "group": "WORKSPACE",
+        "category_badge": "WORKSPACE"
     },
     "Visualization": {
-        "title": "Visualization Studio",
-        "subtitle": "Interactive 25-chart BI builder with smart visual recommendations and vector exports.",
+        "title": "Visualization",
+        "subtitle": "Interactive BI visualization studio with 25+ chart types and vector exports.",
         "icon": "bar-chart-3",
-        "group": "VISUALS & INTELLIGENCE",
-        "category_badge": "VISUALS"
+        "group": "WORKSPACE",
+        "category_badge": "WORKSPACE"
     },
     "Dashboard": {
-        "title": "Executive Dashboard",
-        "subtitle": "Automatically generated insights, key metrics, and executive KPIs.",
-        "icon": "layout-dashboard",
-        "group": "VISUALS & INTELLIGENCE",
-        "category_badge": "INTELLIGENCE"
+        "title": "Dashboard",
+        "subtitle": "Interactive executive KPI summaries and multi-metric analytical views.",
+        "icon": "panels-top-left",
+        "group": "WORKSPACE",
+        "category_badge": "WORKSPACE"
     },
     "AI Analyst": {
-        "title": "AI Analyst Workspace",
-        "subtitle": "Natural language data exploration, automated insights, and question answering.",
+        "title": "AI Analyst",
+        "subtitle": "Conversational data exploration, root-cause investigation, and Q&A.",
         "icon": "sparkles",
-        "group": "VISUALS & INTELLIGENCE",
-        "category_badge": "AI"
+        "group": "INTELLIGENCE",
+        "category_badge": "INTELLIGENCE"
+    },
+    "Data Story": {
+        "title": "Data Story",
+        "subtitle": "Transform complex analytics into an automated, executive-ready narrative briefing.",
+        "icon": "book-open",
+        "group": "INTELLIGENCE",
+        "category_badge": "INTELLIGENCE"
     },
     "Settings": {
         "title": "Settings",
-        "subtitle": "Workspace configuration, appearance preferences, and session management.",
+        "subtitle": "Application configuration, appearance themes, and performance preferences.",
         "icon": "settings",
-        "group": "SYSTEM & TELEMETRY",
+        "group": "SYSTEM",
         "category_badge": "SYSTEM"
     },
     "Admin Analytics": {
         "title": "Admin Analytics",
-        "subtitle": "Administrative control panel, cloud activity logs, and system metrics.",
+        "subtitle": "Platform telemetry, real-time Firestore activity, and user analytics.",
         "icon": "shield",
-        "group": "SYSTEM & TELEMETRY",
+        "group": "ADMINISTRATION",
         "category_badge": "ADMIN"
     }
 }

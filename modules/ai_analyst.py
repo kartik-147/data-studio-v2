@@ -112,6 +112,34 @@ def render_ai_analyst_page() -> None:
     render_next_workflow_steps("AI Analyst")
 
 
+def render_data_story_page() -> None:
+    """Render the Executive Data Story mode directly from the primary navigation."""
+    render_page_header(
+        title="Data Story",
+        subtitle="Transform complex analytics into an automated, executive-ready narrative briefing.",
+        icon="book-open"
+    )
+
+    if not is_dataset_loaded():
+        _render_no_dataset_state()
+        return
+
+    df: pd.DataFrame = st.session_state.get("dataset")
+    metadata: Dict[str, Any] = st.session_state.get("dataset_metadata") or {}
+    dataset_name = st.session_state.get("dataset_name", "dataset.csv")
+    file_type = st.session_state.get("dataset_file_type", "CSV")
+
+    # Top Context Action Bar
+    _render_ai_context_bar(df, dataset_name, file_type, metadata)
+
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    _render_story_tab(df, metadata, dataset_name)
+
+    # Standardized Bottom Workflow Steps
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    render_next_workflow_steps("AI Analyst")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # CONTEXT BAR & AI CONFIG DRAWER
 # ─────────────────────────────────────────────────────────────────────────────

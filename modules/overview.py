@@ -29,13 +29,17 @@ from modules.firebase_service import is_admin_user, fetch_admin_analytics
 
 
 def _get_greeting() -> str:
-    """Return a time-of-day greeting string."""
-    hour = datetime.datetime.now().hour
-    if hour < 12:
+    """Return a time-of-day greeting string adjusted to local timezone (IST UTC+5:30)."""
+    tz = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+    now = datetime.datetime.now(tz)
+    hour = now.hour
+    if 5 <= hour < 12:
         return "Good morning"
-    elif hour < 17:
+    elif 12 <= hour < 17:
         return "Good afternoon"
-    return "Good evening"
+    elif 17 <= hour < 22:
+        return "Good evening"
+    return "Good night"
 
 
 def render_overview_page() -> None:
@@ -319,32 +323,32 @@ def _render_active_dataset_state(stage_info: dict) -> None:
 
         qa_col1, qa_col2, qa_col3 = st.columns(3, gap="small")
         with qa_col1:
-            st.markdown("<div style='font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;'>1. Foundation</div>", unsafe_allow_html=True)
-            if st.button("🗄️ Dataset Workspace", key="ov_qa_ds", use_container_width=True):
+            st.markdown("<div style='font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;'>Workspace</div>", unsafe_allow_html=True)
+            if st.button("Dataset", key="ov_qa_ds", use_container_width=True):
                 st.session_state["current_page"] = "Dataset"
                 st.rerun()
-            if st.button("🛡️ Data Quality Audit", key="ov_qa_qual", use_container_width=True):
+            if st.button("Data Quality", key="ov_qa_qual", use_container_width=True):
                 st.session_state["current_page"] = "Data Quality"
                 st.rerun()
 
         with qa_col2:
-            st.markdown("<div style='font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;'>2. Transform & Explore</div>", unsafe_allow_html=True)
-            if st.button("🔧 Data Preparation", key="ov_qa_prep", use_container_width=True):
+            st.markdown("<div style='font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;'>Transform & Analyze</div>", unsafe_allow_html=True)
+            if st.button("Data Preparation", key="ov_qa_prep", use_container_width=True):
                 st.session_state["current_page"] = "Data Preparation"
                 st.rerun()
-            if st.button("🔍 Analyze Data (EDA)", key="ov_qa_eda", use_container_width=True):
-                st.session_state["current_page"] = "EDA"
+            if st.button("Analyze", key="ov_qa_eda", use_container_width=True):
+                st.session_state["current_page"] = "Analyze"
                 st.rerun()
 
         with qa_col3:
-            st.markdown("<div style='font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;'>3. Visuals & AI</div>", unsafe_allow_html=True)
-            if st.button("📊 Visualization Studio", key="ov_qa_viz", use_container_width=True):
+            st.markdown("<div style='font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;'>Visuals & Intelligence</div>", unsafe_allow_html=True)
+            if st.button("Visualization", key="ov_qa_viz", use_container_width=True):
                 st.session_state["current_page"] = "Visualization"
                 st.rerun()
-            if st.button("▥ Dashboard Studio", key="ov_qa_dash", use_container_width=True):
+            if st.button("Dashboard", key="ov_qa_dash", use_container_width=True):
                 st.session_state["current_page"] = "Dashboard"
                 st.rerun()
-            if st.button("✨ AI Analyst", key="ov_qa_ai", use_container_width=True):
+            if st.button("AI Analyst", key="ov_qa_ai", use_container_width=True):
                 st.session_state["current_page"] = "AI Analyst"
                 st.rerun()
 
