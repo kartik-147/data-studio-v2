@@ -164,6 +164,13 @@ def load_css(theme: str = "Light") -> None:
             border-right: 1px solid #1e2d45 !important;
         }
 
+        section[data-testid="stSidebar"][aria-expanded="false"] {
+            width: 0 !important;
+            min-width: 0 !important;
+            max-width: 0 !important;
+            border: none !important;
+        }
+
         /* ── All Secondary / Standard Buttons in Dark Mode ─────────── */
         .stButton > button,
         div[data-testid="stButton"] button,

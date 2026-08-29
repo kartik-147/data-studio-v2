@@ -4554,12 +4554,49 @@ div[data-testid="stDataFrame"] {
    LEFT SIDEBAR ARCHITECTURE (240–260px Professional Fixed Sidebar)
    ========================================================================== */
 section[data-testid="stSidebar"] {
-  width: 250px !important;
-  min-width: 240px !important;
-  max-width: 260px !important;
   background-color: var(--surface) !important;
   border-right: 1px solid var(--border) !important;
   box-shadow: var(--shadow-xs) !important;
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Expanded Sidebar */
+section[data-testid="stSidebar"][aria-expanded="true"],
+section[data-testid="stSidebar"]:not([aria-expanded="false"]) {
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+  transform: translateX(0) !important;
+}
+
+/* Collapsed Sidebar - ZERO width and cleanly hidden from document flow */
+section[data-testid="stSidebar"][aria-expanded="false"],
+div[data-testid="stSidebar"][aria-expanded="false"] {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: translateX(-100%) !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Position the expand >> button at top-left when collapsed */
+div[data-testid="stSidebarCollapsedControl"],
+div[data-testid="collapsedControl"] {
+  display: block !important;
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  z-index: 999999 !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  box-shadow: var(--shadow-xs) !important;
+  padding: 2px !important;
 }
 
 section[data-testid="stSidebar"] > div:first-child {
