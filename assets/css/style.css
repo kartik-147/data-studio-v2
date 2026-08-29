@@ -183,12 +183,23 @@ body,
   color: var(--text-primary) !important;
 }
 
-.main .block-container {
-  padding-top: 16px !important;
+.main .block-container,
+div[data-testid="stMainBlockContainer"],
+div[data-testid="block-container"],
+section[data-testid="stMain"] .block-container {
+  padding-top: 12px !important;
   padding-bottom: 60px !important;
-  padding-left: 32px !important;
-  padding-right: 32px !important;
-  max-width: 1560px !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+section[data-testid="stMain"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 1 auto !important;
 }
 
 /* ==========================================================================
