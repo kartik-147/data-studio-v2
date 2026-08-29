@@ -780,24 +780,31 @@ def _render_next_actions(report: Dict[str, Any]) -> None:
     score = report["overall_score"]
     
     if score >= 85.0:
+        title = "Quality Validated — Ready for Exploratory Analysis"
         primary_page = "EDA"
         secondary_page = "Visualization"
-        desc = "Your dataset quality is solid. Proceed to Exploratory Data Analysis or build visualizations."
+        desc = "Your dataset quality is solid (Quality Score ≥ 85). Proceed to Exploratory Data Analysis or build visualizations."
     else:
+        title = "Quality Remediation Recommended"
         primary_page = "Data Preparation"
         secondary_page = "EDA"
-        desc = "Review prioritized items in the Decision Queue or open Data Preparation to clean anomalies."
+        desc = "Apply prioritized recommendations from the Decision Queue or use Data Preparation to clean anomalies."
 
     render_next_step_banner(
-        current_page="Data Quality",
-        recommended_next=primary_page,
-        reason=desc
+        title=title,
+        recommendation=desc,
+        primary_action_label=f"Open {primary_page} →",
+        target_page=primary_page,
+        key_prefix="quality_next_step",
+        suggested_actions=[{"label": f"Explore {secondary_page}", "page": secondary_page}]
     )
+
 
     st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
     render_ai_context_trigger("Explain quality results with AI", intent="quality_results", key="qual_ai_btn")
 
     # Dynamic Bottom Next Workflow Steps Section
     render_next_workflow_steps("Data Quality")
+
 
 
