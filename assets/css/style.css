@@ -4897,3 +4897,302 @@ section[data-testid="stSidebar"] div[data-testid="stButton"] > button[kind="prim
   color: #d97706;
   border: 1px solid rgba(217, 119, 6, 0.2);
 }
+
+/* ==========================================================================
+   INTELLIGENT DATA QUALITY DECISION ENGINE & ADVISOR STYLING
+   ========================================================================== */
+.ds-decision-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ds-decision-card:hover {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-sm);
+}
+
+.ds-decision-card.sev-critical {
+  border-left: 4px solid var(--color-error);
+}
+
+.ds-decision-card.sev-high {
+  border-left: 4px solid #f97316;
+}
+
+.ds-decision-card.sev-medium {
+  border-left: 4px solid var(--color-warning);
+}
+
+.ds-decision-card.sev-low {
+  border-left: 4px solid var(--color-info);
+}
+
+.ds-decision-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.ds-decision-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ds-decision-title {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.ds-sev-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.ds-sev-critical {
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+  border: 1px solid var(--color-error-border);
+}
+
+.ds-sev-high {
+  background: rgba(249, 115, 22, 0.12);
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+
+.ds-sev-medium {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border: 1px solid var(--color-warning-border);
+}
+
+.ds-sev-low {
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+  border: 1px solid var(--color-info-border);
+}
+
+.ds-affected-badge {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  background: var(--surface-container-low);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-light);
+}
+
+.ds-recommendation-box {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.ds-rec-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.ds-rec-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.ds-rec-action-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.ds-rec-meta-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ds-conf-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--surface-container);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.ds-risk-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--surface-container);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.ds-decision-why {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.ds-decision-impact {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--surface-container-low);
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px dashed var(--border);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Alternatives Table Styling */
+.ds-alt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 6px;
+  margin-bottom: 8px;
+}
+
+.ds-alt-table th {
+  text-align: left;
+  padding: 6px 8px;
+  background: var(--surface-container-low);
+  color: var(--text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.ds-alt-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.ds-alt-rating {
+  color: #f59e0b;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+/* Preview Modal & Comparison Grid */
+.ds-preview-modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-md);
+}
+
+.ds-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ds-preview-metric {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.ds-preview-metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.ds-preview-metric-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-preview-delta-positive {
+  color: var(--color-success-text);
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.ds-preview-delta-neutral {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+/* Transformation Audit Log */
+.ds-audit-log-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.ds-audit-entry {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ds-audit-entry-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ds-audit-entry-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ds-audit-entry-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
