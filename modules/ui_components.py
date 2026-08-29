@@ -1130,21 +1130,14 @@ def render_page_header(
     icon: Optional[str] = None,
     badge: Optional[str] = None
 ) -> None:
-    """Render a standardized, reusable page-level header component."""
-    icon_html = f'<div class="ds-page-header-icon">{get_icon_svg(icon, 20)}</div>' if icon else ""
-    subtitle_html = f'<p class="ds-page-subtitle">{subtitle}</p>' if subtitle else ""
-    badge_html = f'<span style="font-size:10px;font-weight:700;background:var(--accent-subtle);color:var(--accent);border:1px solid var(--accent-subtle-border);border-radius:3px;padding:2px 8px;letter-spacing:0.04em;">{badge}</span>' if badge else ""
-
+    """Render a clean, non-redundant page subtitle and description beneath the Top Header."""
+    if not subtitle:
+        return
+    badge_html = f'<span style="font-size:10px;font-weight:700;background:var(--accent-subtle);color:var(--accent);border:1px solid var(--accent-subtle-border);border-radius:3px;padding:2px 8px;letter-spacing:0.04em;margin-left:8px;">{badge}</span>' if badge else ""
     html = (
-        f'<div class="ds-page-header">'
-        f'<div class="ds-page-header-main">'
-        f'<div class="ds-page-title-row">'
-        f'{icon_html}'
-        f'<h1 class="ds-page-title">{title}</h1>'
+        f'<div class="ds-page-header-subbar" style="padding: 0 0 12px 0; margin-bottom: 14px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between;">'
+        f'<p class="ds-page-subtitle" style="margin: 0; font-size: 13.5px; color: var(--text-secondary); line-height: 1.4;">{subtitle}</p>'
         f'{badge_html}'
-        f'</div>'
-        f'{subtitle_html}'
-        f'</div>'
         f'</div>'
     )
     st.markdown(html, unsafe_allow_html=True)

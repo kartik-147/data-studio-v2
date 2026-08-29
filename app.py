@@ -95,26 +95,26 @@ def render_sidebar() -> str:
             (
                 "WORKSPACE",
                 [
-                    ("Dataset", "Dataset"),
-                    ("Overview", "Overview"),
-                    ("Data Preparation", "Data Preparation"),
-                    ("Data Quality", "Data Quality"),
-                    ("Analyze", "Analyze"),
-                    ("Visualization", "Visualization"),
-                    ("Dashboard", "Dashboard"),
+                    ("Dataset", "⛁  Dataset"),
+                    ("Overview", "⊞  Overview"),
+                    ("Data Preparation", "⚡  Data Preparation"),
+                    ("Data Quality", "🛡  Data Quality"),
+                    ("Analyze", "📈  Analyze"),
+                    ("Visualization", "📊  Visualization"),
+                    ("Dashboard", "▥  Dashboard"),
                 ]
             ),
             (
                 "INTELLIGENCE",
                 [
-                    ("AI Analyst", "AI Analyst"),
-                    ("Data Story", "Data Story"),
+                    ("AI Analyst", "✦  AI Analyst"),
+                    ("Data Story", "📖  Data Story"),
                 ]
             ),
             (
                 "SYSTEM",
                 [
-                    ("Settings", "Settings"),
+                    ("Settings", "⚙  Settings"),
                 ]
             )
         ]
@@ -124,7 +124,7 @@ def render_sidebar() -> str:
                 (
                     "ADMINISTRATION",
                     [
-                        ("Admin Analytics", "Admin Analytics"),
+                        ("Admin Analytics", "🛡  Admin Analytics"),
                     ]
                 )
             )
