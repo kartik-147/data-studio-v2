@@ -289,6 +289,8 @@ def init_session_state() -> None:
         # Cross-module deep-link hint: set by Data Quality to pre-select a tool in Data Preparation
         # Values: None | "missing" | "duplicates" | "outliers" | "types"
         "prep_suggested_action": None,
+        # Active tab in Data Preparation: "Missing Values" | "Duplicate Rows" | "Outliers & Validity" | "Transformations" | "Preparation History"
+        "prep_active_tab": "Missing Values",
         # Data Story narrative cache (None = not yet generated)
         "ai_story_cache": None,
     }

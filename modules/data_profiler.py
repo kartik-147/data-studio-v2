@@ -563,6 +563,7 @@ def _render_tab_health(df: pd.DataFrame, metadata: Dict[str, Any]) -> None:
 
             if st.button("Impute in Data Preparation →", key="hlth_goto_prep_missing_btn", type="primary", use_container_width=True):
                 st.session_state["prep_suggested_action"] = "missing"
+                st.session_state["prep_active_tab"] = "Missing Values"
                 st.session_state["current_page"] = "Data Preparation"
                 st.rerun()
 
@@ -580,6 +581,7 @@ def _render_tab_health(df: pd.DataFrame, metadata: Dict[str, Any]) -> None:
 
             if st.button("Deduplicate in Data Preparation →", key="hlth_goto_prep_dup_btn", type="primary", use_container_width=True):
                 st.session_state["prep_suggested_action"] = "duplicates"
+                st.session_state["prep_active_tab"] = "Duplicate Rows"
                 st.session_state["current_page"] = "Data Preparation"
                 st.rerun()
 

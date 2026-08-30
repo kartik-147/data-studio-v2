@@ -1,24 +1,19 @@
 """
-DATA STUDIO v2 — Interactive Data Preparation & Transformation Studio (Module 5)
+DATA STUDIO v2 — Interactive Data Preparation & Remediation Studio (Module 5)
 =============================================================================
-Professional, non-destructive data preparation workspace delivering:
-- Dual-State Dataset Architecture (Immutable original vs Interactive working copy)
-- Dynamic Preparation Summary & Real-Time Transformation KPIs
-- Transformation History Logging with 1-Click Undo and Reset All Changes
-- Missing Value Imputation (Mean, Median, Zero, Mode, Unknown, Custom, Drop)
-- Whole-Row and Column-Subset Duplicate Removal
-- Column Management (Rename with validation, Drop, Reorder, Safe Type Casting)
-- Type-Aware Visual Filter Builder with Compound Conditions
-- Persistent Single and Multi-Column Sorting
-- IQR Outlier Inspection, Boundary Capping, and Row Removal
-- Text & String Cleaning (Trim, Case conversions, Find/Replace, Empty handling)
-- Date Parsing and Temporal Component Extraction (Year, Month, Day, DayOfWeek, Quarter)
-- Safe Controlled Column Arithmetic Derivation (Strictly no eval/exec)
-- Side-by-Side Before/After Data Preview and CSV / Excel Exports
-- "Use Prepared Dataset for Analysis" Integration with All Downstream Modules
+Purpose: INVESTIGATE → RECOMMEND → DECIDE → PREVIEW → APPLY → VERIFY
+The central intelligent remediation and decision-making workspace.
+
+Sections:
+1. Missing Values (Intelligent Decision Cards, Alternatives, Simulation Preview, Imputation)
+2. Duplicate Rows (Deduplication Decision, Alternatives, Simulation Preview, Removal)
+3. Outliers & Validity (Domain-aware Outlier Review, Winsorizing/Capping, Value Validity)
+4. Transformations (Columns, Filters, Sorting, Text Cleaning, Dates & Math Derivations)
+5. Preparation History (Audit Timeline, Verified Quality Improvement, 1-Click Undo, Export)
 """
 from typing import Optional, Dict, Any, List, Tuple
 import datetime
+import html
 import pandas as pd
 import numpy as np
 import streamlit as st
@@ -37,7 +32,6 @@ from modules.ui_components import (
     get_type_badge_html
 )
 
-
 from modules.data_loader import (
     create_dataset_metadata,
     get_available_sample_datasets,
@@ -45,6 +39,7 @@ from modules.data_loader import (
     set_active_dataset,
     detect_column_type
 )
+
 from modules.data_preparation_engine import (
     get_missing_values_summary,
     handle_missing_values,
@@ -65,6 +60,18 @@ from modules.data_preparation_engine import (
     export_prepared_excel
 )
 
+from modules.data_quality_engine import (
+    investigate_column_distribution,
+    generate_missing_value_decision,
+    generate_duplicate_decision,
+    generate_outlier_decision,
+    generate_invalid_and_type_decisions,
+    preview_decision_transformation,
+    apply_decision_transformation,
+    verify_decision_impact,
+    analyze_data_quality
+)
+
 
 # =============================================================================
 # SESSION STATE INITIALIZATION & HISTORY MANAGEMENT
@@ -72,7 +79,6 @@ from modules.data_preparation_engine import (
 
 def _init_prep_state() -> None:
     """Initialize Data Preparation session state variables."""
-    # If working copy doesn't exist, initialize from original_dataset or dataset
     if "prep_working_df" not in st.session_state or st.session_state["prep_working_df"] is None:
         source_df = st.session_state.get("original_dataset")
         if source_df is None:
@@ -91,16 +97,25 @@ def _init_prep_state() -> None:
     if "prep_active_filters" not in st.session_state:
         st.session_state["prep_active_filters"] = []
 
+    if "prep_active_tab" not in st.session_state:
+        st.session_state["prep_active_tab"] = "Missing Values"
+
+    if "quality_audit_history" not in st.session_state:
+        st.session_state["quality_audit_history"] = []
+
 
 def _record_transformation(
     new_df: pd.DataFrame,
     trans_type: str,
     description: str,
     before_rows: int,
-    before_cols: int
+    before_cols: int,
+    score_delta: float = 0.0,
+    column: str = "Dataset",
+    strategy: str = "",
+    reason: str = ""
 ) -> None:
-    """Snapshot previous state to undo stack and record transformation in history log."""
-    # Push snapshot to undo stack (limit stack size to 10 to protect memory)
+    """Snapshot previous state to undo stack and record transformation in history logs."""
     current_working = st.session_state.get("prep_working_df")
     if current_working is not None:
         undo_stack: List[pd.DataFrame] = st.session_state.get("prep_undo_stack", [])
@@ -121,10 +136,21 @@ def _record_transformation(
         "rows_before": before_rows,
         "rows_after": after_rows,
         "cols_before": before_cols,
-        "cols_after": after_cols
+        "cols_after": after_cols,
+        "score_delta": score_delta,
+        "column": column,
+        "strategy": strategy,
+        "reason": reason
     }
 
-    st.session_state["prep_history"].append(hist_entry)
+    st.session_state["prep_history"].insert(0, hist_entry)
+
+    # Invalidate cached quality audit so any re-audits reflect the latest transformation
+    st.session_state["_cached_quality_sig"] = None
+    st.session_state["_cached_quality_audit"] = None
+
+    # Central activity log
+    log_activity(f"Data Prep: {description}", "sliders-horizontal")
     st.toast(f"Transformation applied: {description}")
 
 
@@ -137,9 +163,12 @@ def _undo_last_change() -> None:
         st.session_state["prep_working_df"] = prev_df
         history = st.session_state.get("prep_history", [])
         if history:
-            undone = history.pop()
+            undone = history.pop(0)
             st.session_state["prep_history"] = history
             st.toast(f"Undone: {undone['description']}")
+        # Invalidate quality cache
+        st.session_state["_cached_quality_sig"] = None
+        st.session_state["_cached_quality_audit"] = None
         st.rerun()
 
 
@@ -159,6 +188,8 @@ def _reset_all_changes() -> None:
             st.session_state.get("dataset_file_type", "CSV")
         )
         st.session_state["prep_active_dataset_mode"] = "Original"
+        st.session_state["_cached_quality_sig"] = None
+        st.session_state["_cached_quality_audit"] = None
         st.toast("Reset all changes! Restored original dataset.")
         st.rerun()
 
@@ -175,11 +206,39 @@ def _apply_prepared_to_analysis() -> None:
             st.session_state.get("dataset_file_type", "CSV")
         )
         st.session_state["prep_active_dataset_mode"] = "Prepared"
+        st.session_state["_cached_quality_sig"] = None
+        st.session_state["_cached_quality_audit"] = None
         mark_workflow_step("prep", True)
-        log_activity(f"Applied prepared dataset ({len(working_df):,} rows × {len(working_df.columns)} cols) to active session", "wrench")
-        st.toast("Prepared dataset is now active across all Data Studio modules!")
+        log_activity(f"Promoted prepared dataset ({len(working_df):,} rows × {len(working_df.columns)} cols) to active session", "sliders-horizontal")
+        st.toast("Prepared dataset is now active across all Data Studio modules! ✓")
         st.rerun()
 
+
+def _execute_decision_fix(
+    df: pd.DataFrame,
+    decision: Dict[str, Any],
+    custom_strategy: Optional[str] = None
+) -> None:
+    """Execute decision remediation transformation, verify quality impact, and log."""
+    b_rows = len(df)
+    b_cols = len(df.columns)
+    
+    transformed_df, meta = apply_decision_transformation(df, decision, custom_strategy=custom_strategy)
+    impact = verify_decision_impact(df, transformed_df, decision)
+    
+    _record_transformation(
+        new_df=transformed_df,
+        trans_type=decision.get("type", "remediation"),
+        description=meta.get("description", "Quality fix applied"),
+        before_rows=b_rows,
+        before_cols=b_cols,
+        score_delta=impact.get("score_delta", 0.0),
+        column=meta.get("column", "Dataset"),
+        strategy=meta.get("strategy", ""),
+        reason=meta.get("reason", "")
+    )
+    st.session_state["_active_preview_decision_id"] = None
+    st.rerun()
 
 
 # =============================================================================
@@ -192,13 +251,13 @@ def render_data_preparation_page() -> None:
     if not is_dataset_loaded():
         render_page_header(
             title="Data Preparation",
-            subtitle="Clean missing values, drop duplicates, cast types, and prepare your dataset for analysis.",
-            icon="wrench"
+            subtitle="Remediate missing values, remove duplicates, cap outliers, and prepare your dataset for analysis.",
+            icon="sliders-horizontal"
         )
         render_empty_state(
             title="No dataset ready for preparation",
             description="Upload a CSV or Excel dataset to begin cleaning, filtering, and transforming your data.",
-            icon="wrench"
+            icon="sliders-horizontal"
         )
 
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
@@ -233,33 +292,17 @@ def render_data_preparation_page() -> None:
 
     _init_prep_state()
 
-    # ── Consume deep-link hint from Data Quality ────────────────────────────────────
+    # ── Consume deep-link hint if set ────────────────────────────────────────
     prep_hint = st.session_state.get("prep_suggested_action")
     if prep_hint:
-        if isinstance(prep_hint, dict):
-            hint_title = prep_hint.get("title", "Quality Recommendation")
-            hint_action = prep_hint.get("recommended_action", "")
-            hint_why = prep_hint.get("why_reason", "")
-            render_notification(
-                title=f"Data Quality Recommendation: {hint_title}",
-                message=f"**Action:** {hint_action} — {hint_why}",
-                variant="info"
-            )
-        elif isinstance(prep_hint, str):
-            hint_messages = {
-                "missing": ("Missing Values", "Use the **MISSING VALUES** tab below to impute, fill, or drop columns with null values."),
-                "duplicates": ("Duplicate Rows", "Use the **DUPLICATES** tab below to remove identical rows from your dataset."),
-                "outliers": ("Outlier Treatment", "Use the **OUTLIERS** tab below to cap, remove, or inspect extreme values."),
-                "types": ("Column Types", "Use the **COLUMNS** tab below to rename, reorder, or cast data types."),
-            }
-            if prep_hint in hint_messages:
-                tab_label, hint_msg = hint_messages[prep_hint]
-                render_notification(
-                    title=f"Jump to: {tab_label}",
-                    message=hint_msg,
-                    variant="info"
-                )
-        # Clear hint after consuming it
+        if prep_hint == "missing":
+            st.session_state["prep_active_tab"] = "Missing Values"
+        elif prep_hint == "duplicates":
+            st.session_state["prep_active_tab"] = "Duplicate Rows"
+        elif prep_hint == "outliers":
+            st.session_state["prep_active_tab"] = "Outliers & Validity"
+        elif prep_hint == "types":
+            st.session_state["prep_active_tab"] = "Transformations"
         st.session_state["prep_suggested_action"] = None
 
     orig_df: pd.DataFrame = st.session_state.get("original_dataset")
@@ -275,68 +318,69 @@ def render_data_preparation_page() -> None:
     # 2. Standardized Page Header
     render_page_header(
         title="Data Preparation",
-        subtitle="Clean missing values, drop duplicates, filter rows, cast types, and prepare your dataset for analysis.",
-        icon="wrench"
+        subtitle="Remediate missing values, remove duplicates, investigate outliers, and execute verified transformations.",
+        icon="sliders-horizontal"
     )
 
-    # 3. Preparation Summary KPI Cards & Active Dataset Switcher
+    # 3. Preparation Status Summary & Dataset Promotion Bar
     _render_preparation_summary_bar(orig_df, working_df, dataset_name, file_type)
 
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
-    # 4. Transformation History & Undo / Reset Toolbar
-    _render_history_and_undo_toolbar()
+    # 4. Preparation Tab Switcher (The 5 Canonical Sections)
+    prep_tabs = [
+        "Missing Values",
+        "Duplicate Rows",
+        "Outliers & Validity",
+        "Transformations",
+        "Preparation History"
+    ]
 
-    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    current_tab = st.session_state.get("prep_active_tab", "Missing Values")
+    if current_tab not in prep_tabs:
+        current_tab = "Missing Values"
+        st.session_state["prep_active_tab"] = current_tab
 
-    # 5. Functional Preparation Tabs
-    tab_overview, tab_missing, tab_dups, tab_cols, tab_filter, tab_sort, tab_outliers, tab_text, tab_dates, tab_preview = st.tabs([
-        "OVERVIEW",
-        "MISSING VALUES",
-        "DUPLICATES",
-        "COLUMNS",
-        "FILTERS",
-        "SORTING",
-        "OUTLIERS",
-        "TEXT CLEANING",
-        "DATES & DERIVATIONS",
-        "PREVIEW & EXPORT"
-    ])
+    tab_idx = prep_tabs.index(current_tab)
 
-    with tab_overview:
-        _render_tab_overview(orig_df, working_df)
+    # Render top segmented tab bar
+    selected_tab = st.radio(
+        "Select Preparation Section",
+        options=prep_tabs,
+        index=tab_idx,
+        horizontal=True,
+        key="prep_section_radio",
+        label_visibility="collapsed"
+    )
 
-    with tab_missing:
-        _render_tab_missing_values(working_df)
+    if selected_tab != current_tab:
+        st.session_state["prep_active_tab"] = selected_tab
+        st.rerun()
 
-    with tab_dups:
-        _render_tab_duplicates(working_df)
+    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
-    with tab_cols:
-        _render_tab_columns(working_df)
+    # 5. Render Selected Section
+    if selected_tab == "Missing Values":
+        _render_section_missing_values(working_df)
 
-    with tab_filter:
-        _render_tab_filters(working_df)
+    elif selected_tab == "Duplicate Rows":
+        _render_section_duplicates(working_df)
 
-    with tab_sort:
-        _render_tab_sorting(working_df)
+    elif selected_tab == "Outliers & Validity":
+        _render_section_outliers_and_validity(working_df)
 
-    with tab_outliers:
-        _render_tab_outliers(working_df)
+    elif selected_tab == "Transformations":
+        _render_section_transformations(working_df, dataset_name)
 
-    with tab_text:
-        _render_tab_text_cleaning(working_df)
+    elif selected_tab == "Preparation History":
+        _render_section_preparation_history(orig_df, working_df, dataset_name)
 
-    with tab_dates:
-        _render_tab_dates_and_derivations(working_df)
+    st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
 
-    with tab_preview:
-        _render_tab_preview_and_export(orig_df, working_df, dataset_name)
-
-    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    # 6. Workflow Navigation
     render_next_step_banner(
         title="Continue to Exploratory Analysis",
-        recommendation="Transformations ready. Proceed to Analyze to examine distributions, correlations, and statistical summaries.",
+        recommendation="Data remediation complete. Proceed to Analyze to examine distributions, correlations, and statistical summaries.",
         primary_action_label="Continue to Analyze →",
         target_page="Analyze",
         key_prefix="prep_next_step",
@@ -350,8 +394,6 @@ def render_data_preparation_page() -> None:
     render_next_workflow_steps("Data Preparation")
 
 
-
-
 # =============================================================================
 # SUMMARY BAR & ACTIVE DATASET PROMOTION
 # =============================================================================
@@ -362,17 +404,31 @@ def _render_preparation_summary_bar(
     dataset_name: str,
     file_type: str
 ) -> None:
-    """Render top metrics comparing original vs working dataset and promotion button."""
+    """Render top Preparation Status summary comparing original vs working dataset with promotion action."""
     orig_rows = len(orig_df) if orig_df is not None else 0
     orig_cols = len(orig_df.columns) if orig_df is not None else 0
     curr_rows = len(working_df) if working_df is not None else 0
     curr_cols = len(working_df.columns) if working_df is not None else 0
 
     history_len = len(st.session_state.get("prep_history", []))
-    missing_cells = int(working_df.isna().sum().sum()) if working_df is not None else 0
-    total_cells = curr_rows * curr_cols
-    missing_pct = (missing_cells / total_cells * 100) if total_cells > 0 else 0.0
-    dup_rows = int(working_df.duplicated().sum()) if working_df is not None else 0
+    
+    # Missing cells & Completeness
+    orig_missing = int(orig_df.isna().sum().sum()) if orig_df is not None else 0
+    orig_total_cells = orig_rows * orig_cols
+    orig_completeness = float((1.0 - (orig_missing / orig_total_cells)) * 100) if orig_total_cells > 0 else 100.0
+
+    curr_missing = int(working_df.isna().sum().sum()) if working_df is not None else 0
+    curr_total_cells = curr_rows * curr_cols
+    curr_completeness = float((1.0 - (curr_missing / curr_total_cells)) * 100) if curr_total_cells > 0 else 100.0
+
+    # Duplicates
+    orig_dups = int(orig_df.duplicated().sum()) if orig_df is not None else 0
+    curr_dups = int(working_df.duplicated().sum()) if working_df is not None else 0
+
+    # Initial detected vs resolved issues count
+    initial_issues = orig_missing + orig_dups
+    resolved_issues = max(0, initial_issues - (curr_missing + curr_dups))
+    pending_review = curr_missing + curr_dups
 
     active_mode = st.session_state.get("prep_active_dataset_mode", "Original")
 
@@ -385,7 +441,7 @@ def _render_preparation_summary_bar(
             f'<div class="ds-active-banner-left">'
             f'<div class="ds-brand-badge" style="background: var(--accent);">P</div>'
             f'<div>'
-            f'<div class="ds-active-banner-name" style="font-size: 15px;">{dataset_name}</div>'
+            f'<div class="ds-active-banner-name" style="font-size: 15px;">{html.escape(dataset_name)}</div>'
             f'<div class="ds-active-banner-meta" style="font-size: 12px;">'
             f'Active in Analysis: <span class="ds-badge {badge_cls}" style="font-size: 11px;">{active_mode} Dataset</span> · {history_len} transformations applied'
             f'</div>'
@@ -400,731 +456,801 @@ def _render_preparation_summary_bar(
         if st.button("Use Prepared Dataset for Analysis", key="btn_apply_prepared_analysis", type="primary", use_container_width=True):
             _apply_prepared_to_analysis()
 
-    # 4 KPI Summary Cards
+    # 4 Preparation Status KPI Summary Cards
     kpi_c1, kpi_c2, kpi_c3, kpi_c4 = st.columns(4)
     with kpi_c1:
+        render_metric_card(
+            label="Preparation Status",
+            value=f"{resolved_issues:,} Resolved",
+            change=f"{pending_review:,} Pending" if pending_review > 0 else "All Clean",
+            change_type="neutral" if pending_review > 0 else "positive",
+            description=f"Detected: {initial_issues:,} issues",
+            status="Status"
+        )
+    with kpi_c2:
         row_delta = curr_rows - orig_rows
         render_metric_card(
             label="Dataset Rows",
             value=f"{curr_rows:,}",
             change=f"{row_delta:+,} rows" if row_delta != 0 else "Unchanged",
-            change_type="success" if row_delta >= 0 else "neutral",
-            description=f"Original: {orig_rows:,}"
-        )
-    with kpi_c2:
-        col_delta = curr_cols - orig_cols
-        render_metric_card(
-            label="Dataset Columns",
-            value=f"{curr_cols}",
-            change=f"{col_delta:+} cols" if col_delta != 0 else "Unchanged",
-            change_type="success" if col_delta >= 0 else "neutral",
-            description=f"Original: {orig_cols}"
+            change_type="positive" if row_delta >= 0 else "neutral",
+            description=f"Original: {orig_rows:,}",
+            status="Rows"
         )
     with kpi_c3:
+        comp_delta = curr_completeness - orig_completeness
         render_metric_card(
-            label="Missing Values",
-            value=f"{missing_cells:,} ({missing_pct:.1f}%)",
-            change=f"{missing_cells} cells",
-            change_type="warning" if missing_cells > 0 else "success",
-            description="Remaining null cells"
+            label="Completeness",
+            value=f"{curr_completeness:.1f}%",
+            change=f"{comp_delta:+.1f}%" if comp_delta != 0 else "Unchanged",
+            change_type="positive" if comp_delta > 0 else "neutral",
+            description=f"Before: {orig_completeness:.1f}%",
+            status="Completeness"
         )
     with kpi_c4:
         render_metric_card(
             label="Duplicate Rows",
-            value=f"{dup_rows:,}",
-            change="Clean" if dup_rows == 0 else f"{dup_rows} duplicates",
-            change_type="success" if dup_rows == 0 else "warning",
-            description="Remaining duplicated rows"
+            value=f"{curr_dups:,}",
+            change="Clean" if curr_dups == 0 else f"{curr_dups} remaining",
+            change_type="positive" if curr_dups == 0 else "negative",
+            description=f"Original: {orig_dups:,}",
+            status="Uniqueness"
         )
 
 
 # =============================================================================
-# HISTORY & UNDO / RESET TOOLBAR
+# REUSABLE DECISION CARD & PREVIEW MODAL RENDERERS
 # =============================================================================
 
-def _render_history_and_undo_toolbar() -> None:
-    """Render undo, reset all changes, and transformation history log."""
-    history = st.session_state.get("prep_history", [])
-    undo_stack = st.session_state.get("prep_undo_stack", [])
+def _render_decision_card(
+    df: pd.DataFrame,
+    dec: Dict[str, Any],
+    key_prefix: str,
+    resolved_message: Optional[str] = None
+) -> None:
+    """Render an intelligent remediation decision card with why-reasoning, alternatives, and actions."""
+    sev = dec.get("severity", "MEDIUM")
+    sev_class = f"sev-{sev.lower()}"
+    badge_class = f"ds-sev-{sev.lower()}"
 
-    toolbar_c1, toolbar_c2, toolbar_c3 = st.columns([6, 3, 3])
+    card_html = (
+        f'<div class="ds-decision-card {sev_class}">'
+        f'<div class="ds-decision-header">'
+        f'<div class="ds-decision-title-group">'
+        f'<span class="ds-sev-badge {badge_class}">{sev}</span>'
+        f'<h4 class="ds-decision-title">{html.escape(dec.get("title", ""))}</h4>'
+        f'</div>'
+        f'<span class="ds-affected-badge">{dec.get("affected_label", "")}</span>'
+        f'</div>'
+        f'<div class="ds-recommendation-box">'
+        f'<div class="ds-rec-top-row">'
+        f'<span class="ds-rec-label">Recommended Decision</span>'
+        f'<div class="ds-rec-meta-badges">'
+        f'<span class="ds-conf-badge">Confidence: <b>{dec.get("confidence", "HIGH")}</b></span>'
+        f'<span class="ds-risk-badge">Risk: <b>{dec.get("risk", "LOW")}</b></span>'
+        f'</div>'
+        f'</div>'
+        f'<div class="ds-rec-action-name">{html.escape(dec.get("recommended_action", ""))}</div>'
+        f'<div class="ds-decision-why"><b>Why?</b> {html.escape(dec.get("why_reason", ""))}</div>'
+        f'<div class="ds-decision-impact"><span>Expected Impact:</span> <b>{html.escape(dec.get("expected_impact", ""))}</b></div>'
+        f'</div>'
+        f'</div>'
+    )
+    st.markdown(card_html, unsafe_allow_html=True)
 
-    with toolbar_c1:
-        st.markdown(
-            f'<div style="font-weight: 600; font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; padding-top: 6px;">'
-            f'Transformation Actions ({len(history)} Changes Recorded)'
-            f'</div>',
-            unsafe_allow_html=True
-        )
+    # Expanders for Alternatives and Evidence
+    exp_col1, exp_col2 = st.columns(2)
+    
+    with exp_col1:
+        with st.expander("Alternative Strategies", expanded=False):
+            alts = dec.get("alternatives", [])
+            if alts:
+                alt_rows = []
+                for a in alts:
+                    rec_tag = " <b>(Recommended)</b>" if a.get("is_recommended") else ""
+                    alt_rows.append(
+                        f"<tr>"
+                        f"<td class='ds-alt-rating'>{a.get('rating', '★★★☆☆')}</td>"
+                        f"<td><b>{html.escape(a.get('label', ''))}</b>{rec_tag}<br><span style='color:var(--text-muted);font-size:11px;'>{html.escape(a.get('why', ''))}</span></td>"
+                        f"<td style='font-size:11px;color:var(--text-muted);'>{html.escape(a.get('trade_off', ''))}</td>"
+                        f"</tr>"
+                    )
+                table_html = (
+                    f"<table class='ds-alt-table'>"
+                    f"<thead><tr><th>Rating</th><th>Strategy</th><th>Trade-Off</th></tr></thead>"
+                    f"<tbody>{''.join(alt_rows)}</tbody>"
+                    f"</table>"
+                )
+                st.markdown(table_html, unsafe_allow_html=True)
 
-    with toolbar_c2:
-        can_undo = len(undo_stack) > 0
-        if st.button("Undo Last Change", key="prep_undo_btn", disabled=not can_undo, use_container_width=True):
-            _undo_last_change()
+    with exp_col2:
+        with st.expander("Technical Distribution Evidence", expanded=False):
+            ev = dec.get("evidence", {})
+            if ev:
+                ev_items = []
+                for k, v in ev.items():
+                    if isinstance(v, (int, float)):
+                        ev_items.append({"Metric": k.replace("_", " ").title(), "Value": f"{v:,.2f}" if isinstance(v, float) else f"{v:,}"})
+                    elif isinstance(v, str):
+                        ev_items.append({"Metric": k.replace("_", " ").title(), "Value": v})
+                if ev_items:
+                    st.dataframe(pd.DataFrame(ev_items), use_container_width=True, hide_index=True)
+                else:
+                    st.caption("Standard profile evidence captured.")
 
-    with toolbar_c3:
-        with st.popover("Reset All Changes", use_container_width=True):
-            st.markdown("**Confirm Full Reset**")
-            st.caption("Revert working dataset back to the pristine original uploaded file. All transformation history will be cleared.")
-            if st.button("Yes, Reset to Original", key="confirm_reset_all_btn", type="primary", use_container_width=True):
-                _reset_all_changes()
+    # Action Triggers: Preview Fix vs Apply Fix
+    act_c1, act_c2, _ = st.columns([3, 3, 6], gap="small")
+    
+    is_previewing = (st.session_state.get("_active_preview_decision_id") == dec["id"])
+    with act_c1:
+        btn_label = "Close Preview" if is_previewing else "Preview Fix"
+        if st.button(btn_label, key=f"preview_btn_{key_prefix}_{dec['id']}", use_container_width=True):
+            if is_previewing:
+                st.session_state["_active_preview_decision_id"] = None
+            else:
+                st.session_state["_active_preview_decision_id"] = dec["id"]
+            st.rerun()
 
-    if history:
-        with st.expander(f"View Transformation History Log ({len(history)} entries)", expanded=False):
-            hist_df = pd.DataFrame(history)[["id", "timestamp", "description", "rows_before", "rows_after", "cols_before", "cols_after"]]
-            hist_df.columns = ["Step", "Time", "Operation Description", "Rows Before", "Rows After", "Cols Before", "Cols After"]
-            st.dataframe(hist_df, use_container_width=True, hide_index=True)
+    with act_c2:
+        if st.button("Apply Fix", key=f"apply_btn_{key_prefix}_{dec['id']}", type="primary", use_container_width=True):
+            _execute_decision_fix(df, dec)
+
+    # Active Preview Drawer
+    if is_previewing:
+        _render_decision_preview_drawer(df, dec, key_prefix)
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
 
-# =============================================================================
-# TAB 1: OVERVIEW
-# =============================================================================
+def _render_decision_preview_drawer(df: pd.DataFrame, dec: Dict[str, Any], key_prefix: str) -> None:
+    """Render interactive simulation preview comparing before vs after states."""
+    preview = preview_decision_transformation(df, dec)
+    if not preview:
+        return
 
-def _render_tab_overview(orig_df: pd.DataFrame, working_df: pd.DataFrame) -> None:
-    """Render high-level dataset health comparison and quick fix suggestions."""
-    render_section_header(
-        title="Preparation Workspace Overview",
-        subtitle="Compare original uploaded state vs current prepared working state."
+    st.markdown(
+        f"""
+        <div class="ds-preview-modal-box">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <div style="font-size: 14px; font-weight: 700; color: var(--accent);">
+                    ⚡ Transformation Preview: {html.escape(dec.get("title", ""))}
+                </div>
+                <span style="font-size: 11px; color: var(--text-muted); background: var(--surface-container-low); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-light);">
+                    Simulation Mode (Raw Dataset Untouched)
+                </span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("#### Original Dataset State")
-        orig_missing = int(orig_df.isna().sum().sum())
-        orig_dups = int(orig_df.duplicated().sum())
-        st.write(f"- **Total Rows:** {len(orig_df):,}")
-        st.write(f"- **Total Columns:** {len(orig_df.columns)}")
-        st.write(f"- **Missing Cells:** {orig_missing:,}")
-        st.write(f"- **Duplicate Rows:** {orig_dups:,}")
+    # 4 KPI comparison cards
+    k1, k2, k3, k4 = st.columns(4)
+    with k1:
+        r_delta = preview["row_delta"]
+        delta_str = f"({r_delta:+d} rows)" if r_delta != 0 else "(Unchanged)"
+        render_metric_card(
+            label="Dataset Rows",
+            value=f"{preview['rows_after']:,}",
+            description=f"Before: {preview['rows_before']:,} {delta_str}",
+            status="Rows"
+        )
+    with k2:
+        m_delta = preview["missing_delta"]
+        render_metric_card(
+            label="Total Missing Cells",
+            value=f"{preview['missing_after']:,}",
+            change=f"{m_delta:+d} cells",
+            change_type="positive" if m_delta < 0 else "neutral",
+            description=f"Before: {preview['missing_before']:,}",
+            status="Cells"
+        )
+    with k3:
+        c_delta = preview["completeness_delta"]
+        render_metric_card(
+            label="Completeness",
+            value=f"{preview['completeness_after']:.1f}%",
+            change=f"{c_delta:+.1f}%",
+            change_type="positive" if c_delta > 0 else "neutral",
+            description=f"Before: {preview['completeness_before']:.1f}%",
+            status="Health"
+        )
+    with k4:
+        col_name = dec.get("column")
+        s_after = preview.get("stat_after", {})
+        s_before = preview.get("stat_before", {})
+        if s_after and "median" in s_after:
+            render_metric_card(
+                label=f"{col_name} Median",
+                value=f"{s_after['median']:,.2f}",
+                description=f"Before: {s_before.get('median', 0.0):,.2f}",
+                status="Metric"
+            )
+        elif s_after and "mean" in s_after:
+            render_metric_card(
+                label=f"{col_name} Mean",
+                value=f"{s_after['mean']:,.2f}",
+                description=f"Before: {s_before.get('mean', 0.0):,.2f}",
+                status="Metric"
+            )
+        else:
+            render_metric_card(
+                label="Columns",
+                value=f"{preview['cols_after']}",
+                description=f"Before: {preview['cols_before']}",
+                status="Structure"
+            )
 
-    with col2:
-        st.markdown("#### Current Prepared State")
-        curr_missing = int(working_df.isna().sum().sum())
-        curr_dups = int(working_df.duplicated().sum())
-        st.write(f"- **Total Rows:** {len(working_df):,}")
-        st.write(f"- **Total Columns:** {len(working_df.columns)}")
-        st.write(f"- **Missing Cells:** {curr_missing:,}")
-        st.write(f"- **Duplicate Rows:** {curr_dups:,}")
+    # Sample rows preview
+    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+    st.markdown("##### Sample Transformed Data Preview")
+    st.dataframe(preview["sample_after"].head(4), use_container_width=True, hide_index=True)
+
+    # Approval Actions
+    conf_c1, conf_c2, _ = st.columns([3, 3, 6])
+    with conf_c1:
+        if st.button("✓ Confirm & Apply Fix", key=f"confirm_preview_apply_{key_prefix}_{dec['id']}", type="primary", use_container_width=True):
+            _execute_decision_fix(df, dec)
+    with conf_c2:
+        if st.button("✕ Dismiss Preview", key=f"dismiss_preview_{key_prefix}_{dec['id']}", use_container_width=True):
+            st.session_state["_active_preview_decision_id"] = None
+            st.rerun()
 
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-    st.markdown("#### Quick Cleaning Recommendations")
-
-    recs = []
-    if curr_dups > 0:
-        recs.append(f"Remove **{curr_dups} duplicate rows** in the **Duplicates** tab.")
-    if curr_missing > 0:
-        recs.append(f"Resolve **{curr_missing} missing values** across columns in the **Missing Values** tab.")
-    
-    # Check for whitespace in text columns
-    text_cols = [c for c in working_df.columns if pd.api.types.is_object_dtype(working_df[c])]
-    if text_cols:
-        recs.append("Standardize text formatting (trim whitespace, lower/upper) in the **Text Cleaning** tab.")
-
-    if recs:
-        for r in recs:
-            st.info(r)
-    else:
-        render_notification(
-            title="Clean Dataset Status",
-            message="No critical duplicates or missing values detected in the current prepared state.",
-            variant="success"
-        )
 
 
 # =============================================================================
-# TAB 2: MISSING VALUE HANDLING
+# SECTION 1: MISSING VALUES
 # =============================================================================
 
-def _render_tab_missing_values(working_df: pd.DataFrame) -> None:
-    """Render interactive missing value profile table and imputation tools."""
+def _render_section_missing_values(working_df: pd.DataFrame) -> None:
+    """Render Missing Values section with intelligent decision cards for every column with nulls."""
     render_section_header(
-        title="Missing Value Handling",
-        subtitle="Review column completeness and apply precision imputation or removal strategies."
+        title="Missing Values Remediation",
+        subtitle="Review column-by-column missingness, statistical distributions, intelligent recommendations, and safe imputation."
     )
 
-    summary_df = get_missing_values_summary(working_df)
-    missing_cols_df = summary_df[summary_df["Missing Count"] > 0]
+    missing_summary = get_missing_values_summary(working_df)
+    affected_cols_df = missing_summary[missing_summary["Missing Count"] > 0]
+    total_missing_cells = int(working_df.isna().sum().sum())
 
-    st.dataframe(summary_df, use_container_width=True, hide_index=True)
-
-    if missing_cols_df.empty:
+    if total_missing_cells == 0 or affected_cols_df.empty:
         render_notification(
-            title="Zero Missing Values",
-            message="All columns in the prepared dataset are 100% complete.",
+            title="100% Complete Data",
+            message="✓ All columns in the prepared dataset are complete with zero missing values remaining.",
             variant="success"
         )
         return
 
+    st.markdown(
+        f"""
+        <div style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 14px;">
+            Detected <b>{total_missing_cells:,} missing cells</b> across <b>{len(affected_cols_df)} columns</b>. 
+            Review recommended statistical decisions below or preview alternative treatments before applying.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Render a decision card for every column containing missing values
+    for idx, row in affected_cols_df.iterrows():
+        col_name = str(row["Column"])
+        if col_name in working_df.columns:
+            prof = investigate_column_distribution(working_df[col_name], col_name, working_df)
+            decision = generate_missing_value_decision(col_name, prof, working_df)
+            _render_decision_card(working_df, decision, key_prefix=f"miss_{idx}")
+
+    # Manual Custom Imputation Tools (Preserved for advanced batch treatments)
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-    st.markdown("#### Apply Missing Value Strategy")
-
-    col_options = list(missing_cols_df["Column"])
-    ctrl1, ctrl2, ctrl3 = st.columns([4, 4, 4])
-
-    with ctrl1:
-        target_cols = st.multiselect(
-            "Target Columns",
-            options=col_options,
-            default=[col_options[0]] if col_options else [],
-            key="prep_missing_target_cols"
-        )
-
-    with ctrl2:
-        # Check if selected columns are numeric or categorical
-        is_all_numeric = all(pd.api.types.is_numeric_dtype(working_df[c]) for c in target_cols) if target_cols else False
+    with st.expander("Manual / Custom Missing Value Tools", expanded=False):
+        st.markdown("##### Batch Imputation & Custom Overrides")
+        col_options = list(affected_cols_df["Column"])
         
-        if is_all_numeric:
-            strategies = [
-                ("mean", "Fill with Column Mean"),
-                ("median", "Fill with Column Median"),
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            target_cols = st.multiselect("Target Column(s)", options=col_options, default=[col_options[0]] if col_options else [], key="man_miss_cols")
+        with c2:
+            is_all_numeric = all(pd.api.types.is_numeric_dtype(working_df[c]) for c in target_cols) if target_cols else False
+            strat_opts = [
+                ("mean", "Mean Imputation"),
+                ("median", "Median Imputation"),
+                ("mode", "Mode Imputation"),
                 ("zero", "Fill with 0 (Zero)"),
-                ("mode", "Fill with Mode (Most Frequent)"),
-                ("custom", "Fill with Custom Value"),
-                ("ffill", "Forward Fill (Previous Value)"),
-                ("drop_rows", "Drop Rows with Missing Values"),
-                ("drop_cols", "Drop Selected Columns Entirely")
-            ]
-        else:
-            strategies = [
-                ("mode", "Fill with Mode (Most Frequent)"),
                 ("unknown", "Fill with 'Unknown'"),
-                ("custom", "Fill with Custom Text/Value"),
-                ("ffill", "Forward Fill (Previous Value)"),
+                ("custom", "Custom Value"),
+                ("drop_rows", "Drop Rows with Missing Values"),
+                ("drop_cols", "Drop Selected Columns Entirely")
+            ] if is_all_numeric else [
+                ("mode", "Mode Imputation"),
+                ("unknown", "Fill with 'Unknown'"),
+                ("custom", "Custom Value"),
                 ("drop_rows", "Drop Rows with Missing Values"),
                 ("drop_cols", "Drop Selected Columns Entirely")
             ]
+            man_strat = st.selectbox("Strategy", options=[s[0] for s in strat_opts], format_func=lambda k: dict(strat_opts).get(k, k), key="man_miss_strat")
+        with c3:
+            custom_val = None
+            if man_strat == "custom":
+                custom_val = st.text_input("Custom Fill Value", value="0" if is_all_numeric else "Unknown", key="man_miss_custom_val")
+            else:
+                st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
 
-        strat_keys = [s[0] for s in strategies]
-        strategy = st.selectbox(
-            "Imputation Strategy",
-            options=strat_keys,
-            format_func=lambda k: dict(strategies).get(k, k),
-            key="prep_missing_strategy"
-        )
-
-    custom_val = None
-    with ctrl3:
-        if strategy == "custom":
-            custom_val = st.text_input("Custom Fill Value", value="0" if is_all_numeric else "Unknown", key="prep_missing_custom_val")
-        else:
-            st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-
-    if target_cols:
-        # Pre-apply impact calculation
-        est_missing_before = int(working_df[target_cols].isna().sum().sum())
-        if strategy == "drop_rows":
-            est_rows_dropped = int(working_df[target_cols].isna().any(axis=1).sum())
-            impact_msg = f"Applying **Drop Rows** will remove **{est_rows_dropped:,} rows**."
-        elif strategy == "drop_cols":
-            impact_msg = f"Applying **Drop Columns** will remove columns: **{', '.join(target_cols)}**."
-        else:
-            impact_msg = f"Applying strategy will impute **{est_missing_before:,} missing values**."
-
-        st.caption(f"Estimated Impact: {impact_msg}")
-
-        if st.button("Apply Missing Value Transformation", key="btn_apply_missing", type="primary"):
+        if target_cols and st.button("Apply Manual Transformation", key="btn_apply_manual_missing", type="primary"):
             b_rows = len(working_df)
             b_cols = len(working_df.columns)
-            new_df, info = handle_missing_values(working_df, target_cols, strategy, custom_value=custom_val)
-            desc = f"Resolved missing values in {', '.join(target_cols)} using {strategy.replace('_', ' ').title()}"
-            _record_transformation(new_df, "missing_values", desc, b_rows, b_cols)
+            new_df, info = handle_missing_values(working_df, target_cols, man_strat, custom_value=custom_val)
+            desc = f"Resolved missing values in {', '.join(target_cols)} using {man_strat.replace('_', ' ').title()}"
+            _record_transformation(new_df, "missing_values", desc, b_rows, b_cols, column=", ".join(target_cols), strategy=man_strat)
             st.rerun()
 
 
 # =============================================================================
-# TAB 3: DUPLICATE HANDLING
+# SECTION 2: DUPLICATE ROWS
 # =============================================================================
 
-def _render_tab_duplicates(working_df: pd.DataFrame) -> None:
-    """Render duplicate row inspector and subset removal."""
+def _render_section_duplicates(working_df: pd.DataFrame) -> None:
+    """Render Duplicate Rows section with intelligent deduplication decision card and sample review."""
     render_section_header(
-        title="Duplicate Row Handling",
-        subtitle="Detect and remove identical or subset-duplicated records."
+        title="Duplicate Rows Remediation",
+        subtitle="Detect, preview, and eliminate identical observation rows or evaluate column subsets."
     )
 
-    all_cols = list(working_df.columns)
-    subset_selection = st.multiselect(
-        "Evaluate Duplicates on Specific Column Subset (Leave empty to evaluate all columns)",
-        options=all_cols,
-        default=[],
-        key="prep_dup_subset_cols"
-    )
-
-    dup_info = get_duplicates_info(working_df, subset_cols=subset_selection if subset_selection else None)
+    dup_info = get_duplicates_info(working_df)
     dup_cnt = dup_info["duplicate_count"]
     dup_pct = dup_info["duplicate_pct"]
 
-    c1, c2 = st.columns(2)
-    with c1:
-        render_metric_card(
-            label="Duplicate Rows Detected",
-            value=f"{dup_cnt:,}",
-            change=f"{dup_pct:.1f}% of dataset",
-            change_type="warning" if dup_cnt > 0 else "success"
-        )
-    with c2:
-        keep_opt = st.selectbox("Duplicate Retention Rule", options=["first", "last"], format_func=lambda x: f"Keep {x.capitalize()} Occurrence", key="prep_dup_keep")
-
     if dup_cnt > 0:
-        st.markdown("#### Duplicate Records Preview")
-        st.dataframe(dup_info["duplicate_df"], use_container_width=True)
+        dup_dec = generate_duplicate_decision(dup_info, working_df)
+        if dup_dec:
+            _render_decision_card(working_df, dup_dec, key_prefix="dup_main")
 
-        if st.button(f"Remove {dup_cnt:,} Duplicate Rows", key="btn_remove_dups", type="primary"):
-            b_rows = len(working_df)
-            b_cols = len(working_df.columns)
-            new_df, info = remove_duplicates(working_df, subset_cols=subset_selection if subset_selection else None, keep=keep_opt)
-            desc = f"Removed {info['removed_count']:,} duplicate rows"
-            _record_transformation(new_df, "duplicates", desc, b_rows, b_cols)
-            st.rerun()
+        # Duplicate Records Table
+        st.markdown("##### Duplicate Observations Preview")
+        st.dataframe(dup_info["duplicate_df"].head(15), use_container_width=True, hide_index=False)
     else:
         render_notification(
-            title="Zero Duplicate Records",
-            message="No duplicate records detected based on current column selection.",
+            title="Zero Duplicate Rows Detected",
+            message="✓ Every row in the dataset represents a unique observation. No duplicate records exist.",
+            variant="success"
+        )
+
+    # Column-subset duplicate detection tool
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    with st.expander("Evaluate Duplicates on Specific Column Subsets", expanded=False):
+        all_cols = list(working_df.columns)
+        subset_cols = st.multiselect("Select Key Identifier Columns", options=all_cols, key="dup_subset_select")
+        if subset_cols:
+            sub_info = get_duplicates_info(working_df, subset_cols=subset_cols)
+            st.write(f"Subset duplicate rows matching on {', '.join(subset_cols)}: **{sub_info['duplicate_count']:,} rows ({sub_info['duplicate_pct']:.1f}%)**")
+            if sub_info["duplicate_count"] > 0:
+                st.dataframe(sub_info["duplicate_df"].head(10), use_container_width=True)
+                if st.button(f"Remove {sub_info['duplicate_count']:,} Subset Duplicates", key="btn_remove_subset_dups", type="primary"):
+                    b_rows = len(working_df)
+                    b_cols = len(working_df.columns)
+                    new_df, info = remove_duplicates(working_df, subset_cols=subset_cols, keep="first")
+                    desc = f"Removed {info['removed_count']:,} subset duplicates on [{', '.join(subset_cols)}]"
+                    _record_transformation(new_df, "duplicates_subset", desc, b_rows, b_cols, column=", ".join(subset_cols), strategy="subset_dedup")
+                    st.rerun()
+
+
+# =============================================================================
+# SECTION 3: OUTLIERS & VALIDITY
+# =============================================================================
+
+def _render_section_outliers_and_validity(working_df: pd.DataFrame) -> None:
+    """Render Outliers & Validity section with domain-aware decision cards (Do NOT blindly delete outliers)."""
+    render_section_header(
+        title="Outliers & Value Validity",
+        subtitle="Investigate distribution tail observations, domain-specific boundary capping, and invalid value sanitization."
+    )
+
+    numeric_cols = [c for c in working_df.columns if pd.api.types.is_numeric_dtype(working_df[c])]
+    
+    # 1. Outlier Decision Cards per numeric column
+    outlier_decisions = []
+    for col in numeric_cols:
+        prof = investigate_column_distribution(working_df[col], col, working_df)
+        o_dec = generate_outlier_decision(col, prof, working_df)
+        if o_dec:
+            outlier_decisions.append(o_dec)
+
+    if outlier_decisions:
+        st.markdown("#### Statistical Outlier Decisions")
+        st.caption("Never delete legitimate high-value customers or business transactions blindly. Review statistical reasons below:")
+        for idx, o_dec in enumerate(outlier_decisions):
+            _render_decision_card(working_df, o_dec, key_prefix=f"outlier_{idx}")
+    else:
+        render_notification(
+            title="Clean Distribution Tails",
+            message="✓ No extreme statistical outliers detected across numeric features based on the 1.5×IQR boundary.",
+            variant="success"
+        )
+
+    # 2. Value Validity Findings (Negative values, whitespace strings, mixed types)
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    st.markdown("#### Value Validity & Format Sanity")
+
+    audit = analyze_data_quality(working_df)
+    validity_decisions = generate_invalid_and_type_decisions(
+        validity=audit.get("validity_analysis", {}),
+        consistency=audit.get("consistency_analysis", {}),
+        df=working_df
+    )
+
+    if validity_decisions:
+        for idx, v_dec in enumerate(validity_decisions):
+            _render_decision_card(working_df, v_dec, key_prefix=f"val_{idx}")
+    else:
+        render_notification(
+            title="Value Validity Verified",
+            message="✓ All values adhere to semantic domain rules (e.g. non-negative quantities, clean strings, consistent data types).",
             variant="success"
         )
 
 
 # =============================================================================
-# TAB 4: COLUMN MANAGEMENT (Rename, Drop, Reorder, Cast Type)
+# SECTION 4: TRANSFORMATIONS
 # =============================================================================
 
-def _render_tab_columns(working_df: pd.DataFrame) -> None:
-    """Render column operations: Rename, Drop, Reorder, and Cast Data Type."""
+def _render_section_transformations(working_df: pd.DataFrame, dataset_name: str = "dataset.csv") -> None:
+    """Render functional data transformation tools organized by sub-categories."""
     render_section_header(
-        title="Column Management",
-        subtitle="Rename columns, drop unnecessary features, reorder columns, or cast data types safely."
+        title="Transformations & Schema Operations",
+        subtitle="Manage column names and data types, build visual filters, apply sorting, clean text, and derive new features."
     )
 
-    subtab_rename, subtab_drop, subtab_reorder, subtab_cast = st.tabs([
-        "RENAME COLUMN",
-        "DROP COLUMNS",
-        "REORDER COLUMNS",
-        "CHANGE DATA TYPE"
+    sub_cols, sub_filters, sub_sort, sub_text, sub_dates, sub_preview = st.tabs([
+        "COLUMNS & TYPES",
+        "VISUAL FILTERS",
+        "PERSISTENT SORTING",
+        "TEXT CLEANING",
+        "DATES & ARITHMETIC",
+        "PREVIEW & EXPORT"
     ])
 
     all_cols = list(working_df.columns)
+    numeric_cols = [c for c in working_df.columns if pd.api.types.is_numeric_dtype(working_df[c])]
 
-    # 1. Rename Column
-    with subtab_rename:
-        st.markdown("#### Rename Column")
-        c1, c2 = st.columns(2)
-        with c1:
-            col_to_rename = st.selectbox("Select Column to Rename", options=all_cols, key="prep_col_rename_sel")
-        with c2:
-            new_col_name = st.text_input("New Column Name", value=col_to_rename, key="prep_col_rename_val")
+    # ── Subtab 1: Columns & Types ────────────────────────────────────────────
+    with sub_cols:
+        col_c1, col_c2 = st.columns(2)
+        with col_c1:
+            st.markdown("##### Rename Column")
+            col_to_rename = st.selectbox("Select Column", options=all_cols, key="trans_col_rename_sel")
+            new_col_name = st.text_input("New Name", value=col_to_rename, key="trans_col_rename_val")
+            if st.button("Apply Rename", key="btn_apply_rename_trans", type="primary"):
+                b_rows = len(working_df)
+                b_cols = len(working_df.columns)
+                new_df, ok, msg = rename_column(working_df, col_to_rename, new_col_name)
+                if ok:
+                    _record_transformation(new_df, "rename_column", msg, b_rows, b_cols, column=col_to_rename, strategy="rename")
+                    st.rerun()
+                else:
+                    st.error(msg)
 
-        if st.button("Apply Rename", key="btn_apply_rename", type="primary"):
-            b_rows = len(working_df)
-            b_cols = len(working_df.columns)
-            new_df, ok, msg = rename_column(working_df, col_to_rename, new_col_name)
-            if ok:
-                _record_transformation(new_df, "rename_column", msg, b_rows, b_cols)
-                st.rerun()
-            else:
-                st.error(msg)
-
-    # 2. Drop Columns
-    with subtab_drop:
-        st.markdown("#### Drop Column(s)")
-        cols_to_drop = st.multiselect("Select Column(s) to Drop", options=all_cols, key="prep_col_drop_sel")
-
-        if cols_to_drop:
-            st.warning(f"Dropping {len(cols_to_drop)} columns: {', '.join(cols_to_drop)}")
-            if st.button(f"Confirm Drop {len(cols_to_drop)} Column(s)", key="btn_apply_drop_cols", type="primary"):
+            st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+            st.markdown("##### Drop Column(s)")
+            cols_to_drop = st.multiselect("Select Column(s) to Drop", options=all_cols, key="trans_col_drop_sel")
+            if cols_to_drop and st.button(f"Confirm Drop {len(cols_to_drop)} Column(s)", key="btn_apply_drop_trans", type="primary"):
                 b_rows = len(working_df)
                 b_cols = len(working_df.columns)
                 new_df, dropped = drop_columns(working_df, cols_to_drop)
                 desc = f"Dropped column(s): {', '.join(dropped)}"
-                _record_transformation(new_df, "drop_columns", desc, b_rows, b_cols)
+                _record_transformation(new_df, "drop_columns", desc, b_rows, b_cols, column=", ".join(dropped), strategy="drop")
                 st.rerun()
 
-    # 3. Reorder Columns
-    with subtab_reorder:
-        st.markdown("#### Reorder Columns")
-        st.caption("Select columns in the desired display order:")
-        new_order = st.multiselect("Column Ordering", options=all_cols, default=all_cols, key="prep_col_reorder_sel")
-
-        if st.button("Apply Column Order", key="btn_apply_reorder", type="primary"):
-            b_rows = len(working_df)
-            b_cols = len(working_df.columns)
-            new_df, ok = reorder_columns(working_df, new_order)
-            if ok:
-                _record_transformation(new_df, "reorder_columns", "Reordered dataset columns", b_rows, b_cols)
-                st.rerun()
-
-    # 4. Change Data Type
-    with subtab_cast:
-        st.markdown("#### Safe Data Type Casting")
-        c1, c2 = st.columns(2)
-        with c1:
-            col_to_cast = st.selectbox("Select Column to Cast", options=all_cols, key="prep_col_cast_sel")
+        with col_c2:
+            st.markdown("##### Safe Data Type Casting")
+            col_to_cast = st.selectbox("Select Column to Cast", options=all_cols, key="trans_col_cast_sel")
             curr_type = str(working_df[col_to_cast].dtype)
             st.caption(f"Current Pandas Dtype: `{curr_type}`")
+            target_type = st.selectbox("Target Data Type", options=["Numeric", "Integer", "Float", "String", "Category", "Boolean", "Datetime"], key="trans_col_cast_target")
+            
+            if st.button("Apply Type Conversion", key="btn_apply_cast_trans", type="primary"):
+                b_rows = len(working_df)
+                b_cols = len(working_df.columns)
+                new_df, result = cast_column_type(working_df, col_to_cast, target_type)
+                if result.get("success"):
+                    desc = f"Cast column '{col_to_cast}' from {curr_type} to {target_type} ({result['converted']} converted, {result['coerced_na']} NA)"
+                    _record_transformation(new_df, "cast_type", desc, b_rows, b_cols, column=col_to_cast, strategy=f"cast_{target_type}")
+                    st.rerun()
+                else:
+                    st.error(f"Type conversion failed: {result.get('error')}")
+
+            st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+            st.markdown("##### Reorder Columns")
+            new_order = st.multiselect("Set Display Order", options=all_cols, default=all_cols, key="trans_col_reorder_sel")
+            if st.button("Apply Column Order", key="btn_apply_reorder_trans"):
+                b_rows = len(working_df)
+                b_cols = len(working_df.columns)
+                new_df, ok = reorder_columns(working_df, new_order)
+                if ok:
+                    _record_transformation(new_df, "reorder_columns", "Reordered columns", b_rows, b_cols, strategy="reorder")
+                    st.rerun()
+
+    # ── Subtab 2: Visual Filters ─────────────────────────────────────────────
+    with sub_filters:
+        st.markdown("##### Rule-Based Visual Filter Builder")
+        c1, c2, c3, c4 = st.columns([3, 3, 3, 3])
+        with c1:
+            f_col = st.selectbox("Filter Column", options=all_cols, key="trans_f_col")
+        series = working_df[f_col]
+        if pd.api.types.is_numeric_dtype(series):
+            ops = ["Equals (=)", "Not Equals (!=)", "Greater Than (>)", "Greater or Equal (>=)", "Less Than (<)", "Less or Equal (<=)", "Between", "Is Null / Missing", "Is Not Null"]
+        elif pd.api.types.is_datetime64_any_dtype(series):
+            ops = ["Before (<)", "After (>)", "Equals", "Between", "Is Null / Missing", "Is Not Null"]
+        else:
+            ops = ["Equals", "Not Equals", "Contains", "Starts with", "Ends with", "Is one of", "Is Null / Missing", "Is Not Null"]
 
         with c2:
-            type_options = ["Numeric", "Integer", "Float", "String", "Category", "Boolean", "Datetime"]
-            target_type = st.selectbox("Target Data Type", options=type_options, key="prep_col_cast_target")
+            f_op = st.selectbox("Operator", options=ops, key="trans_f_op")
+        with c3:
+            if f_op not in ["Is Null / Missing", "Is Not Null"]:
+                if f_op == "Is one of":
+                    f_val = st.text_input("Values (comma-separated)", key="trans_f_val_multi")
+                elif pd.api.types.is_numeric_dtype(series):
+                    min_v = float(series.dropna().min()) if not series.dropna().empty else 0.0
+                    f_val = st.number_input("Value", value=min_v, key="trans_f_val_num")
+                else:
+                    f_val = st.text_input("Comparison Value", key="trans_f_val_str")
+            else:
+                f_val = None
+        with c4:
+            if f_op == "Between":
+                if pd.api.types.is_numeric_dtype(series):
+                    max_v = float(series.dropna().max()) if not series.dropna().empty else 100.0
+                    f_val_end = st.number_input("End Value", value=max_v, key="trans_f_val_end_num")
+                else:
+                    f_val_end = st.text_input("End Value", key="trans_f_val_end_str")
+            else:
+                f_val_end = None
 
-        if st.button("Apply Type Conversion", key="btn_apply_cast", type="primary"):
+        if st.button("Apply Filter Rule", key="btn_apply_filter_trans", type="primary"):
+            rule = {"column": f_col, "operator": f_op, "value": f_val, "value_end": f_val_end}
             b_rows = len(working_df)
             b_cols = len(working_df.columns)
-            new_df, result = cast_column_type(working_df, col_to_cast, target_type)
-            if result.get("success"):
-                desc = f"Cast column '{col_to_cast}' from {curr_type} to {target_type} ({result['converted']} values converted, {result['coerced_na']} coerced to NA)"
-                _record_transformation(new_df, "cast_type", desc, b_rows, b_cols)
-                st.rerun()
-            else:
-                st.error(f"Type conversion failed: {result.get('error')}")
-
-
-# =============================================================================
-# TAB 5: VISUAL FILTER BUILDER
-# =============================================================================
-
-def _render_tab_filters(working_df: pd.DataFrame) -> None:
-    """Render visual rule-based filter builder with compound conditions."""
-    render_section_header(
-        title="Visual Filter Builder",
-        subtitle="Build non-destructive filters adapting to numeric, text, and datetime column types."
-    )
-
-    all_cols = list(working_df.columns)
-    c1, c2, c3, c4 = st.columns([3, 3, 3, 3])
-
-    with c1:
-        f_col = st.selectbox("Filter Column", options=all_cols, key="prep_filter_col")
-
-    # Select operators according to column data type
-    series = working_df[f_col]
-    if pd.api.types.is_numeric_dtype(series):
-        ops = ["Equals (=)", "Not Equals (!=)", "Greater Than (>)", "Greater or Equal (>=)", "Less Than (<)", "Less or Equal (<=)", "Between", "Is Null / Missing", "Is Not Null"]
-    elif pd.api.types.is_datetime64_any_dtype(series):
-        ops = ["Before (<)", "After (>)", "Equals", "Between", "Is Null / Missing", "Is Not Null"]
-    else:
-        ops = ["Equals", "Not Equals", "Contains", "Starts with", "Ends with", "Is one of", "Is Null / Missing", "Is Not Null"]
-
-    with c2:
-        f_op = st.selectbox("Condition Operator", options=ops, key="prep_filter_op")
-
-    with c3:
-        if f_op not in ["Is Null / Missing", "Is Not Null"]:
-            if f_op == "Is one of":
-                f_val = st.text_input("Values (comma-separated)", key="prep_filter_val_multi")
-            elif pd.api.types.is_numeric_dtype(series):
-                min_v = float(series.dropna().min()) if not series.dropna().empty else 0.0
-                f_val = st.number_input("Value", value=min_v, key="prep_filter_val_num")
-            else:
-                f_val = st.text_input("Comparison Value", key="prep_filter_val_str")
-        else:
-            f_val = None
-
-    with c4:
-        if f_op == "Between":
-            if pd.api.types.is_numeric_dtype(series):
-                max_v = float(series.dropna().max()) if not series.dropna().empty else 100.0
-                f_val_end = st.number_input("End Value (Between)", value=max_v, key="prep_filter_val_end_num")
-            else:
-                f_val_end = st.text_input("End Value", key="prep_filter_val_end_str")
-        else:
-            f_val_end = None
-
-    if st.button("Apply Filter", key="btn_apply_single_filter", type="primary"):
-        rule = {"column": f_col, "operator": f_op, "value": f_val, "value_end": f_val_end}
-        b_rows = len(working_df)
-        b_cols = len(working_df.columns)
-        new_df, info = apply_filters(working_df, [rule])
-        desc = f"Filtered '{f_col}' with {f_op} {f_val or ''} (Kept {info['rows_after']:,} of {b_rows:,} rows)"
-        _record_transformation(new_df, "filter", desc, b_rows, b_cols)
-        st.rerun()
-
-
-# =============================================================================
-# TAB 6: SORTING
-# =============================================================================
-
-def _render_tab_sorting(working_df: pd.DataFrame) -> None:
-    """Render single and multi-column persistent sorting builder."""
-    render_section_header(
-        title="Persistent Sorting",
-        subtitle="Reorder dataset records by primary and secondary columns."
-    )
-
-    all_cols = list(working_df.columns)
-    c1, c2 = st.columns(2)
-    with c1:
-        sort_cols = st.multiselect("Sort Columns (in priority order)", options=all_cols, default=[all_cols[0]] if all_cols else [], key="prep_sort_cols")
-    with c2:
-        order_choice = st.radio("Sort Direction", options=["Ascending (Low to High / A-Z)", "Descending (High to Low / Z-A)"], key="prep_sort_dir")
-        is_asc = "Ascending" in order_choice
-
-    if sort_cols and st.button("Apply Persistent Sort", key="btn_apply_sort", type="primary"):
-        b_rows = len(working_df)
-        b_cols = len(working_df.columns)
-        new_df, ok = sort_dataset(working_df, sort_cols, [is_asc] * len(sort_cols))
-        if ok:
-            desc = f"Sorted dataset by {', '.join(sort_cols)} ({'Ascending' if is_asc else 'Descending'})"
-            _record_transformation(new_df, "sort", desc, b_rows, b_cols)
+            new_df, info = apply_filters(working_df, [rule])
+            desc = f"Filtered '{f_col}' ({f_op} {f_val or ''}): kept {info['rows_after']:,} of {b_rows:,} rows"
+            _record_transformation(new_df, "filter", desc, b_rows, b_cols, column=f_col, strategy="filter")
             st.rerun()
 
+    # ── Subtab 3: Sorting ────────────────────────────────────────────────────
+    with sub_sort:
+        st.markdown("##### Multi-Column Persistent Sorting")
+        sc1, sc2 = st.columns(2)
+        with sc1:
+            sort_cols = st.multiselect("Sort Columns (in priority order)", options=all_cols, default=[all_cols[0]] if all_cols else [], key="trans_sort_cols")
+        with sc2:
+            order_choice = st.radio("Direction", options=["Ascending (Low to High / A-Z)", "Descending (High to Low / Z-A)"], key="trans_sort_dir")
+            is_asc = "Ascending" in order_choice
 
-# =============================================================================
-# TAB 7: OUTLIER HANDLING (IQR)
-# =============================================================================
-
-def _render_tab_outliers(working_df: pd.DataFrame) -> None:
-    """Render IQR outlier detection, affected row preview, capping, and removal."""
-    render_section_header(
-        title="IQR Outlier Handling",
-        subtitle="Detect and handle statistical outliers using the Interquartile Range (IQR) method."
-    )
-
-    numeric_cols = [c for c in working_df.columns if pd.api.types.is_numeric_dtype(working_df[c])]
-    if not numeric_cols:
-        render_notification(title="No Numeric Columns", message="Outlier detection requires at least one numeric column.", variant="info")
-        return
-
-    c1, c2 = st.columns([5, 7])
-    with c1:
-        target_num_col = st.selectbox("Select Numeric Column", options=numeric_cols, key="prep_outlier_col")
-
-    prof = get_outliers_profile(working_df, target_num_col)
-    outlier_cnt = prof["outlier_count"]
-    lower = prof["lower_bound"]
-    upper = prof["upper_bound"]
-
-    with c2:
-        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-        st.caption(f"IQR Boundary: [{lower:,.2f}, {upper:,.2f}] · Detected Outliers: **{outlier_cnt:,} records**")
-
-    if outlier_cnt > 0:
-        st.markdown("#### Outlier Records Review")
-        st.dataframe(prof["outlier_df"].head(30), use_container_width=True)
-
-        action_c1, action_c2 = st.columns(2)
-        with action_c1:
-            if st.button(f"Cap Outliers to Boundaries [{lower:,.1f}, {upper:,.1f}]", key="btn_cap_outliers", type="primary", use_container_width=True):
-                b_rows = len(working_df)
-                b_cols = len(working_df.columns)
-                new_df, info = handle_outliers(working_df, target_num_col, action="cap_boundaries")
-                desc = f"Capped {outlier_cnt:,} outliers in '{target_num_col}' to [{lower:,.2f}, {upper:,.2f}]"
-                _record_transformation(new_df, "outliers_cap", desc, b_rows, b_cols)
+        if sort_cols and st.button("Apply Sort", key="btn_apply_sort_trans", type="primary"):
+            b_rows = len(working_df)
+            b_cols = len(working_df.columns)
+            new_df, ok = sort_dataset(working_df, sort_cols, [is_asc] * len(sort_cols))
+            if ok:
+                desc = f"Sorted by {', '.join(sort_cols)} ({'Ascending' if is_asc else 'Descending'})"
+                _record_transformation(new_df, "sort", desc, b_rows, b_cols, column=", ".join(sort_cols), strategy="sort")
                 st.rerun()
 
-        with action_c2:
-            if st.button(f"Remove {outlier_cnt:,} Outlier Rows", key="btn_remove_outliers", use_container_width=True):
+    # ── Subtab 4: Text Cleaning ──────────────────────────────────────────────
+    with sub_text:
+        st.markdown("##### Text Case & String Cleaning")
+        str_cols = [c for c in working_df.columns if not pd.api.types.is_numeric_dtype(working_df[c])]
+        if str_cols:
+            tc1, tc2 = st.columns(2)
+            with tc1:
+                target_str_col = st.selectbox("Select Text Column", options=str_cols, key="trans_text_col")
+            with tc2:
+                text_ops = st.multiselect(
+                    "Operations",
+                    options=["trim", "lower", "upper", "title", "remove_empty", "find_replace"],
+                    default=["trim"],
+                    format_func=lambda x: {
+                        "trim": "Trim Whitespace",
+                        "lower": "Lowercase",
+                        "upper": "Uppercase",
+                        "title": "Title Case",
+                        "remove_empty": "Blank Strings to NA",
+                        "find_replace": "Find and Replace"
+                    }.get(x, x),
+                    key="trans_text_ops"
+                )
+
+            find_val, replace_val = None, None
+            if "find_replace" in text_ops:
+                fr1, fr2 = st.columns(2)
+                with fr1:
+                    find_val = st.text_input("Find Substring", key="trans_text_find")
+                with fr2:
+                    replace_val = st.text_input("Replace With", key="trans_text_replace")
+
+            if text_ops and st.button("Apply Text Cleaning", key="btn_apply_text_trans", type="primary"):
                 b_rows = len(working_df)
                 b_cols = len(working_df.columns)
-                new_df, info = handle_outliers(working_df, target_num_col, action="remove_rows")
-                desc = f"Removed {outlier_cnt:,} outlier rows in '{target_num_col}'"
-                _record_transformation(new_df, "outliers_remove", desc, b_rows, b_cols)
+                new_df, affected = clean_text_column(working_df, target_str_col, text_ops, find_str=find_val, replace_str=replace_val)
+                desc = f"Cleaned text in '{target_str_col}' ({', '.join(text_ops)})"
+                _record_transformation(new_df, "text_clean", desc, b_rows, b_cols, column=target_str_col, strategy="text_clean")
                 st.rerun()
-    else:
-        render_notification(
-            title="Clean Column Distribution",
-            message=f"No statistical outliers detected in '{target_num_col}' based on 1.5×IQR boundary.",
-            variant="success"
-        )
+        else:
+            render_notification(title="No Text Columns", message="Text operations apply to string and categorical columns.", variant="info")
 
-
-# =============================================================================
-# TAB 8: TEXT CLEANING
-# =============================================================================
-
-def _render_tab_text_cleaning(working_df: pd.DataFrame) -> None:
-    """Render text and categorical string cleaning operations."""
-    render_section_header(
-        title="Text & String Cleaning",
-        subtitle="Standardize text case, trim whitespace, find and replace values, or clean empty strings."
-    )
-
-    str_cols = [c for c in working_df.columns if not pd.api.types.is_numeric_dtype(working_df[c])]
-    if not str_cols:
-        render_notification(title="No Text Columns", message="Text cleaning applies to string or categorical columns.", variant="info")
-        return
-
-    c1, c2 = st.columns(2)
-    with c1:
-        target_str_col = st.selectbox("Select Text Column", options=str_cols, key="prep_text_col")
-
-    with c2:
-        text_ops = st.multiselect(
-            "Select Cleaning Operations",
-            options=["trim", "lower", "upper", "title", "remove_empty", "find_replace"],
-            default=["trim"],
-            format_func=lambda x: {
-                "trim": "Trim Leading/Trailing Whitespace",
-                "lower": "Convert to Lowercase",
-                "upper": "Convert to Uppercase",
-                "title": "Convert to Title Case",
-                "remove_empty": "Convert Blank/Empty Strings to NA",
-                "find_replace": "Find and Replace Text"
-            }.get(x, x),
-            key="prep_text_ops"
-        )
-
-    find_val = None
-    replace_val = None
-    if "find_replace" in text_ops:
-        fr1, fr2 = st.columns(2)
-        with fr1:
-            find_val = st.text_input("Find Substring / Value", key="prep_text_find")
-        with fr2:
-            replace_val = st.text_input("Replace With", key="prep_text_replace")
-
-    if text_ops and st.button("Apply Text Cleaning", key="btn_apply_text_clean", type="primary"):
-        b_rows = len(working_df)
-        b_cols = len(working_df.columns)
-        new_df, affected = clean_text_column(working_df, target_str_col, text_ops, find_str=find_val, replace_str=replace_val)
-        desc = f"Cleaned text in '{target_str_col}' ({', '.join(text_ops)})"
-        _record_transformation(new_df, "text_clean", desc, b_rows, b_cols)
-        st.rerun()
-
-
-# =============================================================================
-# TAB 9: DATES & COLUMN DERIVATIONS
-# =============================================================================
-
-def _render_tab_dates_and_derivations(working_df: pd.DataFrame) -> None:
-    """Render temporal component extractors and safe column arithmetic derivations."""
-    render_section_header(
-        title="Dates & Column Derivations",
-        subtitle="Extract temporal features or derive new columns using safe mathematical calculations."
-    )
-
-    subtab_dates, subtab_arith = st.tabs(["DATE COMPONENT EXTRACTION", "SAFE COLUMN ARITHMETIC"])
-
-    all_cols = list(working_df.columns)
-    numeric_cols = [c for c in working_df.columns if pd.api.types.is_numeric_dtype(working_df[c])]
-
-    # 1. Date Component Extraction
-    with subtab_dates:
-        st.markdown("#### Extract Date Components")
-        c1, c2 = st.columns(2)
-        with c1:
-            date_target = st.selectbox("Date / Timestamp Column", options=all_cols, key="prep_date_extract_col")
-        with c2:
+    # ── Subtab 5: Dates & Arithmetic ─────────────────────────────────────────
+    with sub_dates:
+        st.markdown("##### Extract Date Components")
+        dc1, dc2 = st.columns(2)
+        with dc1:
+            date_target = st.selectbox("Date Column", options=all_cols, key="trans_date_col")
+        with dc2:
             comp_choices = st.multiselect(
-                "Components to Extract",
+                "Components",
                 options=["year", "month", "day", "day_of_week", "quarter"],
                 default=["year", "month"],
                 format_func=lambda x: x.replace("_", " ").title(),
-                key="prep_date_comps"
+                key="trans_date_comps"
             )
-
-        if comp_choices and st.button("Extract Date Features", key="btn_apply_date_extract", type="primary"):
+        if comp_choices and st.button("Extract Components", key="btn_apply_date_trans", type="primary"):
             b_rows = len(working_df)
             b_cols = len(working_df.columns)
             new_df, created = extract_date_components(working_df, date_target, comp_choices)
             if created:
-                desc = f"Extracted temporal components from '{date_target}': {', '.join(created)}"
-                _record_transformation(new_df, "date_extraction", desc, b_rows, b_cols)
+                desc = f"Extracted date components from '{date_target}': {', '.join(created)}"
+                _record_transformation(new_df, "date_extraction", desc, b_rows, b_cols, column=date_target, strategy="date_extract")
                 st.rerun()
 
-    # 2. Safe Column Arithmetic
-    with subtab_arith:
-        st.markdown("#### Safe Mathematical Derivation (Strictly No eval/exec)")
-        st.caption("Calculate new columns from arithmetic operations between features.")
-
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+        st.markdown("##### Safe Mathematical Column Derivation")
         d1, d2, d3, d4 = st.columns(4)
         with d1:
-            new_col_name = st.text_input("New Column Name", placeholder="e.g. Net_Revenue", key="prep_derive_name")
+            new_col_name = st.text_input("New Column Name", placeholder="e.g. Total_Value", key="trans_derive_name")
         with d2:
-            col_a = st.selectbox("Primary Column (A)", options=numeric_cols if numeric_cols else all_cols, key="prep_derive_col_a")
+            col_a = st.selectbox("Primary Column (A)", options=numeric_cols if numeric_cols else all_cols, key="trans_derive_col_a")
         with d3:
-            op_choices = [
-                ("add", "Add (A + B)"),
-                ("subtract", "Subtract (A - B)"),
-                ("multiply", "Multiply (A * B)"),
-                ("divide", "Divide (A / B)"),
-                ("percentage", "Percentage Share (A / B * 100)")
-            ]
-            op_keys = [o[0] for o in op_choices]
-            op = st.selectbox("Operation", options=op_keys, format_func=lambda k: dict(op_choices).get(k, k), key="prep_derive_op")
+            op_choices = [("add", "A + B"), ("subtract", "A - B"), ("multiply", "A * B"), ("divide", "A / B"), ("percentage", "A / B * 100")]
+            op = st.selectbox("Operation", options=[o[0] for o in op_choices], format_func=lambda k: dict(op_choices).get(k, k), key="trans_derive_op")
         with d4:
-            operand_type = st.radio("Second Operand (B)", options=["Another Column", "Constant Value"], key="prep_derive_operand_type")
+            operand_type = st.radio("Second Operand", options=["Another Column", "Constant Value"], key="trans_derive_op_type")
 
         col_b = None
         const_val = None
         if operand_type == "Another Column":
-            col_b = st.selectbox("Second Column (B)", options=numeric_cols if numeric_cols else all_cols, key="prep_derive_col_b")
+            col_b = st.selectbox("Second Column (B)", options=numeric_cols if numeric_cols else all_cols, key="trans_derive_col_b")
         else:
-            const_val = st.number_input("Constant Numeric Value (B)", value=1.0, key="prep_derive_const_val")
+            const_val = st.number_input("Constant Value (B)", value=1.0, key="trans_derive_const_val")
 
-        if new_col_name and st.button("Compute Derived Column", key="btn_apply_derive", type="primary"):
+        if new_col_name and st.button("Compute Derived Column", key="btn_apply_derive_trans", type="primary"):
             b_rows = len(working_df)
             b_cols = len(working_df.columns)
             new_df, ok, msg = derive_column_arithmetic(working_df, new_col_name, col_a, op, col_b=col_b, constant_val=const_val)
             if ok:
-                _record_transformation(new_df, "derive_column", msg, b_rows, b_cols)
+                _record_transformation(new_df, "derive_column", msg, b_rows, b_cols, column=new_col_name, strategy="arithmetic")
                 st.rerun()
             else:
                 st.error(msg)
 
+    # ── Subtab 6: Preview & Export ───────────────────────────────────────────
+    with sub_preview:
+        st.markdown(f"##### Prepared Dataset Table ({len(working_df):,} rows × {len(working_df.columns)} columns)")
+        st.dataframe(working_df.head(100), use_container_width=True)
+
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+        exp_c1, exp_c2 = st.columns(2)
+        base_name = dataset_name.rsplit(".", 1)[0] if "." in dataset_name else dataset_name
+        with exp_c1:
+            csv_bytes = export_prepared_csv(working_df)
+            st.download_button(
+                label="📥 Download Prepared CSV",
+                data=csv_bytes,
+                file_name=f"{base_name}_prepared.csv",
+                mime="text/csv",
+                key="trans_dl_csv",
+                type="primary",
+                use_container_width=True
+            )
+        with exp_c2:
+            xlsx_bytes = export_prepared_excel(working_df, sheet_name="Prepared_Data")
+            st.download_button(
+                label="📥 Download Prepared Excel (XLSX)",
+                data=xlsx_bytes,
+                file_name=f"{base_name}_prepared.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="trans_dl_xlsx",
+                use_container_width=True
+            )
+
 
 # =============================================================================
-# TAB 10: PREVIEW & EXPORT
+# SECTION 5: PREPARATION HISTORY & AUDIT TRAIL
 # =============================================================================
 
-def _render_tab_preview_and_export(
+def _render_section_preparation_history(
     orig_df: pd.DataFrame,
     working_df: pd.DataFrame,
     dataset_name: str
 ) -> None:
-    """Render side-by-side / toggleable dataset preview and export options."""
+    """Render audit timeline of applied transformations, verified quality improvements, and 1-click revert."""
     render_section_header(
-        title="Prepared Dataset Preview & Export",
-        subtitle="Inspect clean data tables and export the prepared dataset to CSV or Excel."
+        title="Preparation History & Audit Trail",
+        subtitle="Chronological audit timeline of verified transformations, quality improvements, and 1-click undo."
     )
 
-    prev_mode = st.radio(
-        "Preview Mode",
-        options=["Prepared Working Dataset", "Original Uploaded Dataset", "Side-by-Side Comparison"],
-        horizontal=True,
-        key="prep_preview_mode_choice"
-    )
+    history = st.session_state.get("prep_history", [])
+    undo_stack = st.session_state.get("prep_undo_stack", [])
 
-    if prev_mode == "Prepared Working Dataset":
-        st.markdown(f"**Prepared Dataset Preview** ({len(working_df):,} rows × {len(working_df.columns)} columns)")
-        st.dataframe(working_df, use_container_width=True)
+    # History Toolbar
+    t1, t2, t3 = st.columns([6, 3, 3])
+    with t1:
+        st.markdown(
+            f'<div style="font-weight: 600; font-size: 13.5px; color: var(--text-primary); padding-top: 6px;">'
+            f'Recorded Audit Trail ({len(history)} Modifications)'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+    with t2:
+        can_undo = len(undo_stack) > 0
+        if st.button("↩ Undo Last Change", key="hist_undo_btn", disabled=not can_undo, use_container_width=True):
+            _undo_last_change()
+    with t3:
+        with st.popover("Reset All Changes", use_container_width=True):
+            st.markdown("**Confirm Full Reset**")
+            st.caption("Revert working dataset back to the pristine uploaded copy. All transformation history will be cleared.")
+            if st.button("Yes, Reset to Original", key="confirm_reset_hist_btn", type="primary", use_container_width=True):
+                _reset_all_changes()
 
-    elif prev_mode == "Original Uploaded Dataset":
-        st.markdown(f"**Original Dataset Preview** ({len(orig_df):,} rows × {len(orig_df.columns)} columns)")
-        st.dataframe(orig_df, use_container_width=True)
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
-    else:
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown(f"**Original** ({len(orig_df):,} × {len(orig_df.columns)})")
-            st.dataframe(orig_df.head(50), use_container_width=True)
-        with c2:
-            st.markdown(f"**Prepared** ({len(working_df):,} × {len(working_df.columns)})")
-            st.dataframe(working_df.head(50), use_container_width=True)
+    if not history:
+        render_empty_state(
+            title="No Transformations Recorded Yet",
+            description="Apply recommended fixes or custom transformations from the sections above to see verified audit entries here.",
+            icon="sliders-horizontal"
+        )
+        return
+
+    # Render Audit Timeline Items
+    for idx, item in enumerate(history):
+        delta = item.get("score_delta", 0.0)
+        delta_tag = f"<span class='ds-preview-delta-positive'>+{delta:.1f} Quality Score</span>" if delta > 0 else ""
+        col_tag = f"Column: <b>{html.escape(item.get('column', 'Dataset'))}</b>"
+        strat_tag = f"Method: <b>{html.escape(item.get('strategy', 'Applied'))}</b>" if item.get('strategy') else ""
+        dim_tag = f"Dataset: {item.get('rows_before', 0):,} → {item.get('rows_after', 0):,} rows"
+
+        reason_text = item.get("reason", "")
+        reason_html = f"<div style='font-size: 11.5px; color: var(--text-secondary); margin-top: 2px;'>{html.escape(reason_text)}</div>" if reason_text else ""
+
+        entry_html = (
+            f"<div class='ds-audit-entry' style='margin-bottom: 8px;'>"
+            f"<div class='ds-audit-entry-left'>"
+            f"<div class='ds-audit-entry-title'>⚡ {html.escape(item.get('description', 'Transformation Applied'))} {delta_tag}</div>"
+            f"<div class='ds-audit-entry-meta'>{item.get('timestamp', '')} · {col_tag} · {strat_tag} · {dim_tag}</div>"
+            f"{reason_html}"
+            f"</div>"
+            f"</div>"
+        )
+        st.markdown(entry_html, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-    st.markdown("#### Export Prepared Dataset")
-
-    base_name = dataset_name.rsplit(".", 1)[0] if "." in dataset_name else dataset_name
+    st.markdown("##### Export Prepared Dataset")
     exp_c1, exp_c2 = st.columns(2)
-
+    base_name = dataset_name.rsplit(".", 1)[0] if "." in dataset_name else dataset_name
     with exp_c1:
         csv_bytes = export_prepared_csv(working_df)
         st.download_button(
-            label="Download Prepared Dataset (CSV)",
+            label="📥 Download Prepared Dataset (CSV)",
             data=csv_bytes,
             file_name=f"{base_name}_prepared.csv",
             mime="text/csv",
-            key="prep_dl_csv",
+            key="hist_dl_csv",
             type="primary",
             use_container_width=True
         )
-
     with exp_c2:
         xlsx_bytes = export_prepared_excel(working_df, sheet_name="Prepared_Data")
         st.download_button(
-            label="Download Prepared Dataset (Excel XLSX)",
+            label="📥 Download Prepared Dataset (Excel XLSX)",
             data=xlsx_bytes,
             file_name=f"{base_name}_prepared.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="prep_dl_xlsx",
+            key="hist_dl_xlsx",
             use_container_width=True
         )

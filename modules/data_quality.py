@@ -1,17 +1,19 @@
 """
-DATA STUDIO v2 — Intelligent Data Quality Decision Engine (Module 4)
+DATA STUDIO v2 — Data Quality Audit & Diagnostics (Module 4)
 =============================================================================
-Transform passive problem detection into an intelligent decision advisor:
-- Statistical profiling (skewness, distribution shape, outliers, mode dominance)
-- Deterministic decision logic (answers What, Why, Severity, Action, Alternatives, Impact)
-- Confidence, Risk, and Expected Impact assessments
-- Interactive before/after preview before applying transformations
-- Safe non-destructive execution with pristine original preservation
-- Automated post-transformation verification check and quality score improvement
-- Complete transformation history and audit trail with 1-click revert
+Purpose: DETECT → MEASURE → EXPLAIN
+Answers: "What problems exist in my dataset?"
+
+Audits and summarizes:
+- Missing values and completeness
+- Duplicate rows and uniqueness
+- Outliers and distribution health
+- Invalid values and domain validity
+- Type inconsistencies and structural anomalies
+
+Decision-making, previews, and remediation workflows live inside Data Preparation.
 """
 from typing import Optional, Dict, Any, List
-import datetime
 import html
 import pandas as pd
 import streamlit as st
@@ -32,11 +34,7 @@ from modules.ui_components import (
 from modules.data_quality_engine import (
     analyze_data_quality,
     generate_missing_bar_chart,
-    generate_outlier_bar_chart,
-    generate_quality_decision_plan,
-    preview_decision_transformation,
-    apply_decision_transformation,
-    verify_decision_impact
+    generate_outlier_bar_chart
 )
 
 
@@ -95,10 +93,10 @@ def render_data_quality_page() -> None:
         st.session_state["_cached_quality_audit"] = audit_report
     mark_workflow_step("quality", True)
 
-    # 4. Standardized Page Subtitle (beneath the compact Top Header)
+    # 4. Standardized Page Subtitle
     render_page_header(
         title="Data Quality",
-        subtitle="Intelligent Data Quality Advisor — statistical anomaly investigation, decision reasoning, and verified remediation.",
+        subtitle="Multi-dimensional health audit, statistical anomaly detection, and issue diagnostics.",
         icon="shield-check"
     )
 
@@ -111,19 +109,21 @@ def render_data_quality_page() -> None:
     # 7. Quality KPI Summary Row
     _render_quality_kpis(audit_report, metadata)
 
+    # 8. Detected Issues Summary & Data Preparation Handoff Banner
+    _render_issues_summary_and_handoff(audit_report)
+
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
-    # 8. Internal Data Quality Tabs
-    tab_decisions, tab_missing, tab_duplicates, tab_outliers_validity, tab_history = st.tabs([
-        "DECISION QUEUE",
+    # 9. Clean Diagnostic Data Quality Tabs (No Decision Queue tab)
+    tab_overview, tab_missing, tab_duplicates, tab_outliers_validity = st.tabs([
+        "OVERVIEW",
         "MISSING VALUES",
         "DUPLICATES",
-        "OUTLIERS & VALIDITY",
-        "TRANSFORMATION HISTORY"
+        "OUTLIERS & VALIDITY"
     ])
 
-    with tab_decisions:
-        _render_tab_decision_queue(df, audit_report)
+    with tab_overview:
+        _render_tab_overview(df, audit_report)
 
     with tab_missing:
         _render_tab_missing(df, audit_report, current_theme)
@@ -134,12 +134,9 @@ def render_data_quality_page() -> None:
     with tab_outliers_validity:
         _render_tab_outliers_and_validity(df, audit_report, current_theme)
 
-    with tab_history:
-        _render_tab_transformation_history(df, audit_report)
-
     st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
 
-    # 9. Next Steps Navigation
+    # 10. Next Steps Navigation
     _render_next_actions(audit_report)
 
 
@@ -177,7 +174,7 @@ def _render_context_bar(name: str, file_type: str, metadata: Dict[str, Any]) -> 
                 st.toast("Data quality audit recalculated.")
                 st.rerun()
         with ac2:
-            if st.button("Open Preparation", key="quality_goto_prep_btn", use_container_width=True):
+            if st.button("Open Preparation", key="quality_goto_prep_btn", type="primary", use_container_width=True):
                 st.session_state["current_page"] = "Data Preparation"
                 st.rerun()
 
@@ -233,7 +230,6 @@ def _render_quality_kpis(report: Dict[str, Any], metadata: Dict[str, Any]) -> No
     """Render top quality metric cards."""
     missing = report["missing_analysis"]
     duplicates = report["duplicate_analysis"]
-    outliers = report["outlier_analysis"]
     problem_cols = [c for c in report["column_quality_scores"] if c["quality_score"] < 80.0]
 
     c1, c2, c3, c4 = st.columns(4)
@@ -275,309 +271,129 @@ def _render_quality_kpis(report: Dict[str, Any], metadata: Dict[str, Any]) -> No
         )
 
 
-# =============================================================================
-# TAB 1: INTELLIGENT DECISION QUEUE (THE CORE ADVISOR)
-# =============================================================================
+def _render_issues_summary_and_handoff(report: Dict[str, Any]) -> None:
+    """Render structured issue count summary with clear handoff into Data Preparation."""
+    missing = report["missing_analysis"]
+    duplicates = report["duplicate_analysis"]
+    outliers = report["outlier_analysis"]
+    validity = report["validity_analysis"]
 
-def _render_tab_decision_queue(df: pd.DataFrame, report: Dict[str, Any]) -> None:
-    """Render Prioritized Intelligent Decision Queue with interactive cards and preview modals."""
-    render_section_header(
-        title="Intelligent Decision Queue",
-        subtitle="Statistical investigation, deterministic decision logic, ranked alternatives, and 1-click remediation."
-    )
-
-    decisions: List[Dict[str, Any]] = report.get("decision_plan", [])
-
-    if not decisions:
-        render_notification(
-            title="Zero Quality Defects Found",
-            message="Your dataset is in pristine analytical condition. No missing values, exact duplicates, or structural anomalies were detected.",
-            variant="success"
-        )
-        return
-
-    # ── Filter Bar ───────────────────────────────────────────────────────────
-    sev_counts = {
-        "CRITICAL": sum(1 for d in decisions if d["severity"] == "CRITICAL"),
-        "HIGH": sum(1 for d in decisions if d["severity"] == "HIGH"),
-        "MEDIUM": sum(1 for d in decisions if d["severity"] == "MEDIUM"),
-        "LOW": sum(1 for d in decisions if d["severity"] in ["LOW", "INFO"])
-    }
-
-    f1, f2 = st.columns([6, 4])
-    with f1:
-        filter_opts = [
-            f"All Decisions ({len(decisions)})",
-            f"Critical ({sev_counts['CRITICAL']})",
-            f"High ({sev_counts['HIGH']})",
-            f"Medium ({sev_counts['MEDIUM']})",
-            f"Low & Review ({sev_counts['LOW']})"
-        ]
-        selected_filter = st.selectbox(
-            "Filter decisions by priority",
-            options=filter_opts,
-            key="decision_queue_filter",
-            label_visibility="collapsed"
-        )
-
-    with f2:
-        search_query = st.text_input(
-            "Search column or issue",
-            placeholder="Search column (e.g. Age, Income)...",
-            key="decision_search_input",
-            label_visibility="collapsed"
-        )
-
-    # Filter decision list
-    filtered_decisions = decisions
-    if "Critical (" in selected_filter:
-        filtered_decisions = [d for d in decisions if d["severity"] == "CRITICAL"]
-    elif "High (" in selected_filter:
-        filtered_decisions = [d for d in decisions if d["severity"] == "HIGH"]
-    elif "Medium (" in selected_filter:
-        filtered_decisions = [d for d in decisions if d["severity"] == "MEDIUM"]
-    elif "Low & Review" in selected_filter:
-        filtered_decisions = [d for d in decisions if d["severity"] in ["LOW", "INFO"]]
-
-    if search_query.strip():
-        q = search_query.lower().strip()
-        filtered_decisions = [d for d in filtered_decisions if q in d.get("column", "").lower() or q in d.get("title", "").lower() or q in d.get("recommended_action", "").lower()]
-
-    st.markdown(f"<div style='font-size: 12px; color: var(--text-muted); margin-bottom: 12px;'>Showing <b>{len(filtered_decisions)}</b> prioritized decision items</div>", unsafe_allow_html=True)
-
-    # ── Active Preview Drawer (if user clicked preview on any item) ───────────
-    active_preview_id = st.session_state.get("_active_preview_decision_id")
-    if active_preview_id:
-        target_dec = next((d for d in decisions if d["id"] == active_preview_id), None)
-        if target_dec:
-            _render_decision_preview_modal(df, target_dec)
-
-    # ── Decision Cards ───────────────────────────────────────────────────────
-    for idx, dec in enumerate(filtered_decisions):
-        _render_decision_card(df, dec, idx)
-
-
-def _render_decision_card(df: pd.DataFrame, dec: Dict[str, Any], idx: int) -> None:
-    """Render a single intelligent decision card with why-explanation and actions."""
-    sev = dec.get("severity", "MEDIUM")
-    sev_class = f"sev-{sev.lower()}"
-    badge_class = f"ds-sev-{sev.lower()}"
-
-    card_html = (
-        f'<div class="ds-decision-card {sev_class}">'
-        f'<div class="ds-decision-header">'
-        f'<div class="ds-decision-title-group">'
-        f'<span class="ds-sev-badge {badge_class}">{sev}</span>'
-        f'<h4 class="ds-decision-title">{html.escape(dec.get("title", ""))}</h4>'
-        f'</div>'
-        f'<span class="ds-affected-badge">{dec.get("affected_label", "")}</span>'
-        f'</div>'
-        f'<div class="ds-recommendation-box">'
-        f'<div class="ds-rec-top-row">'
-        f'<span class="ds-rec-label">Recommended Action</span>'
-        f'<div class="ds-rec-meta-badges">'
-        f'<span class="ds-conf-badge">Confidence: <b>{dec.get("confidence", "HIGH")}</b></span>'
-        f'<span class="ds-risk-badge">Risk: <b>{dec.get("risk", "LOW")}</b></span>'
-        f'</div>'
-        f'</div>'
-        f'<div class="ds-rec-action-name">{html.escape(dec.get("recommended_action", ""))}</div>'
-        f'<div class="ds-decision-why"><b>Why:</b> {html.escape(dec.get("why_reason", ""))}</div>'
-        f'<div class="ds-decision-impact"><span>Expected Impact:</span> <b>{html.escape(dec.get("expected_impact", ""))}</b></div>'
-        f'</div>'
-        f'</div>'
-    )
-    st.markdown(card_html, unsafe_allow_html=True)
-
-    # Expanders for Alternatives and Evidence
-    exp_col1, exp_col2 = st.columns(2)
-    
-    with exp_col1:
-        with st.expander("Show Alternative Strategies", expanded=False):
-            alts = dec.get("alternatives", [])
-            if alts:
-                alt_rows = []
-                for a in alts:
-                    rec_tag = " (Recommended)" if a.get("is_recommended") else ""
-                    alt_rows.append(
-                        f"<tr>"
-                        f"<td class='ds-alt-rating'>{a.get('rating', '★★★☆☆')}</td>"
-                        f"<td><b>{html.escape(a.get('label', ''))}{rec_tag}</b><br><span style='color:var(--text-muted);font-size:11px;'>{html.escape(a.get('why', ''))}</span></td>"
-                        f"<td style='font-size:11px;color:var(--text-muted);'>{html.escape(a.get('trade_off', ''))}</td>"
-                        f"</tr>"
-                    )
-                table_html = (
-                    f"<table class='ds-alt-table'>"
-                    f"<thead><tr><th>Rating</th><th>Strategy</th><th>Trade-Off</th></tr></thead>"
-                    f"<tbody>{''.join(alt_rows)}</tbody>"
-                    f"</table>"
-                )
-                st.markdown(table_html, unsafe_allow_html=True)
-
-    with exp_col2:
-        with st.expander("Technical Distribution Evidence", expanded=False):
-            ev = dec.get("evidence", {})
-            if ev:
-                ev_items = []
-                for k, v in ev.items():
-                    if isinstance(v, (int, float)):
-                        ev_items.append({"Metric": k.replace("_", " ").title(), "Value": f"{v:,.2f}" if isinstance(v, float) else f"{v:,}"})
-                    elif isinstance(v, str):
-                        ev_items.append({"Metric": k.replace("_", " ").title(), "Value": v})
-                if ev_items:
-                    st.dataframe(pd.DataFrame(ev_items), use_container_width=True, hide_index=True)
-                else:
-                    st.caption("Standard profile evidence captured.")
-
-    # Action Triggers: Review Recommendation, Apply in Data Preparation, Direct Quick Apply
-    act_c1, act_c2, act_c3 = st.columns([3, 4, 3], gap="small")
-    
-    with act_c1:
-        is_previewing = (st.session_state.get("_active_preview_decision_id") == dec["id"])
-        btn_label = "Close Preview" if is_previewing else "Review Recommendation"
-        if st.button(btn_label, key=f"preview_btn_{dec['id']}_{idx}", use_container_width=True):
-            if is_previewing:
-                st.session_state["_active_preview_decision_id"] = None
-            else:
-                st.session_state["_active_preview_decision_id"] = dec["id"]
-            st.rerun()
-
-    with act_c2:
-        if st.button("Apply in Data Preparation →", key=f"prep_btn_{dec['id']}_{idx}", type="primary", use_container_width=True):
-            st.session_state["prep_suggested_action"] = dec
-            st.session_state["current_page"] = "Data Preparation"
-            st.rerun()
-
-    with act_c3:
-        if st.button("Quick Apply", key=f"apply_btn_{dec['id']}_{idx}", use_container_width=True):
-            _execute_transformation(df, dec)
-
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-
-
-def _render_decision_preview_modal(df: pd.DataFrame, dec: Dict[str, Any]) -> None:
-    """Render interactive before/after impact comparison drawer."""
-    preview = preview_decision_transformation(df, dec)
-    if not preview:
-        return
+    miss_cnt = missing.get("total_missing_cells", 0)
+    dup_cnt = duplicates.get("duplicate_rows", 0)
+    out_cnt = outliers.get("total_outliers", 0)
+    inv_cnt = validity.get("total_invalid_cells", 0)
+    total_defects = miss_cnt + dup_cnt + out_cnt + inv_cnt
 
     st.markdown(
         f"""
-        <div class="ds-preview-modal-box">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                <div style="font-size: 14px; font-weight: 700; color: var(--accent);">
-                    Transformation Preview: {html.escape(dec.get("title", ""))}
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-top: 12px; margin-bottom: 8px; box-shadow: var(--shadow-xs);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent);">
+                        Quality Audit Findings
+                    </div>
+                    <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-top: 2px;">
+                        <b>{miss_cnt:,}</b> missing cells · <b>{dup_cnt:,}</b> duplicate rows · <b>{out_cnt:,}</b> outliers · <b>{inv_cnt:,}</b> invalid values
+                    </div>
                 </div>
-                <span style="font-size: 11px; color: var(--text-muted); background: var(--surface-container-low); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-light);">
-                    Simulation Mode (Raw Dataset Untouched)
-                </span>
+                <div>
+                    <span style="font-size: 12px; color: var(--text-secondary); margin-right: 8px;">
+                        {f'⚡ {total_defects:,} total quality defects detected.' if total_defects > 0 else '✓ No critical defects found.'}
+                    </span>
+                </div>
             </div>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # 4 KPI comparison cards
-    k1, k2, k3, k4 = st.columns(4)
-    with k1:
-        r_delta = preview["row_delta"]
-        delta_str = f"({r_delta:+d} rows)" if r_delta != 0 else "(Unchanged)"
-        render_metric_card(
-            label="Dataset Rows",
-            value=f"{preview['rows_after']:,}",
-            description=f"Before: {preview['rows_before']:,} {delta_str}",
-            status="Rows"
-        )
-    with k2:
-        m_delta = preview["missing_delta"]
-        render_metric_card(
-            label="Total Missing Cells",
-            value=f"{preview['missing_after']:,}",
-            change=f"{m_delta:+d} cells",
-            change_type="positive" if m_delta < 0 else "neutral",
-            description=f"Before: {preview['missing_before']:,}",
-            status="Cells"
-        )
-    with k3:
-        c_delta = preview["completeness_delta"]
-        render_metric_card(
-            label="Completeness",
-            value=f"{preview['completeness_after']:.1f}%",
-            change=f"{c_delta:+.1f}%",
-            change_type="positive" if c_delta > 0 else "neutral",
-            description=f"Before: {preview['completeness_before']:.1f}%",
-            status="Health"
-        )
-    with k4:
-        col_name = dec.get("column")
-        s_after = preview.get("stat_after", {})
-        s_before = preview.get("stat_before", {})
-        if s_after and "median" in s_after:
-            render_metric_card(
-                label=f"{col_name} Median",
-                value=f"{s_after['median']:,.2f}",
-                description=f"Before: {s_before.get('median', 0.0):,.2f}",
-                status="Metric"
-            )
-        else:
-            render_metric_card(
-                label="Columns",
-                value=f"{preview['cols_after']}",
-                description=f"Before: {preview['cols_before']}",
-                status="Structure"
-            )
+    if total_defects > 0:
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            if miss_cnt > 0 and st.button(f"Fix Missing Values ({miss_cnt:,}) →", key="btn_ho_missing", use_container_width=True):
+                st.session_state["prep_active_tab"] = "Missing Values"
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
+        with c2:
+            if dup_cnt > 0 and st.button(f"Review Duplicates ({dup_cnt:,}) →", key="btn_ho_dups", use_container_width=True):
+                st.session_state["prep_active_tab"] = "Duplicate Rows"
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
+        with c3:
+            if (out_cnt > 0 or inv_cnt > 0) and st.button(f"Investigate Outliers ({out_cnt:,}) →", key="btn_ho_outliers", use_container_width=True):
+                st.session_state["prep_active_tab"] = "Outliers & Validity"
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
+        with c4:
+            if st.button("Review & Fix All Issues →", key="btn_ho_all", type="primary", use_container_width=True):
+                st.session_state["prep_active_tab"] = "Missing Values" if miss_cnt > 0 else ("Duplicate Rows" if dup_cnt > 0 else "Outliers & Validity")
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
 
-    # Sample rows preview
-    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-    st.markdown("##### Sample Transformed Data Preview")
-    st.dataframe(preview["sample_after"].head(4), use_container_width=True, hide_index=True)
 
-    # Approval Actions
-    conf_c1, conf_c2, _ = st.columns([3, 3, 6])
-    with conf_c1:
-        if st.button("✓ Confirm & Apply Transformation", key="confirm_preview_apply_btn", type="primary", use_container_width=True):
-            st.session_state["_active_preview_decision_id"] = None
-            _execute_transformation(df, dec)
-    with conf_c2:
-        if st.button("✕ Dismiss Preview", key="dismiss_preview_btn", use_container_width=True):
-            st.session_state["_active_preview_decision_id"] = None
-            st.rerun()
+# =============================================================================
+# TAB 1: OVERVIEW & COLUMN QUALITY RANKINGS
+# =============================================================================
+
+def _render_tab_overview(df: pd.DataFrame, report: Dict[str, Any]) -> None:
+    """Render overall quality findings, column health rankings, and recommendations summary."""
+    render_section_header(
+        title="Column Quality Health Rankings",
+        subtitle="Ranked assessment of each column's completeness, uniqueness, validity, and consistency."
+    )
+
+    col_scores = report.get("column_quality_scores", [])
+    if col_scores:
+        cols_df = pd.DataFrame([
+            {
+                "Column Name": c["column"],
+                "Quality Score": f"{c['quality_score']:.1f} / 100",
+                "Health Tier": c["severity"],
+                "Primary Finding": c["main_issue"]
+            }
+            for c in col_scores
+        ])
+        st.dataframe(cols_df, use_container_width=True, hide_index=True)
 
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    st.markdown("#### Key Quality Findings & Recommendations")
 
-
-def _execute_transformation(df: pd.DataFrame, dec: Dict[str, Any], custom_strategy: Optional[str] = None) -> None:
-    """Execute quality fix non-destructively, verify impact, and record in audit log."""
-    transformed_df, meta = apply_decision_transformation(df, dec, custom_strategy=custom_strategy)
-
-    # Verify quality impact
-    impact = verify_decision_impact(df, transformed_df, dec)
-
-    # Update session state working dataset
-    st.session_state["dataset"] = transformed_df
-    st.session_state["prep_working_df"] = transformed_df.copy(deep=True)
-    
-    # Invalidate cached quality audit so it re-audits immediately
-    st.session_state["_cached_quality_sig"] = None
-    st.session_state["_cached_quality_audit"] = None
-
-    # Append to transformation history
-    if "quality_audit_history" not in st.session_state:
-        st.session_state["quality_audit_history"] = []
-    
-    audit_entry = {
-        **meta,
-        "score_before": impact["score_before"],
-        "score_after": impact["score_after"],
-        "score_delta": impact["score_delta"],
-        "warnings": impact["warnings"]
-    }
-    st.session_state["quality_audit_history"].insert(0, audit_entry)
-
-    # Also log to central activity
-    log_activity(f"Data Quality Fix: {meta['description']}", "shield-check")
-
-    st.toast(f"Transformation applied! Quality score: {impact['score_before']} → {impact['score_after']} (+{impact['score_delta']} pts)")
-    st.rerun()
+    recs = report.get("recommendations", [])
+    if recs:
+        for idx, rec in enumerate(recs):
+            rec_c1, rec_c2 = st.columns([8, 4])
+            with rec_c1:
+                st.markdown(
+                    f"""
+                    <div style="background: var(--surface-secondary); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 4px; margin-bottom: 8px;">
+                        <div style="font-weight: 700; font-size: 13.5px; color: var(--text-primary);">{rec.get('title', '')}</div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">{rec.get('text', '')}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            with rec_c2:
+                st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+                target = rec.get("target_page", "Data Preparation")
+                if target == "Data Preparation":
+                    btn_txt = "Review in Data Preparation →"
+                    if st.button(btn_txt, key=f"rec_goto_prep_{idx}", use_container_width=True):
+                        # Route smartly based on recommendation title
+                        t_lower = rec.get("title", "").lower()
+                        if "missing" in t_lower:
+                            st.session_state["prep_active_tab"] = "Missing Values"
+                        elif "deduplicate" in t_lower or "duplicate" in t_lower:
+                            st.session_state["prep_active_tab"] = "Duplicate Rows"
+                        elif "outlier" in t_lower:
+                            st.session_state["prep_active_tab"] = "Outliers & Validity"
+                        st.session_state["current_page"] = "Data Preparation"
+                        st.rerun()
+    else:
+        render_notification(
+            title="Pristine Quality Status",
+            message="No significant data defects were detected. Dataset is ready for exploration and analysis.",
+            variant="success"
+        )
 
 
 # =============================================================================
@@ -585,7 +401,7 @@ def _execute_transformation(df: pd.DataFrame, dec: Dict[str, Any], custom_strate
 # =============================================================================
 
 def _render_tab_missing(df: pd.DataFrame, report: Dict[str, Any], theme: str) -> None:
-    """Render Missing Values Tab with charts and column-level profiling."""
+    """Render Missing Values Tab with charts, column-level profiling, and handoff action."""
     missing = report["missing_analysis"]
 
     render_section_header(
@@ -644,13 +460,21 @@ def _render_tab_missing(df: pd.DataFrame, report: Dict[str, Any], theme: str) ->
         ])
         st.dataframe(table_data, use_container_width=True, hide_index=True)
 
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+        ho_c1, ho_c2, _ = st.columns([4, 4, 4])
+        with ho_c1:
+            if st.button("Fix Missing Values in Data Preparation →", key="btn_fix_missing_tab_ho", type="primary", use_container_width=True):
+                st.session_state["prep_active_tab"] = "Missing Values"
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
+
 
 # =============================================================================
 # TAB 3: DUPLICATES
 # =============================================================================
 
 def _render_tab_duplicates(df: pd.DataFrame, report: Dict[str, Any]) -> None:
-    """Render Duplicates Tab: row-level duplicate analysis and key inspection."""
+    """Render Duplicates Tab: row-level duplicate analysis, key inspection, and handoff action."""
     dup = report["duplicate_analysis"]
 
     render_section_header(
@@ -672,13 +496,21 @@ def _render_tab_duplicates(df: pd.DataFrame, report: Dict[str, Any]) -> None:
 
     if dup["duplicate_rows"] > 0:
         render_notification(
-            title=f"{dup['duplicate_rows']:,} Exact Duplicate Rows Found",
-            message="These rows are 100% identical across all columns. You can remove them in the Decision Queue.",
+            title=f"{dup['duplicate_rows']:,} Exact Duplicate Rows Detected ({dup['duplicate_percentage']:.2f}%)",
+            message="These records are identical across all available columns and therefore do not provide additional information.",
             variant="warning"
         )
         if dup.get("duplicate_samples") is not None:
             st.markdown("##### Sample Duplicate Records")
             st.dataframe(dup["duplicate_samples"].head(8), use_container_width=True, hide_index=True)
+
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+        ho_c1, ho_c2, _ = st.columns([4, 4, 4])
+        with ho_c1:
+            if st.button("Review Duplicates in Data Preparation →", key="btn_fix_dup_tab_ho", type="primary", use_container_width=True):
+                st.session_state["prep_active_tab"] = "Duplicate Rows"
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
     else:
         render_notification(
             title="Zero Duplicate Records",
@@ -695,7 +527,6 @@ def _render_tab_outliers_and_validity(df: pd.DataFrame, report: Dict[str, Any], 
     """Render Outliers, Validity, and Type Inconsistencies."""
     outlier_analysis = report["outlier_analysis"]
     validity = report["validity_analysis"]
-    consistency = report["consistency_analysis"]
 
     render_section_header(
         title="Outlier Health & Value Validity",
@@ -723,58 +554,16 @@ def _render_tab_outliers_and_validity(df: pd.DataFrame, report: Dict[str, Any], 
         st.markdown("##### Value Validity Findings")
         st.dataframe(pd.DataFrame(inv_findings), use_container_width=True, hide_index=True)
 
-
-# =============================================================================
-# TAB 5: TRANSFORMATION HISTORY & AUDIT TRAIL
-# =============================================================================
-
-def _render_tab_transformation_history(df: pd.DataFrame, report: Dict[str, Any]) -> None:
-    """Render persistent transformation audit log with score deltas and 1-click revert."""
-    render_section_header(
-        title="Transformation Audit Trail",
-        subtitle="Chronological record of verified data quality fixes applied to the active dataset."
-    )
-
-    history = st.session_state.get("quality_audit_history", [])
-
-    if not history:
-        render_empty_state(
-            title="No Transformations Applied Yet",
-            description="Apply recommended actions from the Decision Queue to see verified quality score improvements and audit logs here.",
-            icon="shield-check"
-        )
-        return
-
-    # Export actions
-    exp_c1, exp_c2, _ = st.columns([3, 3, 6])
-    with exp_c1:
-        csv_bytes = df.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            "📥 Export Prepared CSV",
-            data=csv_bytes,
-            file_name="prepared_dataset.csv",
-            mime="text/csv",
-            key="export_prepared_csv_btn",
-            use_container_width=True
-        )
-
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-
-    for idx, item in enumerate(history):
-        delta = item.get("score_delta", 0.0)
-        delta_tag = f"<span class='ds-preview-delta-positive'>+{delta:.1f} Quality Score</span>" if delta > 0 else ""
-        
-        entry_html = (
-            f"<div class='ds-audit-entry'>"
-            f"<div class='ds-audit-entry-left'>"
-            f"<div class='ds-audit-entry-title'>⚡ {html.escape(item.get('description', 'Remediation Applied'))} {delta_tag}</div>"
-            f"<div class='ds-audit-entry-meta'>{item.get('timestamp', '')} · Column: <b>{html.escape(item.get('column', 'Dataset'))}</b> · Strategy: {item.get('strategy', '')}</div>"
-            f"<div style='font-size: 11.5px; color: var(--text-secondary); margin-top: 2px;'>{html.escape(item.get('reason', ''))}</div>"
-            f"</div>"
-            f"</div>"
-        )
-        st.markdown(entry_html, unsafe_allow_html=True)
-        st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+    out_cnt = outlier_analysis.get("total_outliers", 0)
+    inv_cnt = validity.get("total_invalid_cells", 0)
+    if out_cnt > 0 or inv_cnt > 0:
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+        ho_c1, ho_c2, _ = st.columns([4, 4, 4])
+        with ho_c1:
+            if st.button("Investigate in Data Preparation →", key="btn_fix_outlier_tab_ho", type="primary", use_container_width=True):
+                st.session_state["prep_active_tab"] = "Outliers & Validity"
+                st.session_state["current_page"] = "Data Preparation"
+                st.rerun()
 
 
 # =============================================================================
@@ -786,7 +575,7 @@ def _render_next_actions(report: Dict[str, Any]) -> None:
     title = "Proceed to Data Preparation"
     primary_page = "Data Preparation"
     secondary_page = "Analyze"
-    desc = "Audit complete. Continue to Data Preparation to clean anomalies, impute missing values, or cast types."
+    desc = "Audit complete. Continue to Data Preparation to remediate missing values, remove duplicates, or cap outliers."
 
     render_next_step_banner(
         title=title,
@@ -802,6 +591,3 @@ def _render_next_actions(report: Dict[str, Any]) -> None:
 
     # Dynamic Bottom Next Workflow Steps Section
     render_next_workflow_steps("Data Quality")
-
-
-
