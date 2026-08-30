@@ -125,9 +125,9 @@ def render_eda_page() -> None:
 
     # 3. Standardized Page Header
     render_page_header(
-        title="Analyze Data (EDA)",
+        title="Analyze",
         subtitle="Descriptive statistics, skewness, kurtosis, correlation matrices, outlier detection, and column deep dives.",
-        icon="search"
+        icon="chart-no-axes-combined"
     )
     mark_workflow_step("analyze", True)
 
@@ -1026,10 +1026,20 @@ def _render_tab_automated_insights(df: pd.DataFrame, metadata: Dict[str, Any]) -
 
 def _render_next_actions() -> None:
     """Render recommended next action callouts and dynamic workflow navigation."""
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    render_next_step_banner(
+        title="Proceed to Visualization",
+        recommendation="Exploratory analysis complete. Proceed to Visualization to create individual interactive charts, rankings, and trends.",
+        primary_action_label="Continue to Visualization →",
+        target_page="Visualization",
+        key_prefix="eda_next_step",
+        suggested_actions=[{"label": "Jump to Dashboard", "page": "Dashboard"}]
+    )
+
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
     render_ai_context_trigger("Generate AI Insights for this analysis", intent="eda_insights", key="eda_ai_btn")
 
     # Dynamic Bottom Next Workflow Steps Section
-    render_next_workflow_steps("EDA")
+    render_next_workflow_steps("Analyze")
 
 

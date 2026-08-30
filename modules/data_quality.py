@@ -115,7 +115,7 @@ def render_data_quality_page() -> None:
 
     # 8. Internal Data Quality Tabs
     tab_decisions, tab_missing, tab_duplicates, tab_outliers_validity, tab_history = st.tabs([
-        "⚡ DECISION QUEUE",
+        "DECISION QUEUE",
         "MISSING VALUES",
         "DUPLICATES",
         "OUTLIERS & VALIDITY",
@@ -380,9 +380,9 @@ def _render_decision_card(df: pd.DataFrame, dec: Dict[str, Any], idx: int) -> No
         f'<span class="ds-risk-badge">Risk: <b>{dec.get("risk", "LOW")}</b></span>'
         f'</div>'
         f'</div>'
-        f'<div class="ds-rec-action-name">⚡ {html.escape(dec.get("recommended_action", ""))}</div>'
+        f'<div class="ds-rec-action-name">{html.escape(dec.get("recommended_action", ""))}</div>'
         f'<div class="ds-decision-why"><b>Why:</b> {html.escape(dec.get("why_reason", ""))}</div>'
-        f'<div class="ds-decision-impact"><span>📊</span><span><b>Expected Impact:</b> {html.escape(dec.get("expected_impact", ""))}</span></div>'
+        f'<div class="ds-decision-impact"><span>Expected Impact:</span> <b>{html.escape(dec.get("expected_impact", ""))}</b></div>'
         f'</div>'
         f'</div>'
     )
@@ -428,12 +428,12 @@ def _render_decision_card(df: pd.DataFrame, dec: Dict[str, Any], idx: int) -> No
                 else:
                     st.caption("Standard profile evidence captured.")
 
-    # Action Triggers
-    act_c1, act_c2, _ = st.columns([3, 3, 6], gap="small")
+    # Action Triggers: Review Recommendation, Apply in Data Preparation, Direct Quick Apply
+    act_c1, act_c2, act_c3 = st.columns([3, 4, 3], gap="small")
     
     with act_c1:
         is_previewing = (st.session_state.get("_active_preview_decision_id") == dec["id"])
-        btn_label = "✕ Close Preview" if is_previewing else "👁️ Preview Fix"
+        btn_label = "Close Preview" if is_previewing else "Review Recommendation"
         if st.button(btn_label, key=f"preview_btn_{dec['id']}_{idx}", use_container_width=True):
             if is_previewing:
                 st.session_state["_active_preview_decision_id"] = None
@@ -442,7 +442,13 @@ def _render_decision_card(df: pd.DataFrame, dec: Dict[str, Any], idx: int) -> No
             st.rerun()
 
     with act_c2:
-        if st.button("⚡ Apply Fix", key=f"apply_btn_{dec['id']}_{idx}", type="primary", use_container_width=True):
+        if st.button("Apply in Data Preparation →", key=f"prep_btn_{dec['id']}_{idx}", type="primary", use_container_width=True):
+            st.session_state["prep_suggested_action"] = dec
+            st.session_state["current_page"] = "Data Preparation"
+            st.rerun()
+
+    with act_c3:
+        if st.button("Quick Apply", key=f"apply_btn_{dec['id']}_{idx}", use_container_width=True):
             _execute_transformation(df, dec)
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
@@ -459,7 +465,7 @@ def _render_decision_preview_modal(df: pd.DataFrame, dec: Dict[str, Any]) -> Non
         <div class="ds-preview-modal-box">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
                 <div style="font-size: 14px; font-weight: 700; color: var(--accent);">
-                    👁️ Transformation Preview: {html.escape(dec.get("title", ""))}
+                    Transformation Preview: {html.escape(dec.get("title", ""))}
                 </div>
                 <span style="font-size: 11px; color: var(--text-muted); background: var(--surface-container-low); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-light);">
                     Simulation Mode (Raw Dataset Untouched)
@@ -776,29 +782,20 @@ def _render_tab_transformation_history(df: pd.DataFrame, report: Dict[str, Any])
 # =============================================================================
 
 def _render_next_actions(report: Dict[str, Any]) -> None:
-    """Render contextual workflow next actions."""
-    score = report["overall_score"]
-    
-    if score >= 85.0:
-        title = "Quality Validated — Ready for Exploratory Analysis"
-        primary_page = "EDA"
-        secondary_page = "Visualization"
-        desc = "Your dataset quality is solid (Quality Score ≥ 85). Proceed to Exploratory Data Analysis or build visualizations."
-    else:
-        title = "Quality Remediation Recommended"
-        primary_page = "Data Preparation"
-        secondary_page = "EDA"
-        desc = "Apply prioritized recommendations from the Decision Queue or use Data Preparation to clean anomalies."
+    """Render contextual workflow next actions following canonical order: Quality -> Preparation -> Analyze."""
+    title = "Proceed to Data Preparation"
+    primary_page = "Data Preparation"
+    secondary_page = "Analyze"
+    desc = "Audit complete. Continue to Data Preparation to clean anomalies, impute missing values, or cast types."
 
     render_next_step_banner(
         title=title,
         recommendation=desc,
-        primary_action_label=f"Open {primary_page} →",
+        primary_action_label="Continue to Data Preparation →",
         target_page=primary_page,
         key_prefix="quality_next_step",
-        suggested_actions=[{"label": f"Explore {secondary_page}", "page": secondary_page}]
+        suggested_actions=[{"label": "Skip to Analyze", "page": secondary_page}]
     )
-
 
     st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
     render_ai_context_trigger("Explain quality results with AI", intent="quality_results", key="qual_ai_btn")

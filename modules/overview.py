@@ -54,7 +54,7 @@ def render_overview_page() -> None:
     render_page_header(
         title="Overview",
         subtitle="Intelligent control center, workflow progress, and dataset summary.",
-        icon="home"
+        icon="layout-dashboard"
     )
 
     # ── Admin Welcome Banner & Compact Summary (Admin Only) ──────────────────
@@ -65,7 +65,7 @@ def render_overview_page() -> None:
     if not is_admin:
         if dataset_loaded:
             welcome_subtitle = f"Active dataset loaded ({stage_info['status_label']}). Continue your analysis workflow below."
-            greeting_title = f"{greeting}, {first_name}. 👋"
+            greeting_title = f"{greeting}, {first_name}."
         else:
             greeting_title = "Welcome to Data Studio."
             welcome_subtitle = "Upload a dataset to begin your analysis."
@@ -104,7 +104,7 @@ def _render_admin_welcome_summary() -> None:
         <div style="background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 16px; box-shadow: var(--shadow-xs);">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 16px; font-weight: 700; color: var(--text-primary);">Welcome back, Admin. 👋</span>
+                    <span style="font-size: 16px; font-weight: 700; color: var(--text-primary);">Welcome back, Admin.</span>
                     <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; background: rgba(37, 99, 235, 0.12); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.3); letter-spacing: 0.04em;">ADMIN</span>
                 </div>
                 <div style="font-size: 12px; color: var(--text-muted);">Administrative Workspace View</div>
@@ -284,7 +284,7 @@ def _render_active_dataset_state(stage_info: dict) -> None:
         render_metric_card(
             label="Workflow Status",
             value=f"{stage_info['progress_percent']}%",
-            description=f"{stage_info['completed_count']}/6 steps done",
+            description=f"{stage_info['completed_count']}/{len(WORKFLOW_STEPS)} steps done",
             status="In Progress" if stage_info['progress_percent'] < 100 else "Completed",
             icon="activity",
             change_type="success" if stage_info['progress_percent'] >= 50 else "neutral"
@@ -350,6 +350,9 @@ def _render_active_dataset_state(stage_info: dict) -> None:
                 st.rerun()
             if st.button("AI Analyst", key="ov_qa_ai", use_container_width=True):
                 st.session_state["current_page"] = "AI Analyst"
+                st.rerun()
+            if st.button("Data Story", key="ov_qa_story", use_container_width=True):
+                st.session_state["current_page"] = "Data Story"
                 st.rerun()
 
         st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)

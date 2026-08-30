@@ -107,8 +107,18 @@ def render_dataset_page() -> None:
     with tab_upload:
         _render_tab_upload(has_active_dataset=True)
 
-    # 7. Standardized Bottom Workflow Steps
-    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+    # 7. Standardized Next Step Banner & Bottom Workflow Steps
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    render_next_step_banner(
+        title="Proceed to Overview",
+        recommendation="Dataset loaded and profiled. Continue to Overview for an executive health summary and progress roadmap.",
+        primary_action_label="Continue to Overview →",
+        target_page="Overview",
+        key_prefix="ds_next_step",
+        suggested_actions=[{"label": "Audit Data Quality", "page": "Data Quality"}]
+    )
+
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
     render_next_workflow_steps("Dataset")
 
 
@@ -537,9 +547,9 @@ def _render_tab_health(df: pd.DataFrame, metadata: Dict[str, Any]) -> None:
     with h_col1:
         st.markdown("#### Missing Values Audit")
         if missing_cnt == 0:
-            st.success("✅ **100% Complete**: Zero missing values detected across all columns.")
+            st.success("**100% Complete**: Zero missing values detected across all columns.")
         else:
-            st.warning(f"⚠️ **{missing_cnt:,} missing cells** detected ({missing_pct:.2f}% of total data cells).")
+            st.warning(f"**{missing_cnt:,} missing cells** detected ({missing_pct:.2f}% of total data cells).")
             st.markdown(f"**{len(missing_cols)} column(s)** contain missing values:")
             st.dataframe(pd.DataFrame([
                 {
@@ -559,9 +569,9 @@ def _render_tab_health(df: pd.DataFrame, metadata: Dict[str, Any]) -> None:
     with h_col2:
         st.markdown("#### Duplicate Records Audit")
         if dup_cnt == 0:
-            st.success("✅ **100% Unique**: Every record in the dataset is unique.")
+            st.success("**100% Unique**: Every record in the dataset is unique.")
         else:
-            st.warning(f"⚠️ **{dup_cnt:,} duplicate rows** found ({dup_pct:.2f}% of dataset).")
+            st.warning(f"**{dup_cnt:,} duplicate rows** found ({dup_pct:.2f}% of dataset).")
             dup_mask = df.duplicated(keep=False)
             dup_df = df[dup_mask]
             if not dup_df.empty:
@@ -599,7 +609,7 @@ def _render_tab_health(df: pd.DataFrame, metadata: Dict[str, Any]) -> None:
 def _render_tab_upload(has_active_dataset: bool = True) -> None:
     """Render upload file dropzone and sample datasets catalog."""
     if has_active_dataset:
-        st.info("💡 Uploading or selecting a new dataset will replace the currently active workspace dataset.")
+        st.info("Uploading or selecting a new dataset will replace the currently active workspace dataset.")
 
     u_col1, u_col2 = st.columns([6, 6], gap="large")
 

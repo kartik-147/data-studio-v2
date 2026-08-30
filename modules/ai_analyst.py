@@ -25,6 +25,7 @@ from modules.ui_components import (
     render_notification,
     render_empty_state,
     render_section_header,
+    render_next_step_banner,
     render_next_workflow_steps,
     get_icon_svg,
 )
@@ -109,6 +110,16 @@ def render_ai_analyst_page() -> None:
 
     # ── Standardized Bottom Workflow Steps ───────────────────────────────────
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    render_next_step_banner(
+        title="Proceed to Data Story",
+        recommendation="AI analysis completed. Generate a comprehensive 7-chapter executive narrative briefing for stakeholders.",
+        primary_action_label="Generate Data Story →",
+        target_page="Data Story",
+        key_prefix="ai_next_step",
+        suggested_actions=[{"label": "Return to Dashboard", "page": "Dashboard"}]
+    )
+
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
     render_next_workflow_steps("AI Analyst")
 
 
@@ -137,7 +148,17 @@ def render_data_story_page() -> None:
 
     # Standardized Bottom Workflow Steps
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-    render_next_workflow_steps("AI Analyst")
+    render_next_step_banner(
+        title="Workflow Complete — Review Settings",
+        recommendation="You have progressed through the entire analytical workflow! Configure workspace settings, customize themes, or restart with a new dataset.",
+        primary_action_label="Open Settings →",
+        target_page="Settings",
+        key_prefix="story_next_step",
+        suggested_actions=[{"label": "Restart from Overview", "page": "Overview"}]
+    )
+
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    render_next_workflow_steps("Data Story")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

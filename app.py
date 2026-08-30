@@ -20,7 +20,7 @@ from modules.config import (
     init_session_state, is_dataset_loaded
 )
 from modules.ui_components import (
-    load_css, get_icon_svg, render_top_header
+    load_css, get_icon_svg, render_top_header, render_workflow_indicator
 )
 from modules.auth import (
     is_authenticated, get_current_user, logout_user
@@ -44,7 +44,6 @@ from modules.admin_analytics import render_admin_analytics_page
 # ── Streamlit Page Configuration ──────────────────────────────────────────────
 st.set_page_config(
     page_title="Data Studio",
-    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -58,17 +57,30 @@ def render_sidebar() -> str:
     """
     Render the professional fixed Left Sidebar navigation.
     Hierarchical grouping:
-      - WORKSPACE: Dataset, Overview, Data Preparation, Data Quality, Analyze, Visualization, Dashboard
-      - INTELLIGENCE: AI Analyst, Data Story
-      - SYSTEM: Settings
-      - ADMINISTRATION: Admin Analytics (Admins only)
+      - WORKSPACE:
+          01 Dataset
+          02 Overview
+          03 Data Quality
+          04 Data Preparation
+          05 Analyze
+          06 Visualization
+          07 Dashboard
+      - INTELLIGENCE:
+          08 AI Analyst
+          09 Data Story
+      - SYSTEM:
+          10 Settings
+          11 Admin Analytics (Admins only)
+    Dataset State Card:
+      - Active dataset name + row/col dimensions or empty helper state
     Bottom Area:
-      - User Profile & Auth Status
-      - Theme toggle
+      - User Profile & Auth Status (ADMIN / MEMBER / GUEST)
+      - Theme toggle (Light / Dark)
       - Sign Out
     """
     current_page = st.session_state.get("current_page", "Overview")
     current_theme = st.session_state.get("theme", "Light")
+    is_collapsed = st.session_state.get("sidebar_collapsed", False)
     user = get_current_user()
     is_dark = current_theme == "Dark"
     user_name = user.get("full_name", "User")
@@ -77,101 +89,163 @@ def render_sidebar() -> str:
 
     with st.sidebar:
         # ── 1. Sidebar Brand Header ──────────────────────────────────────────
-        st.markdown(
-            f"""
-            <div class="ds-sidebar-brand">
-                <div class="ds-sidebar-brand-icon">
-                    <span style="font-size: 13px; line-height: 1;">⚡</span>
-                </div>
-                <span class="ds-sidebar-brand-title">{APP_NAME.upper()}</span>
-                <span class="ds-sidebar-brand-version">{APP_VERSION}</span>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        brand_icon_svg = get_icon_svg("layout-dashboard", 14)
+        toggle_icon = "→" if is_collapsed else "←"
+        toggle_help = "Expand sidebar" if is_collapsed else "Collapse sidebar"
 
-        # ── 2. Navigation Structure ──────────────────────────────────────────
+        col_brand, col_toggle = st.columns([8, 2])
+        with col_brand:
+            if not is_collapsed:
+                st.markdown(
+                    f"""
+                    <div class="ds-sidebar-brand">
+                        <div class="ds-sidebar-brand-icon">
+                            {brand_icon_svg}
+                        </div>
+                        <span class="ds-sidebar-brand-title">{APP_NAME.upper()}</span>
+                        <span class="ds-sidebar-brand-version">{APP_VERSION}</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            else:
+                st.markdown(
+                    f"""
+                    <div class="ds-sidebar-brand" style="justify-content: center; padding: 4px 0 10px 0;">
+                        <div class="ds-sidebar-brand-icon">
+                            {brand_icon_svg}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+        with col_toggle:
+            if st.button(toggle_icon, key="sidebar_toggle_collapse_btn", help=toggle_help):
+                st.session_state["sidebar_collapsed"] = not is_collapsed
+                st.rerun()
+
+        # ── 2. Active Dataset State Card ─────────────────────────────────────
+        if not is_collapsed:
+            df = st.session_state.get("dataset")
+            ds_name = st.session_state.get("dataset_name")
+            if df is not None:
+                rows, cols = df.shape
+                display_name = html.escape(ds_name or "Active Dataset")
+                st.markdown(
+                    f"""
+                    <div class="ds-sidebar-dataset-card">
+                        <div class="ds-sidebar-dataset-label">Active Dataset</div>
+                        <div class="ds-sidebar-dataset-name">
+                            <span class="ds-status-dot-active">●</span> {display_name}
+                        </div>
+                        <div class="ds-sidebar-dataset-stats">{rows:,} rows · {cols} columns</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            else:
+                st.markdown(
+                    """
+                    <div class="ds-sidebar-dataset-card ds-dataset-card-empty">
+                        <div class="ds-sidebar-dataset-label">Dataset</div>
+                        <div class="ds-sidebar-dataset-name" style="color: var(--text-muted);">No dataset loaded</div>
+                        <div class="ds-sidebar-dataset-stats">Upload a dataset to begin.</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+        # ── 3. Navigation Hierarchy ──────────────────────────────────────────
         nav_sections = [
             (
                 "WORKSPACE",
                 [
-                    ("Dataset", "⛁  Dataset"),
-                    ("Overview", "⊞  Overview"),
-                    ("Data Preparation", "⚡  Data Preparation"),
-                    ("Data Quality", "🛡  Data Quality"),
-                    ("Analyze", "📈  Analyze"),
-                    ("Visualization", "📊  Visualization"),
-                    ("Dashboard", "▥  Dashboard"),
+                    ("Dataset", "01  Dataset" if not is_collapsed else "01", "database"),
+                    ("Overview", "02  Overview" if not is_collapsed else "02", "layout-dashboard"),
+                    ("Data Quality", "03  Data Quality" if not is_collapsed else "03", "shield-check"),
+                    ("Data Preparation", "04  Data Preparation" if not is_collapsed else "04", "sliders-horizontal"),
+                    ("Analyze", "05  Analyze" if not is_collapsed else "05", "chart-no-axes-combined"),
+                    ("Visualization", "06  Visualization" if not is_collapsed else "06", "chart-column"),
+                    ("Dashboard", "07  Dashboard" if not is_collapsed else "07", "panels-top-left"),
                 ]
             ),
             (
                 "INTELLIGENCE",
                 [
-                    ("AI Analyst", "✦  AI Analyst"),
-                    ("Data Story", "📖  Data Story"),
+                    ("AI Analyst", "08  AI Analyst" if not is_collapsed else "08", "brain-circuit"),
+                    ("Data Story", "09  Data Story" if not is_collapsed else "09", "book-open"),
                 ]
             ),
             (
                 "SYSTEM",
                 [
-                    ("Settings", "⚙  Settings"),
+                    ("Settings", "10  Settings" if not is_collapsed else "10", "settings"),
                 ]
             )
         ]
 
         if is_admin:
-            nav_sections.append(
-                (
-                    "ADMINISTRATION",
-                    [
-                        ("Admin Analytics", "🛡  Admin Analytics"),
-                    ]
-                )
+            nav_sections[2][1].append(
+                ("Admin Analytics", "11  Admin Analytics" if not is_collapsed else "11", "shield-check")
             )
 
         for group_title, items in nav_sections:
-            st.markdown(f'<div class="ds-sidebar-group-title">{group_title}</div>', unsafe_allow_html=True)
-            for page_key, page_label in items:
+            if not is_collapsed:
+                st.markdown(f'<div class="ds-sidebar-group-title">{group_title}</div>', unsafe_allow_html=True)
+            for page_key, page_label, icon_key in items:
                 # Handle active state matching (e.g., Analyze vs EDA)
                 is_active = (current_page == page_key) or (page_key == "Analyze" and current_page == "EDA")
                 btn_type = "primary" if is_active else "secondary"
+                item_help = page_key if is_collapsed else None
 
                 if st.button(
                     page_label,
                     key=f"sidebar_nav_{page_key.replace(' ', '_')}",
                     use_container_width=True,
-                    type=btn_type
+                    type=btn_type,
+                    help=item_help
                 ):
                     if st.session_state.get("current_page") != page_key:
                         st.session_state["current_page"] = page_key
                         st.rerun()
 
-        # ── 3. Sidebar Bottom Area ───────────────────────────────────────────
+        # ── 4. Sidebar Bottom Area ───────────────────────────────────────────
         st.markdown('<div class="ds-sidebar-footer">', unsafe_allow_html=True)
 
-        auth_status = "Guest User" if is_guest else "Authenticated"
-        role_tag = "ADMIN" if is_admin else ("GUEST" if is_guest else "MEMBER")
-        st.markdown(
-            f"""
-            <div class="ds-sidebar-user-card">
-                <div style="overflow: hidden; width: 100%;">
-                    <div class="ds-sidebar-user-name">{html.escape(user_name)}</div>
-                    <div class="ds-sidebar-user-status">{auth_status} · {role_tag}</div>
+        if not is_collapsed:
+            auth_status = "Guest User" if is_guest else "Authenticated"
+            role_tag = "ADMIN" if is_admin else ("GUEST" if is_guest else "MEMBER")
+            st.markdown(
+                f"""
+                <div class="ds-sidebar-user-card">
+                    <div style="overflow: hidden; width: 100%;">
+                        <div class="ds-sidebar-user-name">{html.escape(user_name)}</div>
+                        <div class="ds-sidebar-user-status">{auth_status} · {role_tag}</div>
+                    </div>
                 </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+                """,
+                unsafe_allow_html=True
+            )
 
-        col_theme, col_logout = st.columns(2, gap="small")
-        with col_theme:
-            theme_btn_label = "☀ Light" if is_dark else "🌙 Dark"
-            if st.button(theme_btn_label, key="sidebar_theme_btn", use_container_width=True):
+            col_theme, col_logout = st.columns(2, gap="small")
+            with col_theme:
+                theme_btn_label = "Light" if is_dark else "Dark"
+                if st.button(theme_btn_label, key="sidebar_theme_btn", use_container_width=True, help="Switch color theme"):
+                    st.session_state["theme"] = "Light" if is_dark else "Dark"
+                    st.rerun()
+
+            with col_logout:
+                if st.button("Sign Out", key="sidebar_logout_btn", use_container_width=True, help="Sign out of Data Studio"):
+                    logout_user()
+                    st.toast("Signed out successfully.")
+                    st.rerun()
+        else:
+            theme_btn_label = "Light" if is_dark else "Dark"
+            if st.button(theme_btn_label, key="sidebar_theme_btn_col", use_container_width=True, help="Switch Theme"):
                 st.session_state["theme"] = "Light" if is_dark else "Dark"
                 st.rerun()
-
-        with col_logout:
-            if st.button("Sign Out", key="sidebar_logout_btn", use_container_width=True):
+            if st.button("Out", key="sidebar_logout_btn_col", use_container_width=True, help="Sign Out"):
                 logout_user()
                 st.toast("Signed out successfully.")
                 st.rerun()
@@ -179,6 +253,63 @@ def render_sidebar() -> str:
         st.markdown('</div>', unsafe_allow_html=True)
 
     return st.session_state.get("current_page", "Overview")
+
+
+def render_mobile_navigation(is_admin: bool) -> None:
+    """Render a compact navigation drawer for mobile viewports (< 768px)."""
+    current_page = st.session_state.get("current_page", "Overview")
+    
+    with st.expander("Navigation Menu", expanded=False):
+        st.markdown("<div class='ds-sidebar-group-title'>WORKSPACE</div>", unsafe_allow_html=True)
+        m_c1, m_c2 = st.columns(2)
+        workspace_items = [
+            ("Dataset", "01 Dataset"),
+            ("Overview", "02 Overview"),
+            ("Data Quality", "03 Data Quality"),
+            ("Data Preparation", "04 Data Preparation"),
+            ("Analyze", "05 Analyze"),
+            ("Visualization", "06 Visualization"),
+            ("Dashboard", "07 Dashboard"),
+        ]
+        for idx, (p_key, p_label) in enumerate(workspace_items):
+            target_col = m_c1 if idx % 2 == 0 else m_c2
+            with target_col:
+                is_active = (current_page == p_key) or (p_key == "Analyze" and current_page == "EDA")
+                if st.button(
+                    p_label,
+                    key=f"mob_nav_{p_key.replace(' ', '_')}",
+                    use_container_width=True,
+                    type="primary" if is_active else "secondary"
+                ):
+                    st.session_state["current_page"] = p_key
+                    st.rerun()
+
+        st.markdown("<div class='ds-sidebar-group-title'>INTELLIGENCE</div>", unsafe_allow_html=True)
+        i_c1, i_c2 = st.columns(2)
+        with i_c1:
+            is_active = (current_page == "AI Analyst")
+            if st.button("08 AI Analyst", key="mob_nav_ai", use_container_width=True, type="primary" if is_active else "secondary"):
+                st.session_state["current_page"] = "AI Analyst"
+                st.rerun()
+        with i_c2:
+            is_active = (current_page == "Data Story")
+            if st.button("09 Data Story", key="mob_nav_story", use_container_width=True, type="primary" if is_active else "secondary"):
+                st.session_state["current_page"] = "Data Story"
+                st.rerun()
+
+        st.markdown("<div class='ds-sidebar-group-title'>SYSTEM</div>", unsafe_allow_html=True)
+        s_cols = st.columns(2 if is_admin else 1)
+        with s_cols[0]:
+            is_active = (current_page == "Settings")
+            if st.button("10 Settings", key="mob_nav_settings", use_container_width=True, type="primary" if is_active else "secondary"):
+                st.session_state["current_page"] = "Settings"
+                st.rerun()
+        if is_admin and len(s_cols) > 1:
+            with s_cols[1]:
+                is_active = (current_page == "Admin Analytics")
+                if st.button("11 Admin Analytics", key="mob_nav_admin", use_container_width=True, type="primary" if is_active else "secondary"):
+                    st.session_state["current_page"] = "Admin Analytics"
+                    st.rerun()
 
 
 def main() -> None:
@@ -219,12 +350,15 @@ def main() -> None:
         is_admin=is_admin_user(get_current_user())
     )
 
+    # Render Subtle Workflow Indicator Breadcrumb Bar
+    render_workflow_indicator(active_page)
+
     # Page Router
     page_router = {
         "Dataset": render_dataset_page,
         "Overview": render_overview_page,
-        "Data Preparation": render_data_preparation_page,
         "Data Quality": render_data_quality_page,
+        "Data Preparation": render_data_preparation_page,
         "Analyze": render_eda_page,
         "EDA": render_eda_page,
         "Visualization": render_visualization_page,

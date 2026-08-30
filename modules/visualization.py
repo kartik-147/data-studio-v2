@@ -160,6 +160,16 @@ def render_visualization_page() -> None:
     # 7. Saved Visualizations Gallery Shelf
     _render_saved_visualizations_section(df, current_theme)
 
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    render_next_step_banner(
+        title="Proceed to Dashboard",
+        recommendation="Charts configured. Assemble and pin your executive metrics, trends, and breakdowns into an interactive Dashboard.",
+        primary_action_label="Continue to Dashboard →",
+        target_page="Dashboard",
+        key_prefix="viz_next_step",
+        suggested_actions=[{"label": "Consult AI Analyst", "page": "AI Analyst"}]
+    )
+
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
     render_ai_context_trigger("Ask AI Analyst about this Visualization", intent="viz_recommend", key="viz_ai_btn")
 
@@ -217,7 +227,7 @@ def _render_recommendations_section(df: pd.DataFrame, metadata: Dict[str, Any]) 
     if not recommendations:
         return
 
-    with st.expander("✨ Smart Visual Recommendations & Insights (Auto-Generated)", expanded=False):
+    with st.expander("Smart Visual Recommendations & Insights (Auto-Generated)", expanded=False):
         st.caption("Heuristic recommendations tailored to your dataset schema. Click 'Apply' to load any chart configuration instantly.")
         
         cols = st.columns(min(len(recommendations), 3))
@@ -812,7 +822,7 @@ def _render_canvas_intelligence_hub(
 
     # 4. Transformed Data Table Inspector Drawer
     if data_df is not None and not data_df.empty:
-        with st.expander(f"🔍 Transformed Data Inspector ({len(data_df):,} rows feeding active chart)", expanded=False):
+        with st.expander(f"Transformed Data Inspector ({len(data_df):,} rows feeding active chart)", expanded=False):
             st.dataframe(data_df, use_container_width=True, height=220)
 
 

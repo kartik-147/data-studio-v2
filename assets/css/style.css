@@ -4599,8 +4599,25 @@ div[data-testid="collapsedControl"] {
   padding: 2px !important;
 }
 
+section[data-testid="stSidebar"] {
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 260px !important;
+  background-color: var(--surface) !important;
+  border-right: 1px solid var(--border-light) !important;
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
 section[data-testid="stSidebar"] > div:first-child {
-  padding: 16px 12px 24px 12px !important;
+  padding: 14px 10px 20px 10px !important;
+}
+
+/* Collapsed Sidebar Mode (68px) */
+.ds-sidebar-collapsed section[data-testid="stSidebar"],
+section[data-testid="stSidebar"].collapsed {
+  width: 68px !important;
+  min-width: 68px !important;
+  max-width: 68px !important;
 }
 
 /* Sidebar Brand Header */
@@ -4608,9 +4625,9 @@ section[data-testid="stSidebar"] > div:first-child {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 6px 14px 6px;
+  padding: 4px 6px 12px 6px;
   border-bottom: 1px solid var(--border-light);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .ds-sidebar-brand-icon {
@@ -4623,12 +4640,13 @@ section[data-testid="stSidebar"] > div:first-child {
   background: var(--accent-subtle);
   color: var(--accent);
   border: 1px solid var(--accent-subtle-border);
+  flex-shrink: 0;
 }
 
 .ds-sidebar-brand-title {
   font-family: var(--font-sans);
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.01em;
   line-height: 1;
@@ -4636,25 +4654,73 @@ section[data-testid="stSidebar"] > div:first-child {
 
 .ds-sidebar-brand-version {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 600;
   color: var(--text-muted);
   background: var(--surface-container-low);
-  padding: 1px 5px;
+  padding: 1px 4px;
   border-radius: 3px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-light);
   margin-left: auto;
+}
+
+/* Sidebar Active Dataset State Card */
+.ds-sidebar-dataset-card {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 5px;
+  padding: 8px 10px;
+  margin: 4px 0 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ds-sidebar-dataset-card.ds-dataset-card-empty {
+  background: var(--surface-container-low);
+  border-style: dashed;
+}
+
+.ds-sidebar-dataset-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.ds-sidebar-dataset-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ds-status-dot-active {
+  color: var(--color-success);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.ds-sidebar-dataset-stats {
+  font-size: 11px;
+  color: var(--text-secondary);
 }
 
 /* Group Headers */
 .ds-sidebar-group-title {
   font-family: var(--font-sans);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   color: var(--text-muted);
-  padding: 10px 8px 4px 8px;
+  padding: 8px 8px 3px 8px;
   margin: 0;
   display: flex;
   align-items: center;
@@ -4663,24 +4729,24 @@ section[data-testid="stSidebar"] > div:first-child {
 
 /* Sidebar Nav Buttons Override - Strict Left Alignment */
 section[data-testid="stSidebar"] div[data-testid="stButton"] {
-  margin-bottom: 3px !important;
+  margin-bottom: 2px !important;
   width: 100% !important;
 }
 
 section[data-testid="stSidebar"] div[data-testid="stButton"] > button {
   width: 100% !important;
-  height: 38px !important;
-  min-height: 38px !important;
+  height: 36px !important;
+  min-height: 36px !important;
   font-size: 13.5px !important;
   font-weight: 500 !important;
   font-family: var(--font-sans) !important;
-  border-radius: 6px !important;
+  border-radius: 5px !important;
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
   justify-content: flex-start !important;
   text-align: left !important;
-  padding: 0 12px !important;
+  padding: 0 10px !important;
   background: transparent !important;
   border: 1px solid transparent !important;
   color: var(--text-secondary) !important;
@@ -4726,12 +4792,12 @@ section[data-testid="stSidebar"] div[data-testid="stButton"] > button[kind="prim
 
 /* Sidebar Footer */
 .ds-sidebar-footer {
-  margin-top: 16px;
-  padding-top: 12px;
+  margin-top: 14px;
+  padding-top: 10px;
   border-top: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .ds-sidebar-user-card {
@@ -4742,7 +4808,7 @@ section[data-testid="stSidebar"] div[data-testid="stButton"] > button[kind="prim
   border-radius: 5px;
   background: var(--surface-secondary);
   border: 1px solid var(--border-light);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .ds-sidebar-user-name {
@@ -4757,6 +4823,52 @@ section[data-testid="stSidebar"] div[data-testid="stButton"] > button[kind="prim
 .ds-sidebar-user-status {
   font-size: 9.5px;
   color: var(--text-muted);
+}
+
+/* Subtle Workflow Indicator Breadcrumb Bar */
+.ds-workflow-indicator-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-xs);
+}
+
+.ds-wf-ind-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.ds-wf-ind-active {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-weight: 700;
+  border: 1px solid var(--accent-subtle-border);
+}
+
+.ds-wf-ind-inactive {
+  color: var(--text-muted);
+}
+
+.ds-wf-ind-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ds-wf-ind-sep {
+  color: var(--border);
+  font-size: 10px;
+  user-select: none;
 }
 
 /* ==========================================================================

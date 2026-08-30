@@ -236,19 +236,29 @@ def render_data_preparation_page() -> None:
     # ── Consume deep-link hint from Data Quality ────────────────────────────────────
     prep_hint = st.session_state.get("prep_suggested_action")
     if prep_hint:
-        hint_messages = {
-            "missing": ("Missing Values", "Use the **MISSING VALUES** tab below to impute, fill, or drop columns with null values."),
-            "duplicates": ("Duplicate Rows", "Use the **DUPLICATES** tab below to remove identical rows from your dataset."),
-            "outliers": ("Outlier Treatment", "Use the **OUTLIERS** tab below to cap, remove, or inspect extreme values."),
-            "types": ("Column Types", "Use the **COLUMNS** tab below to rename, reorder, or cast data types."),
-        }
-        if prep_hint in hint_messages:
-            tab_label, hint_msg = hint_messages[prep_hint]
+        if isinstance(prep_hint, dict):
+            hint_title = prep_hint.get("title", "Quality Recommendation")
+            hint_action = prep_hint.get("recommended_action", "")
+            hint_why = prep_hint.get("why_reason", "")
             render_notification(
-                title=f"→ Jump to: {tab_label}",
-                message=hint_msg,
+                title=f"Data Quality Recommendation: {hint_title}",
+                message=f"**Action:** {hint_action} — {hint_why}",
                 variant="info"
             )
+        elif isinstance(prep_hint, str):
+            hint_messages = {
+                "missing": ("Missing Values", "Use the **MISSING VALUES** tab below to impute, fill, or drop columns with null values."),
+                "duplicates": ("Duplicate Rows", "Use the **DUPLICATES** tab below to remove identical rows from your dataset."),
+                "outliers": ("Outlier Treatment", "Use the **OUTLIERS** tab below to cap, remove, or inspect extreme values."),
+                "types": ("Column Types", "Use the **COLUMNS** tab below to rename, reorder, or cast data types."),
+            }
+            if prep_hint in hint_messages:
+                tab_label, hint_msg = hint_messages[prep_hint]
+                render_notification(
+                    title=f"Jump to: {tab_label}",
+                    message=hint_msg,
+                    variant="info"
+                )
         # Clear hint after consuming it
         st.session_state["prep_suggested_action"] = None
 
@@ -323,7 +333,17 @@ def render_data_preparation_page() -> None:
     with tab_preview:
         _render_tab_preview_and_export(orig_df, working_df, dataset_name)
 
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    render_next_step_banner(
+        title="Continue to Exploratory Analysis",
+        recommendation="Transformations ready. Proceed to Analyze to examine distributions, correlations, and statistical summaries.",
+        primary_action_label="Continue to Analyze →",
+        target_page="Analyze",
+        key_prefix="prep_next_step",
+        suggested_actions=[{"label": "Skip to Visualization", "page": "Visualization"}]
+    )
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     render_ai_context_trigger("Suggest cleaning transformations with AI", intent="data_prep_cleaning", key="prep_ai_btn")
 
     # Dynamic Bottom Next Workflow Steps Section
