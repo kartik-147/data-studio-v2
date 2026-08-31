@@ -484,7 +484,7 @@ def _render_explanation_level_selector() -> None:
     with lvl_c1:
         st.markdown(
             "<div style='font-size: 13px; font-weight: 600; color: var(--text-secondary); padding-top: 6px;'>"
-            "🎓 <b>AI Data Mentor Mode:</b>"
+            "<b>AI Data Mentor Mode:</b>"
             "</div>",
             unsafe_allow_html=True
         )
@@ -546,40 +546,37 @@ def _render_decision_card(
         for item in happen_items
     ])
 
-    card_html = f"""
-    <div class="ds-decision-card {sev_class}">
-        <div class="ds-mentor-found-box">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                <span class="ds-mentor-found-badge">🔍 WHAT WE FOUND</span>
-                <span class="ds-sev-badge {badge_class}">{found_badge}</span>
-            </div>
-            <div class="ds-mentor-found-primary">{html.escape(found_primary)}</div>
-            <div class="ds-mentor-found-desc">
-                {html.escape(found_secondary)}
-                {f" · <b>{html.escape(human_summary)}</b>" if human_summary else ""}
-            </div>
-        </div>
-
-        <div class="ds-recommendation-box">
-            <div class="ds-rec-top-row">
-                <span class="ds-rec-label">🤖 OUR RECOMMENDATION</span>
-                <div class="ds-rec-meta-badges">
-                    <span class="ds-conf-badge">Confidence: <b>{dec.get("confidence", "HIGH")}</b></span>
-                    <span class="ds-risk-badge">Risk: <b>{dec.get("risk", "LOW")}</b></span>
-                </div>
-            </div>
-            <div class="ds-rec-action-name">{html.escape(rec_action)}</div>
-
-            <div class="ds-mentor-section-label" style="margin-top:10px;">WHY ARE WE RECOMMENDING THIS?</div>
-            <div class="ds-decision-why">{html.escape(why_text)}</div>
-
-            <div class="ds-mentor-section-label" style="margin-top:12px;">WHAT WILL HAPPEN?</div>
-            <div class="ds-mentor-happen-box" style="margin-top:4px; margin-bottom:4px;">
-                {happen_html_list}
-            </div>
-        </div>
-    </div>
-    """
+    card_html = (
+        f'<div class="ds-decision-card {sev_class}">'
+        f'<div class="ds-mentor-found-box">'
+        f'<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">'
+        f'<span class="ds-mentor-found-badge">WHAT WE FOUND</span>'
+        f'<span class="ds-sev-badge {badge_class}">{found_badge}</span>'
+        f'</div>'
+        f'<div class="ds-mentor-found-primary">{html.escape(found_primary)}</div>'
+        f'<div class="ds-mentor-found-desc">'
+        f'{html.escape(found_secondary)}'
+        f'{f" · <b>{html.escape(human_summary)}</b>" if human_summary else ""}'
+        f'</div>'
+        f'</div>'
+        f'<div class="ds-recommendation-box">'
+        f'<div class="ds-rec-top-row">'
+        f'<span class="ds-rec-label">OUR RECOMMENDATION</span>'
+        f'<div class="ds-rec-meta-badges">'
+        f'<span class="ds-conf-badge">Confidence: <b>{dec.get("confidence", "HIGH")}</b></span>'
+        f'<span class="ds-risk-badge">Risk: <b>{dec.get("risk", "LOW")}</b></span>'
+        f'</div>'
+        f'</div>'
+        f'<div class="ds-rec-action-name">{html.escape(rec_action)}</div>'
+        f'<div class="ds-mentor-section-label" style="margin-top:10px;">WHY ARE WE RECOMMENDING THIS?</div>'
+        f'<div class="ds-decision-why">{html.escape(why_text)}</div>'
+        f'<div class="ds-mentor-section-label" style="margin-top:12px;">WHAT WILL HAPPEN?</div>'
+        f'<div class="ds-mentor-happen-box" style="margin-top:4px; margin-bottom:4px;">'
+        f'{happen_html_list}'
+        f'</div>'
+        f'</div>'
+        f'</div>'
+    )
     st.markdown(card_html, unsafe_allow_html=True)
 
     # Action Triggers: Preview Fix vs Apply Fix
@@ -587,7 +584,7 @@ def _render_decision_card(
     
     is_previewing = (st.session_state.get("_active_preview_decision_id") == dec["id"])
     with act_c1:
-        btn_label = "✕ Close Preview" if is_previewing else "⚡ Preview This Change"
+        btn_label = "Close Preview" if is_previewing else "Preview This Change"
         if st.button(btn_label, key=f"preview_btn_{key_prefix}_{dec['id']}", use_container_width=True):
             if is_previewing:
                 st.session_state["_active_preview_decision_id"] = None
@@ -596,7 +593,7 @@ def _render_decision_card(
             st.rerun()
 
     with act_c2:
-        if st.button("✓ Apply Recommendation", key=f"apply_btn_{key_prefix}_{dec['id']}", type="primary", use_container_width=True):
+        if st.button("Apply Recommendation", key=f"apply_btn_{key_prefix}_{dec['id']}", type="primary", use_container_width=True):
             _execute_decision_fix(df, dec)
 
     # Active Preview Drawer
@@ -605,18 +602,16 @@ def _render_decision_card(
 
     # Collapsible 1: Why did AI choose this?
     ai_reason = dec.get("ai_reasoning_beginner") or "AI analyzed statistical distributions and edge boundaries to select this strategy."
-    with st.expander("▼ Why did AI choose this?", expanded=(level == "Beginner")):
+    with st.expander("Why did AI choose this?", expanded=(level == "Beginner")):
         st.markdown(
-            f"""
-            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; padding: 4px 0;">
-                💡 <b>AI Mentor Insight:</b> {html.escape(ai_reason)}
-            </div>
-            """,
+            f"<div style='font-size: 13px; color: var(--text-secondary); line-height: 1.5; padding: 4px 0;'>"
+            f"<b>AI Mentor Insight:</b> {html.escape(ai_reason)}"
+            f"</div>",
             unsafe_allow_html=True
         )
 
     # Collapsible 2: Alternative Strategies
-    with st.expander("▼ Alternative Strategies", expanded=False):
+    with st.expander("Alternative Strategies", expanded=False):
         alts = dec.get("alternatives", [])
         if alts:
             alt_rows = []
@@ -645,7 +640,7 @@ def _render_decision_card(
             st.caption("No alternative strategies recorded for this recommendation.")
 
     # Collapsible 3: Technical details & evidence
-    with st.expander("▼ Technical details & evidence", expanded=(level == "Technical")):
+    with st.expander("Technical details & evidence", expanded=(level == "Technical")):
         tech_ev = dec.get("technical_evidence") or {}
         if not tech_ev:
             ev = dec.get("evidence", {})
@@ -667,18 +662,16 @@ def _render_decision_preview_drawer(df: pd.DataFrame, dec: Dict[str, Any], key_p
         return
 
     st.markdown(
-        f"""
-        <div class="ds-preview-modal-box">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                <div style="font-size: 14px; font-weight: 700; color: var(--accent);">
-                    ⚡ Transformation Preview: {html.escape(dec.get("title", ""))}
-                </div>
-                <span style="font-size: 11px; color: var(--text-muted); background: var(--surface-container-low); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-light);">
-                    Simulation Mode (Raw Dataset Untouched)
-                </span>
-            </div>
-        </div>
-        """,
+        f'<div class="ds-preview-modal-box">'
+        f'<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">'
+        f'<div style="font-size: 14px; font-weight: 700; color: var(--accent);">'
+        f'Transformation Preview: {html.escape(dec.get("title", ""))}'
+        f'</div>'
+        f'<span style="font-size: 11px; color: var(--text-muted); background: var(--surface-container-low); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-light);">'
+        f'Simulation Mode (Raw Dataset Untouched)'
+        f'</span>'
+        f'</div>'
+        f'</div>',
         unsafe_allow_html=True
     )
 
@@ -747,10 +740,10 @@ def _render_decision_preview_drawer(df: pd.DataFrame, dec: Dict[str, Any], key_p
     # Approval Actions
     conf_c1, conf_c2, _ = st.columns([3, 3, 6])
     with conf_c1:
-        if st.button("✓ Confirm & Apply Fix", key=f"confirm_preview_apply_{key_prefix}_{dec['id']}", type="primary", use_container_width=True):
+        if st.button("Confirm & Apply Fix", key=f"confirm_preview_apply_{key_prefix}_{dec['id']}", type="primary", use_container_width=True):
             _execute_decision_fix(df, dec)
     with conf_c2:
-        if st.button("✕ Dismiss Preview", key=f"dismiss_preview_{key_prefix}_{dec['id']}", use_container_width=True):
+        if st.button("Dismiss Preview", key=f"dismiss_preview_{key_prefix}_{dec['id']}", use_container_width=True):
             st.session_state["_active_preview_decision_id"] = None
             st.rerun()
 
@@ -846,7 +839,7 @@ def _render_section_missing_values(working_df: pd.DataFrame) -> None:
     if total_missing_cells == 0 or affected_cols_df.empty:
         render_notification(
             title="100% Complete Data",
-            message="✓ All columns in the prepared dataset are complete with zero missing values remaining.",
+            message="All columns in the prepared dataset are complete with zero missing values remaining.",
             variant="success"
         )
         return
@@ -941,7 +934,7 @@ def _render_section_duplicates(working_df: pd.DataFrame) -> None:
     else:
         render_notification(
             title="Zero Duplicate Rows Detected",
-            message="✓ Every row in the dataset represents a unique observation under the current scope.",
+            message="Every row in the dataset represents a unique observation under the current scope.",
             variant="success"
         )
 
@@ -962,7 +955,7 @@ def _render_section_duplicates(working_df: pd.DataFrame) -> None:
     else:
         render_notification(
             title="Clean Uniqueness Health",
-            message="✓ No AI deduplication intervention required. All records are unique.",
+            message="No AI deduplication intervention required. All records are unique.",
             variant="success"
         )
 
@@ -1070,7 +1063,7 @@ def _render_section_outliers_and_validity(working_df: pd.DataFrame) -> None:
     else:
         render_notification(
             title="Clean Distribution Tails",
-            message="✓ No extreme statistical outliers detected across numeric features based on the 1.5×IQR boundary.",
+            message="No extreme statistical outliers detected across numeric features based on the 1.5×IQR boundary.",
             variant="success"
         )
 
@@ -1094,7 +1087,7 @@ def _render_section_outliers_and_validity(working_df: pd.DataFrame) -> None:
     else:
         render_notification(
             title="Value Validity Verified",
-            message="✓ All values adhere to semantic domain rules (e.g. non-negative quantities, clean strings, consistent data types).",
+            message="All values adhere to semantic domain rules (e.g. non-negative quantities, clean strings, consistent data types).",
             variant="success"
         )
 
