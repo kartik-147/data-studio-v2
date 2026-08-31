@@ -475,7 +475,7 @@ def _render_preparation_summary_bar(
 # REUSABLE DECISION CARD & PREVIEW MODAL RENDERERS
 # =============================================================================
 
-def _render_explanation_level_selector() -> None:
+def _render_explanation_level_selector(key_prefix: str = "main") -> None:
     """Render the AI Explanation Level selector control (Beginner, Standard, Technical)."""
     if "ai_explanation_level" not in st.session_state:
         st.session_state["ai_explanation_level"] = "Beginner"
@@ -497,7 +497,7 @@ def _render_explanation_level_selector() -> None:
             options=opts,
             index=idx,
             horizontal=True,
-            key="ai_explanation_level_radio",
+            key=f"ai_explanation_level_radio_{key_prefix}",
             label_visibility="collapsed",
             help="Beginner uses simple language with no jargon; Standard provides analyst summaries; Technical includes full statistical metrics."
         )
@@ -834,7 +834,7 @@ def _render_section_missing_values(working_df: pd.DataFrame) -> None:
         subtitle="Statistical recommendations and automated remediation decisions tailored to feature distributions."
     )
 
-    _render_explanation_level_selector()
+    _render_explanation_level_selector("missing")
 
     if total_missing_cells == 0 or affected_cols_df.empty:
         render_notification(
@@ -946,7 +946,7 @@ def _render_section_duplicates(working_df: pd.DataFrame) -> None:
         subtitle="Automated uniqueness assessment and intelligent deduplication strategy."
     )
 
-    _render_explanation_level_selector()
+    _render_explanation_level_selector("duplicates")
 
     if dup_cnt > 0:
         dup_dec = generate_duplicate_decision(dup_info, working_df)
@@ -1048,7 +1048,7 @@ def _render_section_outliers_and_validity(working_df: pd.DataFrame) -> None:
         subtitle="Domain-aware AI reasoning based on distribution shape and statistical outlier severity."
     )
 
-    _render_explanation_level_selector()
+    _render_explanation_level_selector("outliers")
 
     outlier_decisions = []
     for col in numeric_cols:
