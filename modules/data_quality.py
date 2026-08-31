@@ -329,7 +329,7 @@ def _render_issues_summary_and_handoff(report: Dict[str, Any]) -> None:
                 </div>
                 <div>
                     <span style="font-size: 12px; color: var(--text-secondary); margin-right: 8px;">
-                        {f'⚡ {total_defects:,} total quality defects detected.' if total_defects > 0 else '✓ No critical defects found.'}
+                        {f'{total_defects:,} total quality defects detected.' if total_defects > 0 else 'No critical defects found.'}
                     </span>
                 </div>
             </div>

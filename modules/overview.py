@@ -33,15 +33,14 @@ from modules.data_loader import (
 
 
 def _get_greeting() -> str:
-    """Return a time-of-day greeting string adjusted to local timezone (IST UTC+5:30)."""
-    tz = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
-    now = datetime.datetime.now(tz)
+    """Return a time-of-day greeting string adjusted to user's local time."""
+    now = datetime.datetime.now()
     hour = now.hour
     if 5 <= hour < 12:
         return "Good morning"
     elif 12 <= hour < 17:
         return "Good afternoon"
-    elif 17 <= hour < 22:
+    elif 17 <= hour < 21:
         return "Good evening"
     return "Good night"
 
@@ -57,7 +56,7 @@ def render_overview_page() -> None:
 
     render_page_header(
         title="Overview",
-        subtitle="Intelligent control center, workflow progress, and dataset summary.",
+        subtitle="Intelligent control center, workspace summary, and workflow progress.",
         icon="layout-dashboard"
     )
 
@@ -68,11 +67,11 @@ def render_overview_page() -> None:
     # ── Welcome Hero ─────────────────────────────────────────────────────────
     if not is_admin:
         if dataset_loaded:
-            welcome_subtitle = f"Active dataset loaded ({stage_info['status_label']}). Continue your analysis workflow below."
+            welcome_subtitle = "Your dataset is ready for quality assessment. Continue your analysis workflow below."
             greeting_title = f"{greeting}, {first_name}."
         else:
-            greeting_title = "Welcome to Data Studio."
-            welcome_subtitle = "Upload a dataset to begin your analysis."
+            greeting_title = f"{greeting}, {first_name}."
+            welcome_subtitle = "Upload a dataset to begin your analysis journey."
 
         welcome_html = (
             f'<div class="ds-welcome-hero">'
@@ -173,7 +172,7 @@ def _render_no_dataset_state() -> None:
         col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
         with col_btn2:
             if st.button(
-                "UPLOAD DATASET →",
+                "Upload Dataset →",
                 key="ov_empty_upload_btn",
                 type="primary",
                 use_container_width=True
@@ -188,7 +187,7 @@ def _render_no_dataset_state() -> None:
             subtitle="The standard enterprise path from raw data to actionable intelligence."
         )
 
-        # Clean 6-step workflow preview roadmap
+        # Clean 7-step workflow preview roadmap
         render_workflow_timeline(interactive=False)
 
     with col_preview:
@@ -266,7 +265,7 @@ def _render_no_dataset_state() -> None:
 # =============================================================================
 
 def _render_active_dataset_state(stage_info: dict) -> None:
-    """Render the active dataset control center answering the 3 core questions."""
+    """Render the active dataset control center with clean hierarchy and actionable observations."""
     df = st.session_state.get("dataset")
     name = st.session_state.get("dataset_name", "dataset.csv")
     file_type = st.session_state.get("dataset_file_type", "CSV") or "CSV"
@@ -274,109 +273,75 @@ def _render_active_dataset_state(stage_info: dict) -> None:
     rows = meta.get("total_rows", df.shape[0] if df is not None else 0)
     cols = meta.get("total_columns", df.shape[1] if df is not None else 0)
     quality_score = meta.get("quality_score", None)
-    is_prepared = st.session_state.get("cleaned_dataset") is not None
 
-    # 1. Answer: "What data am I working with?"
+    # 1. Dataset Summary KPI Cards (5 Cards: Name, Rows, Columns, Quality, Progress)
     render_section_header(
-        title="Active Dataset Summary",
-        subtitle=f"Currently loaded: {html.escape(name)} ({file_type.upper()})"
+        title="Dataset Summary",
+        subtitle=f"Active Workspace Context: {html.escape(name)}"
     )
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
         render_metric_card(
-            label="Dataset Name",
-            value=name.split(".")[0].replace("_", " ").title()[:14],
-            description=f"Format: {file_type.upper()}",
+            label="Dataset",
+            value=name.split(".")[0].replace("_", " ").title()[:13],
+            description=f"{file_type.upper()} format",
             status="Active",
             icon="database"
         )
     with c2:
         render_metric_card(
-            label="Dataset Dimensions",
+            label="Rows",
             value=f"{rows:,}",
-            description=f"{cols} total columns",
-            status="Rows",
+            description="Dataset volume",
+            status="Volume",
             icon="table"
         )
     with c3:
         render_metric_card(
-            label="Data Quality Score",
-            value=f"{int(quality_score)}%" if quality_score is not None else "—",
-            change_type="success" if (quality_score or 0) >= 80 else "warning",
-            description="Overall health",
-            icon="shield-check"
+            label="Columns",
+            value=f"{cols}",
+            description="Feature count",
+            status="Features",
+            icon="sliders"
         )
     with c4:
         render_metric_card(
-            label="Workflow Status",
+            label="Quality Score",
+            value=f"{int(quality_score)}%" if quality_score is not None else "—",
+            change_type="success" if (quality_score or 0) >= 80 else "warning",
+            description="Reliability audit",
+            status="Health",
+            icon="shield-check"
+        )
+    with c5:
+        render_metric_card(
+            label="Workflow Progress",
             value=f"{stage_info['progress_percent']}%",
-            description=f"{stage_info['completed_count']}/{len(WORKFLOW_STEPS)} steps done",
+            description=f"{stage_info['completed_count']}/7 steps finished",
             status="In Progress" if stage_info['progress_percent'] < 100 else "Completed",
-            icon="activity",
-            change_type="success" if stage_info['progress_percent'] >= 50 else "neutral"
+            change_type="success" if stage_info['progress_percent'] >= 50 else "neutral",
+            icon="activity"
         )
 
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
-    # 2. Answer: "Where am I in the workflow?"
+    # 2. Workflow Timeline Stepper
     render_section_header(
         title="Workflow Timeline",
-        subtitle="Track your journey from raw dataset to executive dashboard."
+        subtitle="Track your analytical journey and jump directly to any stage."
     )
     render_workflow_timeline(interactive=True)
 
     st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
-    # ── Main Content Split: Quick Actions & Contextual Insights ──────────────
+    # 3. Split View: Automated Data Observations & Session Activity
     col_left, col_right = st.columns([6, 4], gap="large")
 
     with col_left:
         render_section_header(
-            title="Functional Workspace Hub",
-            subtitle="Jump directly to any specialized analysis module."
-        )
-
-        qa_col1, qa_col2, qa_col3 = st.columns(3, gap="small")
-        with qa_col1:
-            st.markdown("<div style='font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;'>Workspace</div>", unsafe_allow_html=True)
-            if st.button("Dataset", key="ov_qa_ds", use_container_width=True):
-                st.session_state["current_page"] = "Dataset"
-                st.rerun()
-            if st.button("Data Quality", key="ov_qa_qual", use_container_width=True):
-                st.session_state["current_page"] = "Data Quality"
-                st.rerun()
-
-        with qa_col2:
-            st.markdown("<div style='font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;'>Transform & Analyze</div>", unsafe_allow_html=True)
-            if st.button("Data Preparation", key="ov_qa_prep", use_container_width=True):
-                st.session_state["current_page"] = "Data Preparation"
-                st.rerun()
-            if st.button("Analyze", key="ov_qa_eda", use_container_width=True):
-                st.session_state["current_page"] = "Analyze"
-                st.rerun()
-
-        with qa_col3:
-            st.markdown("<div style='font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;'>Visuals & Intelligence</div>", unsafe_allow_html=True)
-            if st.button("Visualization", key="ov_qa_viz", use_container_width=True):
-                st.session_state["current_page"] = "Visualization"
-                st.rerun()
-            if st.button("Dashboard", key="ov_qa_dash", use_container_width=True):
-                st.session_state["current_page"] = "Dashboard"
-                st.rerun()
-            if st.button("AI Analyst", key="ov_qa_ai", use_container_width=True):
-                st.session_state["current_page"] = "AI Analyst"
-                st.rerun()
-            if st.button("Data Story", key="ov_qa_story", use_container_width=True):
-                st.session_state["current_page"] = "Data Story"
-                st.rerun()
-
-        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-
-        # Contextual Observations
-        render_section_header(
             title="Automated Data Observations",
-            subtitle="Immediate diagnostic highlights from your active dataset."
+            subtitle="Intelligent assistant findings and recommended next actions."
         )
 
         missing_rate = meta.get("missing_percentage", 0.0) or 0.0
@@ -384,34 +349,40 @@ def _render_active_dataset_state(stage_info: dict) -> None:
 
         if missing_rate > 0:
             render_insight_card(
-                title=f"{missing_rate:.1f}% Missing Values Detected",
-                description="Your dataset contains incomplete fields. Use Data Preparation to impute, filter, or clean missing values.",
+                title="Missing values need attention",
+                description=f"{missing_rate:.1f}% of cells are empty. Recommended next step: Review missing-value handling in Data Quality.",
                 priority="warning" if missing_rate > 5 else "info",
-                actions=[{"label": "Clean in Data Prep", "page": "Data Preparation"}]
+                actions=[{"label": "Review in Data Quality →", "page": "Data Quality"}]
             )
         else:
             render_insight_card(
                 title="100% Data Completeness",
                 description="Zero missing values detected across all columns. Dataset integrity is high.",
-                priority="healthy"
+                priority="healthy",
+                actions=[{"label": "Explore in Analyze →", "page": "Analyze"}]
             )
 
         if dup_rate > 0:
             render_insight_card(
-                title=f"{dup_rate:.1f}% Duplicate Rows Found",
-                description="Duplicate records can bias statistical aggregations. Consider deduplication in Data Preparation.",
+                title="Repeated records detected",
+                description=f"{dup_rate:.1f}% repeated rows found. Duplicate records can bias statistical aggregations.",
                 priority="warning" if dup_rate > 3 else "info",
-                actions=[{"label": "Deduplicate in Data Prep", "page": "Data Preparation"}]
+                actions=[{"label": "Review in Data Quality →", "page": "Data Quality"}]
             )
+
+        if st.button("Audit Full Dataset Quality →", key="ov_audit_quality_cta_btn", type="primary", use_container_width=True):
+            st.session_state["current_page"] = "Data Quality"
+            st.rerun()
 
     with col_right:
         render_section_header(
             title="Session Activity",
             subtitle="Recent analytical events and operations."
         )
-        render_activity_list(max_items=8)
+        render_activity_list(max_items=6)
 
-    # ── Standardized Bottom Next Workflow Steps Section ──────────────────
+    # 4. Standardized Compact Recommended Next Workflow Step Callout
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
     render_next_workflow_steps("Overview")
+
 

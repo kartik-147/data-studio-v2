@@ -1150,7 +1150,7 @@ def render_top_header(
             f'<span class="ds-status-dot">●</span>'
             f'<span class="ds-context-name">{ds_display_name}</span>'
             f'<span class="ds-context-divider">·</span>'
-            f'<span class="ds-context-stats">{rows:,} rows &times; {cols} cols</span>'
+            f'<span class="ds-context-stats">{rows:,} rows &times; {cols} columns</span>'
             f'</div>'
         )
     else:
@@ -1520,8 +1520,9 @@ def render_workflow_indicator(current_page: Optional[str] = None) -> None:
 
 def render_workflow_timeline(interactive: bool = True) -> None:
     """
-    Render a professional analytics progress timeline following the canonical workflow:
-    1. Dataset -> 2. Overview -> 3. Data Quality -> 4. Data Preparation -> 5. Analyze -> 6. Visualization -> 7. Dashboard
+    Render a compact, interactive 7-stage analytical progress stepper:
+    01 Dataset -> 02 Overview -> 03 Data Quality -> 04 Data Preparation -> 05 Analyze -> 06 Visualization -> 07 Dashboard.
+    Each step clearly indicates number, name, status, description, and is clickable to navigate directly.
     """
     from modules.config import WORKFLOW_STEPS, is_workflow_step_completed, is_dataset_loaded, get_current_workflow_stage
     
@@ -1529,69 +1530,57 @@ def render_workflow_timeline(interactive: bool = True) -> None:
     stage_info = get_current_workflow_stage()
     current_step_num = stage_info["current_step_num"]
 
-    steps_html = []
-    for step in WORKFLOW_STEPS:
+    # Filter to canonical 7 workspace workflow steps
+    workspace_steps = [s for s in WORKFLOW_STEPS if s["step_num"] <= 7]
+
+    cols = st.columns(len(workspace_steps), gap="small")
+    for idx, step in enumerate(workspace_steps):
         s_num = step["step_num"]
         s_key = step["key"]
         s_name = step["name"]
-        s_short = step.get("short_name", s_name)
         s_page = step["page"]
+        s_desc = step.get("desc", "")
         
         is_comp = is_workflow_step_completed(s_key)
         is_curr = (s_num == current_step_num) and is_dataset_loaded()
-        is_page_active = (current_page == s_page)
         
         if is_comp:
-            state_class = "ds-timeline-step-completed"
-            icon_badge = '<span class="ds-timeline-badge ds-badge-completed">✓</span>'
+            state_badge = '<span class="ds-timeline-badge ds-badge-completed">✓</span>'
             status_text = "Completed"
+            card_class = "ds-timeline-step ds-timeline-step-completed"
+            btn_type = "secondary"
         elif is_curr or (s_num == 1 and not is_dataset_loaded()):
-            state_class = "ds-timeline-step-current"
-            icon_badge = f'<span class="ds-timeline-badge ds-badge-current">{s_num}</span>'
-            status_text = "Current Step"
+            state_badge = f'<span class="ds-timeline-badge ds-badge-current">0{s_num}</span>'
+            status_text = "Current"
+            card_class = "ds-timeline-step ds-timeline-step-current"
+            btn_type = "primary"
         else:
-            state_class = "ds-timeline-step-upcoming"
-            icon_badge = f'<span class="ds-timeline-badge ds-badge-upcoming">{s_num}</span>'
+            state_badge = f'<span class="ds-timeline-badge ds-badge-upcoming">0{s_num}</span>'
             status_text = "Upcoming"
+            card_class = "ds-timeline-step ds-timeline-step-upcoming"
+            btn_type = "secondary"
 
-        step_card = (
-            f'<div class="ds-timeline-step {state_class}">'
-            f'<div class="ds-timeline-step-header">'
-            f'{icon_badge}'
-            f'<span class="ds-timeline-step-num">STEP 0{s_num}</span>'
-            f'</div>'
-            f'<div class="ds-timeline-step-title">{s_name}</div>'
-            f'<div class="ds-timeline-step-status">{status_text}</div>'
-            f'</div>'
-        )
-        steps_html.append(step_card)
-
-    timeline_container_html = (
-        f'<div class="ds-timeline-wrapper">'
-        f'<div class="ds-timeline-track"></div>'
-        f'<div class="ds-timeline-steps">{"".join(steps_html)}</div>'
-        f'</div>'
-    )
-    st.markdown(timeline_container_html, unsafe_allow_html=True)
-
-    # 1-Click interactive navigation buttons below timeline if requested
-    if interactive:
-        st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
-        nav_cols = st.columns(len(WORKFLOW_STEPS))
-        for idx, step in enumerate(WORKFLOW_STEPS):
-            with nav_cols[idx]:
-                s_key = step["key"]
-                s_page = step["page"]
-                s_name = step["short_name"]
-                is_comp = is_workflow_step_completed(s_key)
-                is_curr = (step["step_num"] == current_step_num)
-                btn_label = f"✓ {s_name}" if is_comp else (f"● {s_name}" if is_curr else s_name)
-                
+        with cols[idx]:
+            card_html = (
+                f'<div class="{card_class}">'
+                f'<div class="ds-timeline-step-header">'
+                f'{state_badge}'
+                f'<span class="ds-timeline-step-status">{status_text}</span>'
+                f'</div>'
+                f'<div class="ds-timeline-step-title">{s_name}</div>'
+                f'<div class="ds-timeline-step-desc">{s_desc}</div>'
+                f'</div>'
+            )
+            st.markdown(card_html, unsafe_allow_html=True)
+            
+            if interactive:
+                btn_title = f"Open {s_name} →" if is_curr else (f"✓ {s_name}" if is_comp else s_name)
                 if st.button(
-                    btn_label,
-                    key=f"tl_btn_{s_key}",
+                    btn_title,
+                    key=f"tl_step_nav_{s_key}",
+                    type=btn_type,
                     use_container_width=True,
-                    type="primary" if is_curr else "secondary"
+                    help=f"Navigate to {s_name}"
                 ):
                     st.session_state["current_page"] = s_page
                     st.rerun()
@@ -1613,7 +1602,6 @@ def render_next_step_banner(
     Render a high-visibility, professional next-step guidance callout card.
     Dynamically guides the user from their current completed task to the next logical workflow phase.
     """
-    banner_icon = get_icon_svg("arrow-right", 18)
     banner_html = (
         f'<div class="ds-next-step-banner">'
         f'<div class="ds-next-step-content">'
@@ -1673,7 +1661,6 @@ def render_ai_context_trigger(
     """
     Render a clean, contextual AI Analyst trigger button without interrupting the workflow.
     """
-    ai_icon = get_icon_svg("sparkles", 14)
     if st.button(
         f"{label}",
         key=key,
@@ -1755,35 +1742,23 @@ ANALYTICAL_WORKFLOW_STEPS = [
 
 def render_next_workflow_steps(current_page: Optional[str] = None) -> None:
     """
-    Render the standardized bottom 'Next Workflow Steps' section across all modules.
-    Guarantees a consistent structure across every single page:
-      - Button 1: Previous Module (if any)
-      - Button 2: Immediate Next Module (Recommended, primary visual emphasis)
-      - Button 3: Subsequent Next Module (if any)
+    Render a compact, professional 'Recommended next step' section across all modules.
+    Provides clear, single-action next guidance with subtle previous and jump links.
     """
     if not current_page:
         current_page = st.session_state.get("current_page", "Overview")
 
     # Handle Admin Analytics special route
     if current_page == "Admin Analytics":
-        cards = [
-            {
-                "step": ANALYTICAL_WORKFLOW_STEPS[0],  # Overview
-                "role_badge": "PRIMARY WORKSPACE",
-                "btn_label": "← Return to Overview",
-                "is_recommended": True,
-                "btn_type": "primary"
-            },
-            {
-                "step": ANALYTICAL_WORKFLOW_STEPS[-1],  # Settings
-                "role_badge": "SYSTEM PREFERENCES",
-                "btn_label": "Go to Settings →",
-                "is_recommended": False,
-                "btn_type": "secondary"
-            }
-        ]
+        prev_step = {"page_key": "Overview", "name": "Overview"}
+        next_step = {
+            "page_key": "Settings",
+            "name": "Settings",
+            "description": "Configure platform preferences, theme appearance, and diagnostics.",
+            "icon": "settings"
+        }
+        subsequent_step = None
     else:
-        # Resolve index in analytical workflow
         curr_idx = -1
         for idx, step in enumerate(ANALYTICAL_WORKFLOW_STEPS):
             if current_page == step["page_key"] or current_page.lower() == step["name"].lower():
@@ -1793,95 +1768,61 @@ def render_next_workflow_steps(current_page: Optional[str] = None) -> None:
         if curr_idx == -1:
             return
 
-        # Compute up to 3 buttons dynamically
-        cards = []
+        prev_step = ANALYTICAL_WORKFLOW_STEPS[curr_idx - 1] if curr_idx > 0 else None
+        next_step = ANALYTICAL_WORKFLOW_STEPS[curr_idx + 1] if curr_idx < len(ANALYTICAL_WORKFLOW_STEPS) - 1 else None
+        subsequent_step = ANALYTICAL_WORKFLOW_STEPS[curr_idx + 2] if curr_idx < len(ANALYTICAL_WORKFLOW_STEPS) - 2 else None
 
-        # 1. Previous Module (if exists)
-        if curr_idx > 0:
-            cards.append({
-                "step": ANALYTICAL_WORKFLOW_STEPS[curr_idx - 1],
-                "role_badge": "PREVIOUS STEP",
-                "btn_label": f"← Return to {ANALYTICAL_WORKFLOW_STEPS[curr_idx - 1]['name']}",
-                "is_recommended": False,
-                "btn_type": "secondary"
-            })
+        if next_step is None and curr_idx == len(ANALYTICAL_WORKFLOW_STEPS) - 1:
+            next_step = ANALYTICAL_WORKFLOW_STEPS[0]
 
-        # 2. Immediate Next Module (if exists - Recommended with primary emphasis)
-        if curr_idx < len(ANALYTICAL_WORKFLOW_STEPS) - 1:
-            cards.append({
-                "step": ANALYTICAL_WORKFLOW_STEPS[curr_idx + 1],
-                "role_badge": "RECOMMENDED NEXT",
-                "btn_label": f"Continue to {ANALYTICAL_WORKFLOW_STEPS[curr_idx + 1]['name']} →",
-                "is_recommended": True,
-                "btn_type": "primary"
-            })
-
-        # 3. Second Next Module (if exists)
-        if curr_idx < len(ANALYTICAL_WORKFLOW_STEPS) - 2:
-            cards.append({
-                "step": ANALYTICAL_WORKFLOW_STEPS[curr_idx + 2],
-                "role_badge": "SUBSEQUENT STEP",
-                "btn_label": f"Jump to {ANALYTICAL_WORKFLOW_STEPS[curr_idx + 2]['name']} →",
-                "is_recommended": False,
-                "btn_type": "secondary"
-            })
-        elif curr_idx == len(ANALYTICAL_WORKFLOW_STEPS) - 1 and len(ANALYTICAL_WORKFLOW_STEPS) > 2:
-            # On last step (Settings), offer quick return to Overview
-            cards.append({
-                "step": ANALYTICAL_WORKFLOW_STEPS[0],
-                "role_badge": "RETURN HOME",
-                "btn_label": "Restart from Overview →",
-                "is_recommended": True,
-                "btn_type": "primary"
-            })
-
-    if not cards:
+    if next_step is None:
         return
 
-    st.markdown("<div class='ds-wf-steps-container'>", unsafe_allow_html=True)
+    icon_svg = get_icon_svg(next_step.get("icon", "arrow-right"), 15)
 
-    render_section_header(
-        title="Next Workflow Steps",
-        subtitle="Continue your analytical journey through subsequent modules or review previous steps."
+    st.markdown(
+        f"""
+        <div class="ds-next-step-compact-box">
+            <div class="ds-next-step-compact-header">
+                <span class="ds-next-step-badge">RECOMMENDED NEXT</span>
+                <span class="ds-next-step-compact-target">{icon_svg} {next_step['name']}</span>
+            </div>
+            <div class="ds-next-step-compact-desc">{next_step['description']}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-    cols = st.columns(len(cards), gap="medium")
-
-    for i, item in enumerate(cards):
-        step_data = item["step"]
-        is_rec = item["is_recommended"]
-        role_badge = item["role_badge"]
-        btn_label = item["btn_label"]
-        btn_type = item["btn_type"]
-
-        card_class = "ds-wf-card ds-wf-card-recommended" if is_rec else "ds-wf-card"
-        badge_class = "ds-wf-badge ds-wf-badge-recommended" if is_rec else "ds-wf-badge"
-        icon_svg = get_icon_svg(step_data["icon"], 16)
-
-        with cols[i]:
-            card_html = (
-                f'<div class="{card_class}">'
-                f'<div>'
-                f'<span class="{badge_class}">{role_badge}</span>'
-                f'<div class="ds-wf-card-title">{icon_svg} {step_data["name"]}</div>'
-                f'<div class="ds-wf-card-desc">{step_data["description"]}</div>'
-                f'</div>'
-                f'</div>'
-            )
-            st.markdown(card_html, unsafe_allow_html=True)
-
-            target_page_key = step_data["page_key"]
-            if st.button(
-                btn_label,
-                key=f"wf_nav_{current_page.replace(' ', '_')}_{target_page_key}_{i}",
-                type=btn_type,
-                use_container_width=True
-            ):
-                st.session_state["current_page"] = target_page_key
+    if prev_step and subsequent_step:
+        c1, c2, c3 = st.columns([3, 4, 3])
+        with c1:
+            if st.button(f"← {prev_step['name']}", key=f"wf_prev_{current_page.replace(' ', '_')}_{prev_step['page_key']}", use_container_width=True):
+                st.session_state["current_page"] = prev_step["page_key"]
                 st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
+        with c2:
+            if st.button(f"Continue to {next_step['name']} →", key=f"wf_next_{current_page.replace(' ', '_')}_{next_step['page_key']}", type="primary", use_container_width=True):
+                st.session_state["current_page"] = next_step["page_key"]
+                st.rerun()
+        with c3:
+            if st.button(f"Jump to {subsequent_step['name']} →", key=f"wf_sub_{current_page.replace(' ', '_')}_{subsequent_step['page_key']}", use_container_width=True):
+                st.session_state["current_page"] = subsequent_step["page_key"]
+                st.rerun()
+    elif prev_step:
+        c1, c2 = st.columns([4, 6])
+        with c1:
+            if st.button(f"← {prev_step['name']}", key=f"wf_prev_{current_page.replace(' ', '_')}_{prev_step['page_key']}", use_container_width=True):
+                st.session_state["current_page"] = prev_step["page_key"]
+                st.rerun()
+        with c2:
+            if st.button(f"Continue to {next_step['name']} →", key=f"wf_next_{current_page.replace(' ', '_')}_{next_step['page_key']}", type="primary", use_container_width=True):
+                st.session_state["current_page"] = next_step["page_key"]
+                st.rerun()
+    else:
+        c1, c2 = st.columns([6, 4])
+        with c2:
+            if st.button(f"Continue to {next_step['name']} →", key=f"wf_next_{current_page.replace(' ', '_')}_{next_step['page_key']}", type="primary", use_container_width=True):
+                st.session_state["current_page"] = next_step["page_key"]
+                st.rerun()
 
 
 # ============================================================================

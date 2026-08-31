@@ -5493,3 +5493,172 @@ section[data-testid="stSidebar"] div[data-testid="stButton"] > button[kind="prim
   font-size: 11px;
   color: var(--text-muted);
 }
+
+/* ==========================================================================
+   INTERACTIVE WORKFLOW TIMELINE STEPPER
+   ========================================================================== */
+.ds-timeline-step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 82px;
+  box-shadow: var(--shadow-xs);
+  transition: all 0.15s ease;
+  margin-bottom: 6px;
+}
+
+.ds-timeline-step:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.ds-timeline-step-completed {
+  border-top: 3px solid #10b981;
+  background: var(--surface);
+}
+
+.ds-timeline-step-current {
+  border-top: 3px solid var(--accent, #2563eb);
+  background: var(--accent-subtle, rgba(37, 99, 235, 0.05));
+}
+
+.ds-timeline-step-upcoming {
+  border-top: 3px solid var(--border);
+  opacity: 0.82;
+}
+
+.ds-timeline-step-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.ds-timeline-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.ds-badge-completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.ds-badge-current {
+  background: var(--accent);
+  color: #ffffff;
+  border: 1px solid var(--accent);
+}
+
+.ds-badge-upcoming {
+  background: var(--surface-container-low);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.ds-timeline-step-status {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.ds-timeline-step-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.ds-timeline-step-desc {
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   COMPACT RECOMMENDED NEXT WORKFLOW STEP BOX
+   ========================================================================== */
+.ds-next-step-compact-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent, #2563eb);
+  border-radius: var(--radius-md, 8px);
+  padding: 12px 16px;
+  margin-top: 14px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-xs);
+}
+
+.ds-next-step-compact-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.ds-next-step-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-subtle, rgba(37, 99, 235, 0.1));
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.ds-next-step-compact-target {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ds-next-step-compact-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVENESS (< 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .ds-top-header {
+    flex-direction: column;
+    height: auto;
+    min-height: auto;
+    padding: 10px;
+    gap: 8px;
+  }
+  
+  .ds-top-header-left,
+  .ds-top-header-center,
+  .ds-top-header-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .ds-next-step-compact-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
