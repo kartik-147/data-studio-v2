@@ -25,7 +25,6 @@ from modules.ui_components import (
     render_metric_card,
     render_notification,
     render_empty_state,
-    render_next_step_banner,
     render_ai_context_trigger,
     render_next_workflow_steps,
     get_icon_svg,
@@ -327,70 +326,35 @@ def render_data_preparation_page() -> None:
 
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
-    # 4. Preparation Tab Switcher (The 5 Canonical Sections)
-    prep_tabs = [
-        "Missing Values",
-        "Duplicate Rows",
-        "Outliers & Validity",
-        "Transformations",
-        "Preparation History"
-    ]
+    # 4. Standardized Analytical Tabs
+    tab_missing, tab_dups, tab_outliers, tab_trans, tab_history = st.tabs([
+        "MISSING VALUES",
+        "DUPLICATE ROWS",
+        "OUTLIERS & VALIDITY",
+        "TRANSFORMATIONS",
+        "PREPARATION HISTORY"
+    ])
 
-    current_tab = st.session_state.get("prep_active_tab", "Missing Values")
-    if current_tab not in prep_tabs:
-        current_tab = "Missing Values"
-        st.session_state["prep_active_tab"] = current_tab
-
-    tab_idx = prep_tabs.index(current_tab)
-
-    # Render top segmented tab bar
-    selected_tab = st.radio(
-        "Select Preparation Section",
-        options=prep_tabs,
-        index=tab_idx,
-        horizontal=True,
-        key="prep_section_radio",
-        label_visibility="collapsed"
-    )
-
-    if selected_tab != current_tab:
-        st.session_state["prep_active_tab"] = selected_tab
-        st.rerun()
-
-    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
-
-    # 5. Render Selected Section
-    if selected_tab == "Missing Values":
+    with tab_missing:
         _render_section_missing_values(working_df)
 
-    elif selected_tab == "Duplicate Rows":
+    with tab_dups:
         _render_section_duplicates(working_df)
 
-    elif selected_tab == "Outliers & Validity":
+    with tab_outliers:
         _render_section_outliers_and_validity(working_df)
 
-    elif selected_tab == "Transformations":
+    with tab_trans:
         _render_section_transformations(working_df, dataset_name)
 
-    elif selected_tab == "Preparation History":
+    with tab_history:
         _render_section_preparation_history(orig_df, working_df, dataset_name)
 
-    st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
-    # 6. Workflow Navigation
-    render_next_step_banner(
-        title="Continue to Exploratory Analysis",
-        recommendation="Data remediation complete. Proceed to Analyze to examine distributions, correlations, and statistical summaries.",
-        primary_action_label="Continue to Analyze →",
-        target_page="Analyze",
-        key_prefix="prep_next_step",
-        suggested_actions=[{"label": "Skip to Visualization", "page": "Visualization"}]
-    )
-
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    # 5. Contextual AI & Bottom Workflow Navigation
     render_ai_context_trigger("Suggest cleaning transformations with AI", intent="data_prep_cleaning", key="prep_ai_btn")
-
-    # Dynamic Bottom Next Workflow Steps Section
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
     render_next_workflow_steps("Data Preparation")
 
 
@@ -437,13 +401,13 @@ def _render_preparation_summary_bar(
     with col_status:
         badge_cls = "ds-badge-numeric" if active_mode == "Prepared" else "ds-badge-neutral"
         banner_html = (
-            f'<div class="ds-active-banner" style="margin-bottom: 10px; padding: 10px 16px;">'
+            f'<div class="ds-active-banner" style="margin-bottom: 12px; padding: 10px 16px;">'
             f'<div class="ds-active-banner-left">'
-            f'<div class="ds-brand-badge" style="background: var(--accent);">P</div>'
+            f'<div class="ds-brand-badge" style="background: var(--accent);">{file_type[0] if file_type else "P"}</div>'
             f'<div>'
             f'<div class="ds-active-banner-name" style="font-size: 15px;">{html.escape(dataset_name)}</div>'
             f'<div class="ds-active-banner-meta" style="font-size: 12px;">'
-            f'Active in Analysis: <span class="ds-badge {badge_cls}" style="font-size: 11px;">{active_mode} Dataset</span> · {history_len} transformations applied'
+            f'{curr_rows:,} rows · {curr_cols} columns · <span class="ds-badge {badge_cls}" style="font-size: 11px;">{active_mode} Dataset</span> · {history_len} transformations applied'
             f'</div>'
             f'</div>'
             f'</div>'
@@ -452,9 +416,18 @@ def _render_preparation_summary_bar(
         st.markdown(banner_html, unsafe_allow_html=True)
 
     with col_action:
-        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-        if st.button("Use Prepared Dataset for Analysis", key="btn_apply_prepared_analysis", type="primary", use_container_width=True):
-            _apply_prepared_to_analysis()
+        st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+        ac1, ac2 = st.columns(2)
+        with ac1:
+            if st.button("Reset Changes", key="prep_reset_btn", disabled=(history_len == 0), use_container_width=True, help="Revert all transformations and restore original dataset"):
+                st.session_state["prepared_dataset"] = orig_df.copy(deep=True)
+                st.session_state["prep_history"] = []
+                st.session_state["prep_active_dataset_mode"] = "Original"
+                st.toast("Reverted all transformations. Original dataset restored.")
+                st.rerun()
+        with ac2:
+            if st.button("Apply to Analysis", key="btn_apply_prepared_analysis", type="primary", use_container_width=True, help="Promote prepared dataset to all analysis modules"):
+                _apply_prepared_to_analysis()
 
     # 4 Preparation Status KPI Summary Cards
     kpi_c1, kpi_c2, kpi_c3, kpi_c4 = st.columns(4)
@@ -706,8 +679,8 @@ def _render_decision_preview_drawer(df: pd.DataFrame, dec: Dict[str, Any], key_p
 def _render_section_missing_values(working_df: pd.DataFrame) -> None:
     """Render Missing Values section with manual controls first, followed by intelligent AI decision cards."""
     render_section_header(
-        title="Missing Values Remediation",
-        subtitle="Apply manual batch imputation or review AI-recommended statistical decisions and safe remediation."
+        title="Manual Missing Value Imputation",
+        subtitle="Directly apply batch imputations, custom override values, or removal strategies across selected columns."
     )
 
     missing_summary = get_missing_values_summary(working_df)
@@ -715,9 +688,6 @@ def _render_section_missing_values(working_df: pd.DataFrame) -> None:
     total_missing_cells = int(working_df.isna().sum().sum())
 
     # ── 1. MANUAL MISSING VALUE CONTROLS (COMES FIRST) ───────────────────────
-    st.markdown("#### 🛠️ Manual Missing Value Handling")
-    st.caption("Directly apply batch imputations, custom override values, or removal strategies across selected columns.")
-
     all_cols = list(working_df.columns)
     affected_col_names = list(affected_cols_df["Column"]) if not affected_cols_df.empty else all_cols
     default_selected = [affected_col_names[0]] if affected_col_names else []
@@ -781,7 +751,10 @@ def _render_section_missing_values(working_df: pd.DataFrame) -> None:
     st.markdown("<div style='height: 18px; border-bottom: 1px solid var(--border-light); margin-bottom: 18px;'></div>", unsafe_allow_html=True)
 
     # ── 2. AI SUGGESTIONS & INTELLIGENT DECISION CARDS (COMES AFTER) ────────
-    st.markdown("#### 🤖 AI-Powered Missing Value Suggestions")
+    render_section_header(
+        title="AI-Powered Missing Value Suggestions",
+        subtitle="Statistical recommendations and automated remediation decisions tailored to feature distributions."
+    )
 
     if total_missing_cells == 0 or affected_cols_df.empty:
         render_notification(
@@ -791,18 +764,25 @@ def _render_section_missing_values(working_df: pd.DataFrame) -> None:
         )
         return
 
-    st.caption(
-        f"Detected **{total_missing_cells:,} missing cells** across **{len(affected_cols_df)} columns**. "
-        f"Review AI recommendations and statistical alternatives below:"
-    )
+    # Generate Decision Engine Recommendations for affected columns
+    decisions = []
+    for col in affected_cols_df["Column"]:
+        series = working_df[col]
+        miss_count = int(series.isna().sum())
+        if miss_count > 0:
+            dec = generate_missing_value_decision(col, series, len(working_df), working_df)
+            if dec:
+                decisions.append(dec)
 
-    # Render a decision card for every column containing missing values
-    for idx, row in affected_cols_df.iterrows():
-        col_name = str(row["Column"])
-        if col_name in working_df.columns:
-            prof = investigate_column_distribution(working_df[col_name], col_name, working_df)
-            decision = generate_missing_value_decision(col_name, prof, working_df)
-            _render_decision_card(working_df, decision, key_prefix=f"miss_{idx}")
+    if decisions:
+        for idx, dec in enumerate(decisions):
+            _render_decision_card(working_df, dec, key_prefix=f"miss_{idx}")
+    else:
+        render_notification(
+            title="No Pending Missing Value Actions",
+            message="All columns meet high completeness standards.",
+            variant="info"
+        )
 
 
 # =============================================================================
@@ -810,10 +790,10 @@ def _render_section_missing_values(working_df: pd.DataFrame) -> None:
 # =============================================================================
 
 def _render_section_duplicates(working_df: pd.DataFrame) -> None:
-    """Render Duplicate Rows section with manual tools first, followed by AI deduplication decision cards."""
+    """Render Duplicate Rows section with manual tools first, followed by AI decision cards."""
     render_section_header(
-        title="Duplicate Rows Remediation",
-        subtitle="Manually configure deduplication or review AI recommendations to eliminate identical observations."
+        title="Manual Duplicate Rows Handling",
+        subtitle="Manually configure deduplication across all columns or specific key identifiers, set retention rules, and preview duplicate records."
     )
 
     dup_info = get_duplicates_info(working_df)
@@ -822,9 +802,6 @@ def _render_section_duplicates(working_df: pd.DataFrame) -> None:
     all_cols = list(working_df.columns)
 
     # ── 1. MANUAL DUPLICATE CONTROLS (COMES FIRST) ───────────────────────────
-    st.markdown("#### 🛠️ Manual Duplicate Rows Handling")
-    st.caption("Manually configure deduplication across all columns or specific key identifiers, set retention rules, and preview duplicate records.")
-
     c_scope, c_keep, c_action = st.columns([4, 4, 4])
     with c_scope:
         dedup_scope = st.radio(
@@ -884,7 +861,10 @@ def _render_section_duplicates(working_df: pd.DataFrame) -> None:
     st.markdown("<div style='height: 18px; border-bottom: 1px solid var(--border-light); margin-bottom: 18px;'></div>", unsafe_allow_html=True)
 
     # ── 2. AI DEDUPLICATION SUGGESTIONS (COMES AFTER) ────────────────────────
-    st.markdown("#### 🤖 AI Deduplication Recommendation")
+    render_section_header(
+        title="AI Deduplication Recommendation",
+        subtitle="Automated uniqueness assessment and intelligent deduplication strategy."
+    )
 
     if dup_cnt > 0:
         dup_dec = generate_duplicate_decision(dup_info, working_df)
@@ -905,16 +885,13 @@ def _render_section_duplicates(working_df: pd.DataFrame) -> None:
 def _render_section_outliers_and_validity(working_df: pd.DataFrame) -> None:
     """Render Outliers & Validity section with manual tools first, followed by AI decision cards."""
     render_section_header(
-        title="Outliers & Value Validity",
-        subtitle="Manually cap or trim distribution boundaries, or review AI domain-aware decisions and validity fixes."
+        title="Manual Outlier Remediation",
+        subtitle="Select a numeric feature to inspect its IQR distribution bounds, and apply Winsorization, trimming, or custom clipping."
     )
 
     numeric_cols = [c for c in working_df.columns if pd.api.types.is_numeric_dtype(working_df[c])]
 
     # ── 1. MANUAL OUTLIER CONTROLS (COMES FIRST) ─────────────────────────────
-    st.markdown("#### 🛠️ Manual Outlier Remediation")
-    st.caption("Select a numeric feature to inspect its IQR distribution bounds, and apply custom capping or trimming.")
-
     if numeric_cols:
         c1, c2, c3 = st.columns(3)
         with c1:
@@ -984,8 +961,10 @@ def _render_section_outliers_and_validity(working_df: pd.DataFrame) -> None:
     st.markdown("<div style='height: 18px; border-bottom: 1px solid var(--border-light); margin-bottom: 18px;'></div>", unsafe_allow_html=True)
 
     # ── 2. AI OUTLIER & VALIDITY RECOMMENDATIONS (COMES AFTER) ───────────────
-    st.markdown("#### 🤖 AI Outlier Recommendations")
-    st.caption("Domain-aware AI reasoning based on distribution shape. Never delete legitimate high-value customers blindly:")
+    render_section_header(
+        title="AI Outlier Recommendations",
+        subtitle="Domain-aware AI reasoning based on distribution shape and statistical outlier severity."
+    )
 
     outlier_decisions = []
     for col in numeric_cols:
@@ -1006,7 +985,10 @@ def _render_section_outliers_and_validity(working_df: pd.DataFrame) -> None:
 
     # 3. Value Validity Findings (Negative values, whitespace strings, mixed types)
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-    st.markdown("#### 🤖 AI Value Validity & Format Sanity Decisions")
+    render_section_header(
+        title="AI Value Validity & Format Sanity Decisions",
+        subtitle="Automated checks for negative quantities, unexpected whitespace, and mixed data types."
+    )
 
     audit = analyze_data_quality(working_df)
     validity_decisions = generate_invalid_and_type_decisions(

@@ -25,7 +25,6 @@ from modules.ui_components import (
     render_metric_card,
     render_notification,
     render_empty_state,
-    render_next_step_banner,
     render_ai_context_trigger,
     render_next_workflow_steps,
     get_icon_svg
@@ -600,23 +599,7 @@ def _render_tab_outliers_and_validity(df: pd.DataFrame, report: Dict[str, Any], 
 # =============================================================================
 
 def _render_next_actions(report: Dict[str, Any]) -> None:
-    """Render contextual workflow next actions following canonical order: Quality -> Preparation -> Analyze."""
-    title = "Proceed to Data Preparation"
-    primary_page = "Data Preparation"
-    secondary_page = "Analyze"
-    desc = "Audit complete. Continue to Data Preparation to remediate missing values, remove duplicates, or cap outliers."
-
-    render_next_step_banner(
-        title=title,
-        recommendation=desc,
-        primary_action_label="Continue to Data Preparation →",
-        target_page=primary_page,
-        key_prefix="quality_next_step",
-        suggested_actions=[{"label": "Skip to Analyze", "page": secondary_page}]
-    )
-
-    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+    """Render contextual AI trigger and standardized bottom workflow navigation."""
     render_ai_context_trigger("Explain quality results with AI", intent="quality_results", key="qual_ai_btn")
-
-    # Dynamic Bottom Next Workflow Steps Section
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
     render_next_workflow_steps("Data Quality")

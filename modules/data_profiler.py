@@ -30,7 +30,6 @@ from modules.ui_components import (
     render_metric_card,
     render_notification,
     render_empty_state,
-    render_next_step_banner,
     render_ai_context_trigger,
     render_next_workflow_steps,
     get_type_badge_html
@@ -107,18 +106,8 @@ def render_dataset_page() -> None:
     with tab_upload:
         _render_tab_upload(has_active_dataset=True)
 
-    # 7. Standardized Next Step Banner & Bottom Workflow Steps
-    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-    render_next_step_banner(
-        title="Proceed to Overview",
-        recommendation="Dataset loaded and profiled. Continue to Overview for an executive health summary and progress roadmap.",
-        primary_action_label="Continue to Overview →",
-        target_page="Overview",
-        key_prefix="ds_next_step",
-        suggested_actions=[{"label": "Audit Data Quality", "page": "Data Quality"}]
-    )
-
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    # 7. Standardized Universal Bottom Workflow Navigation
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     render_next_workflow_steps("Dataset")
 
 

@@ -14,7 +14,6 @@ from modules.ui_components import (
     render_insight_card,
     render_activity_list,
     render_workflow_timeline,
-    render_next_step_banner,
     render_next_workflow_steps,
     get_icon_svg,
 )
@@ -327,18 +326,7 @@ def _render_active_dataset_state(stage_info: dict) -> None:
     )
     render_workflow_timeline(interactive=True)
 
-    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-
-    # 3. Answer: "What should I do next?"
-    render_next_step_banner(
-        title=stage_info["recommended_title"],
-        recommendation=stage_info["recommended_desc"],
-        primary_action_label=stage_info["recommended_action_label"],
-        target_page=stage_info["recommended_page"],
-        key_prefix="ov_rec"
-    )
-
-    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
     # ── Main Content Split: Quick Actions & Contextual Insights ──────────────
     col_left, col_right = st.columns([6, 4], gap="large")

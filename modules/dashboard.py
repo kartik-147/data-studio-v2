@@ -23,7 +23,6 @@ from modules.ui_components import (
     render_page_header,
     render_section_header,
     render_empty_state,
-    render_next_step_banner,
     render_next_workflow_steps,
     render_notification,
     get_icon_svg,
@@ -166,19 +165,9 @@ def render_dashboard_page() -> None:
     # 10. Render Executive AI Briefing
     _render_executive_briefing(perspective_data.get("briefing", []))
 
-    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-    render_next_step_banner(
-        title="Proceed to AI Analyst",
-        recommendation="Dashboard assembled. Consult the AI Analyst for deep natural language querying, automated anomaly insights, and executive summaries.",
-        primary_action_label="Continue to AI Analyst →",
-        target_page="AI Analyst",
-        key_prefix="dash_next_step",
-        suggested_actions=[{"label": "Generate Data Story", "page": "Data Story"}]
-    )
+    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-
-    # 11. Standardized Next Workflow Steps
+    # 11. Standardized Universal Bottom Workflow Navigation
     render_next_workflow_steps("Dashboard")
 
 

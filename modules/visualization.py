@@ -160,18 +160,9 @@ def render_visualization_page() -> None:
     # 7. Saved Visualizations Gallery Shelf
     _render_saved_visualizations_section(df, current_theme)
 
-    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-    render_next_step_banner(
-        title="Proceed to Dashboard",
-        recommendation="Charts configured. Assemble and pin your executive metrics, trends, and breakdowns into an interactive Dashboard.",
-        primary_action_label="Continue to Dashboard →",
-        target_page="Dashboard",
-        key_prefix="viz_next_step",
-        suggested_actions=[{"label": "Consult AI Analyst", "page": "AI Analyst"}]
-    )
-
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
     render_ai_context_trigger("Ask AI Analyst about this Visualization", intent="viz_recommend", key="viz_ai_btn")
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
     # 8. Standardized Universal Bottom Workflow Navigation
     render_next_workflow_steps("Visualization")
