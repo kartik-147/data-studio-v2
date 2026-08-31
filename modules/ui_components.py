@@ -191,8 +191,6 @@ def load_css(theme: str = "Light") -> None:
         .stButton > button:not([kind="primary"]),
         div[data-testid="stDownloadButton"] button,
         div[data-testid="stFormSubmitButton"] button:not([kind="primary"]),
-        div[data-testid="stFileUploader"] section button,
-        div[data-testid="stFileUploader"] button,
         div[data-testid="stPills"] button:not([aria-selected="true"]),
         div[data-testid="stSegmentedControl"] button:not([aria-selected="true"]),
         div[data-testid="stPopover"] button,
@@ -219,8 +217,6 @@ def load_css(theme: str = "Light") -> None:
         .stButton > button:not([kind="primary"]) *,
         div[data-testid="stDownloadButton"] button *,
         div[data-testid="stFormSubmitButton"] button:not([kind="primary"]) *,
-        div[data-testid="stFileUploader"] section button *,
-        div[data-testid="stFileUploader"] button *,
         div[data-testid="stPills"] button:not([aria-selected="true"]) *,
         div[data-testid="stSegmentedControl"] button:not([aria-selected="true"]) *,
         div[data-testid="stPopover"] button *,
@@ -246,8 +242,6 @@ def load_css(theme: str = "Light") -> None:
         .stButton > button:not([kind="primary"]):hover,
         div[data-testid="stDownloadButton"] button:hover,
         div[data-testid="stFormSubmitButton"] button:not([kind="primary"]):hover,
-        div[data-testid="stFileUploader"] section button:hover,
-        div[data-testid="stFileUploader"] button:hover,
         div[data-testid="stPills"] button:hover,
         div[data-testid="stSegmentedControl"] button:hover,
         div[data-testid="stPopover"] button:hover,
@@ -272,8 +266,6 @@ def load_css(theme: str = "Light") -> None:
         .stButton > button:not([kind="primary"]):hover *,
         div[data-testid="stDownloadButton"] button:hover *,
         div[data-testid="stFormSubmitButton"] button:not([kind="primary"]):hover *,
-        div[data-testid="stFileUploader"] section button:hover *,
-        div[data-testid="stFileUploader"] button:hover *,
         div[data-testid="stPills"] button:hover *,
         div[data-testid="stSegmentedControl"] button:hover *,
         div[data-testid="stPopover"] button:hover *,
@@ -283,6 +275,44 @@ def load_css(theme: str = "Light") -> None:
         div[data-testid="stLinkButton"] a:hover * {
             color: #38bdf8 !important;
             fill: #38bdf8 !important;
+        }
+
+        /* ── Prominent File Uploader Action Button in Dark Mode ──────── */
+        div[data-testid="stFileUploader"] section button,
+        div[data-testid="stFileUploader"] button[data-testid="baseButton-secondary"],
+        div[data-testid="stFileUploader"] button[data-testid="stBaseButton-secondary"],
+        div[data-testid="stFileUploader"] button:not([data-testid="stFileUploaderDeleteFileButton"]),
+        section[data-testid="stFileUploaderDropzone"] button:not([data-testid="stFileUploaderDeleteFileButton"]) {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+            border: 1.5px solid #1d4ed8 !important;
+            border-radius: 8px !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            padding: 8px 20px !important;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4) !important;
+        }
+
+        div[data-testid="stFileUploader"] section button *,
+        div[data-testid="stFileUploader"] button[data-testid="baseButton-secondary"] *,
+        div[data-testid="stFileUploader"] button[data-testid="stBaseButton-secondary"] *,
+        div[data-testid="stFileUploader"] button:not([data-testid="stFileUploaderDeleteFileButton"]) *,
+        section[data-testid="stFileUploaderDropzone"] button:not([data-testid="stFileUploaderDeleteFileButton"]) * {
+            color: #ffffff !important;
+            fill: #ffffff !important;
+            stroke: #ffffff !important;
+            font-weight: 700 !important;
+        }
+
+        div[data-testid="stFileUploader"] section button:hover,
+        div[data-testid="stFileUploader"] button[data-testid="baseButton-secondary"]:hover,
+        div[data-testid="stFileUploader"] button[data-testid="stBaseButton-secondary"]:hover,
+        div[data-testid="stFileUploader"] button:not([data-testid="stFileUploaderDeleteFileButton"]):hover,
+        section[data-testid="stFileUploaderDropzone"] button:not([data-testid="stFileUploaderDeleteFileButton"]):hover {
+            background-color: #1d4ed8 !important;
+            border-color: #60a5fa !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.6) !important;
         }
 
         /* ── All Primary Buttons in Dark Mode ──────────────────────── */
@@ -823,8 +853,6 @@ def load_css(theme: str = "Light") -> None:
         .stButton > button:not([kind="primary"]),
         div[data-testid="stDownloadButton"] button,
         div[data-testid="stFormSubmitButton"] button:not([kind="primary"]),
-        div[data-testid="stFileUploader"] section button,
-        div[data-testid="stFileUploader"] button,
         div[data-testid="stPills"] button:not([aria-selected="true"]),
         div[data-testid="stSegmentedControl"] button:not([aria-selected="true"]),
         div[data-testid="stPopover"] button,
@@ -850,8 +878,6 @@ def load_css(theme: str = "Light") -> None:
         .stButton > button:not([kind="primary"]) *,
         div[data-testid="stDownloadButton"] button *,
         div[data-testid="stFormSubmitButton"] button:not([kind="primary"]) *,
-        div[data-testid="stFileUploader"] section button *,
-        div[data-testid="stFileUploader"] button *,
         div[data-testid="stPills"] button:not([aria-selected="true"]) *,
         div[data-testid="stSegmentedControl"] button:not([aria-selected="true"]) *,
         div[data-testid="stPopover"] button *,
@@ -883,6 +909,44 @@ def load_css(theme: str = "Light") -> None:
         .stButton > button:not([kind="primary"]):hover * {
             color: #2563eb !important;
             fill: #2563eb !important;
+        }
+
+        /* ── Prominent File Uploader Action Button in Light Mode ──────── */
+        div[data-testid="stFileUploader"] section button,
+        div[data-testid="stFileUploader"] button[data-testid="baseButton-secondary"],
+        div[data-testid="stFileUploader"] button[data-testid="stBaseButton-secondary"],
+        div[data-testid="stFileUploader"] button:not([data-testid="stFileUploaderDeleteFileButton"]),
+        section[data-testid="stFileUploaderDropzone"] button:not([data-testid="stFileUploaderDeleteFileButton"]) {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+            border: 1.5px solid #1d4ed8 !important;
+            border-radius: 8px !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            padding: 8px 20px !important;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35) !important;
+        }
+
+        div[data-testid="stFileUploader"] section button *,
+        div[data-testid="stFileUploader"] button[data-testid="baseButton-secondary"] *,
+        div[data-testid="stFileUploader"] button[data-testid="stBaseButton-secondary"] *,
+        div[data-testid="stFileUploader"] button:not([data-testid="stFileUploaderDeleteFileButton"]) *,
+        section[data-testid="stFileUploaderDropzone"] button:not([data-testid="stFileUploaderDeleteFileButton"]) * {
+            color: #ffffff !important;
+            fill: #ffffff !important;
+            stroke: #ffffff !important;
+            font-weight: 700 !important;
+        }
+
+        div[data-testid="stFileUploader"] section button:hover,
+        div[data-testid="stFileUploader"] button[data-testid="baseButton-secondary"]:hover,
+        div[data-testid="stFileUploader"] button[data-testid="stBaseButton-secondary"]:hover,
+        div[data-testid="stFileUploader"] button:not([data-testid="stFileUploaderDeleteFileButton"]):hover,
+        section[data-testid="stFileUploaderDropzone"] button:not([data-testid="stFileUploaderDeleteFileButton"]):hover {
+            background-color: #1d4ed8 !important;
+            border-color: #1e40af !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.5) !important;
         }
 
         /* Primary buttons in Light Mode */

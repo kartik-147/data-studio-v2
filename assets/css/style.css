@@ -494,8 +494,6 @@ button[data-testid="stBaseButton-icon"],
 div[data-testid="stButton"] button:not([kind="primary"]),
 div[data-testid="stDownloadButton"] button,
 div[data-testid="stFormSubmitButton"] button:not([kind="primary"]),
-div[data-testid="stFileUploader"] section button,
-div[data-testid="stFileUploader"] button,
 div[data-testid="stPills"] button:not([aria-selected="true"]),
 div[data-testid="stSegmentedControl"] button:not([aria-selected="true"]),
 div[data-testid="stPopover"] button,
@@ -522,8 +520,6 @@ button[data-testid="stBaseButton-icon"] *,
 div[data-testid="stButton"] button:not([kind="primary"]) *,
 div[data-testid="stDownloadButton"] button *,
 div[data-testid="stFormSubmitButton"] button:not([kind="primary"]) *,
-div[data-testid="stFileUploader"] section button *,
-div[data-testid="stFileUploader"] button *,
 div[data-testid="stPills"] button:not([aria-selected="true"]) *,
 div[data-testid="stSegmentedControl"] button:not([aria-selected="true"]) *,
 div[data-testid="stPopover"] button *,
@@ -549,8 +545,6 @@ button[data-testid="stBaseButton-icon"]:hover,
 div[data-testid="stButton"] button:not([kind="primary"]):hover,
 div[data-testid="stDownloadButton"] button:hover,
 div[data-testid="stFormSubmitButton"] button:not([kind="primary"]):hover,
-div[data-testid="stFileUploader"] section button:hover,
-div[data-testid="stFileUploader"] button:hover,
 div[data-testid="stPills"] button:hover,
 div[data-testid="stSegmentedControl"] button:hover,
 div[data-testid="stPopover"] button:hover,
@@ -576,8 +570,6 @@ button[data-testid="stBaseButton-icon"]:hover *,
 div[data-testid="stButton"] button:not([kind="primary"]):hover *,
 div[data-testid="stDownloadButton"] button:hover *,
 div[data-testid="stFormSubmitButton"] button:not([kind="primary"]):hover *,
-div[data-testid="stFileUploader"] section button:hover *,
-div[data-testid="stFileUploader"] button:hover *,
 div[data-testid="stPills"] button:hover *,
 div[data-testid="stSegmentedControl"] button:hover *,
 div[data-testid="stPopover"] button:hover *,
@@ -3420,38 +3412,157 @@ div[data-testid="stMultiSelect"] div[data-baseweb="select"] > div:focus-within {
 }
 
 /* Streamlit File Uploader Overrides */
+/* Streamlit File Uploader Overrides - High Contrast & Prominent Visibility */
 div[data-testid="stFileUploader"] {
-  background-color: var(--surface) !important;
-  border: 1.5px dashed var(--border-dashed, #94a3b8) !important;
-  border-radius: 8px !important;
-  box-shadow: var(--shadow-xs) !important;
-}
-
-div[data-testid="stFileUploader"]:hover {
-  border-color: var(--accent, #2563eb) !important;
-  background-color: var(--accent-subtle, rgba(37, 99, 235, 0.03)) !important;
-}
-
-div[data-testid="stFileUploader"] section {
   background-color: transparent !important;
-  border: none !important;
-  padding: 16px !important;
+  border-radius: 10px !important;
 }
 
-div[data-testid="stFileUploader"] section button {
-  background-color: var(--surface) !important;
-  color: var(--text-primary) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 6px !important;
+div[data-testid="stFileUploader"] section,
+section[data-testid="stFileUploaderDropzone"] {
+  background-color: rgba(37, 99, 235, 0.05) !important;
+  border: 1.5px dashed #3b82f6 !important;
+  border-radius: 10px !important;
+  padding: 16px 20px !important;
+  transition: all 0.2s ease !important;
+}
+
+div[data-testid="stFileUploader"]:hover section,
+div[data-testid="stFileUploader"] section:hover,
+section[data-testid="stFileUploaderDropzone"]:hover {
+  border-color: #60a5fa !important;
+  background-color: rgba(37, 99, 235, 0.09) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* File Uploader Action Button (Browse files / + button) */
+div[data-testid="stFileUploader"] section button,
+div[data-testid="stFileUploader"] button[data-testid="baseButton-secondary"],
+div[data-testid="stFileUploader"] button[data-testid="stBaseButton-secondary"],
+div[data-testid="stFileUploader"] button:not([data-testid="stFileUploaderDeleteFileButton"]),
+section[data-testid="stFileUploaderDropzone"] button:not([data-testid="stFileUploaderDeleteFileButton"]) {
+  background: #2563eb !important;
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border: 1.5px solid #1d4ed8 !important;
+  border-radius: 8px !important;
   font-size: 14px !important;
-  font-weight: 600 !important;
-  padding: 7px 16px !important;
+  font-weight: 700 !important;
+  padding: 8px 20px !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4) !important;
+  transition: all 0.15s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
 }
 
-div[data-testid="stFileUploader"] section button:hover {
-  background-color: var(--surface-hover) !important;
-  border-color: var(--accent) !important;
-  color: var(--accent) !important;
+div[data-testid="stFileUploader"] section button *,
+div[data-testid="stFileUploader"] button[data-testid="baseButton-secondary"] *,
+div[data-testid="stFileUploader"] button[data-testid="stBaseButton-secondary"] *,
+div[data-testid="stFileUploader"] button:not([data-testid="stFileUploaderDeleteFileButton"]) *,
+section[data-testid="stFileUploaderDropzone"] button:not([data-testid="stFileUploaderDeleteFileButton"]) * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+div[data-testid="stFileUploader"] section button:hover,
+div[data-testid="stFileUploader"] button[data-testid="baseButton-secondary"]:hover,
+div[data-testid="stFileUploader"] button[data-testid="stBaseButton-secondary"]:hover,
+div[data-testid="stFileUploader"] button:not([data-testid="stFileUploaderDeleteFileButton"]):hover,
+section[data-testid="stFileUploaderDropzone"] button:not([data-testid="stFileUploaderDeleteFileButton"]):hover {
+  background: #1d4ed8 !important;
+  background-color: #1d4ed8 !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.6) !important;
+  transform: translateY(-1px) !important;
+}
+
+div[data-testid="stFileUploader"] section button:hover *,
+div[data-testid="stFileUploader"] button[data-testid="baseButton-secondary"]:hover *,
+div[data-testid="stFileUploader"] button[data-testid="stBaseButton-secondary"]:hover *,
+div[data-testid="stFileUploader"] button:not([data-testid="stFileUploaderDeleteFileButton"]):hover *,
+section[data-testid="stFileUploaderDropzone"] button:not([data-testid="stFileUploaderDeleteFileButton"]):hover * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Uploaded File Data Card */
+div[data-testid="stFileUploaderFileData"],
+.stFileUploaderFileData {
+  background-color: #1e293b !important;
+  border: 1px solid #3b82f6 !important;
+  border-radius: 8px !important;
+  padding: 6px 12px !important;
+  color: #f8fafc !important;
+}
+
+div[data-testid="stFileUploaderFileData"] *,
+.stFileUploaderFileData * {
+  color: #f8fafc !important;
+}
+
+/* File Uploader Delete File Button */
+div[data-testid="stFileUploaderDeleteFileButton"] button,
+button[data-testid="stFileUploaderDeleteFileButton"],
+div[data-testid="stFileUploaderFileData"] button {
+  background: rgba(239, 68, 68, 0.15) !important;
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: #f87171 !important;
+  border-radius: 6px !important;
+  padding: 4px 8px !important;
+  min-height: 28px !important;
+  transition: all 0.15s ease !important;
+}
+
+div[data-testid="stFileUploaderDeleteFileButton"] button *,
+button[data-testid="stFileUploaderDeleteFileButton"] *,
+div[data-testid="stFileUploaderFileData"] button * {
+  color: #f87171 !important;
+  fill: #f87171 !important;
+}
+
+div[data-testid="stFileUploaderDeleteFileButton"] button:hover,
+button[data-testid="stFileUploaderDeleteFileButton"]:hover,
+div[data-testid="stFileUploaderFileData"] button:hover {
+  background: #ef4444 !important;
+  background-color: #ef4444 !important;
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+div[data-testid="stFileUploaderDeleteFileButton"] button:hover *,
+button[data-testid="stFileUploaderDeleteFileButton"]:hover *,
+div[data-testid="stFileUploaderFileData"] button:hover * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+/* Dropzone Instructions Text */
+div[data-testid="stFileUploaderDropzoneInstructions"],
+div[data-testid="stFileUploaderDropzoneInstructions"] * {
+  color: #94a3b8 !important;
+  font-size: 13.5px !important;
+}
+
+[data-theme="light"] div[data-testid="stFileUploaderFileData"] {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] div[data-testid="stFileUploaderFileData"] * {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] div[data-testid="stFileUploaderDropzoneInstructions"],
+[data-theme="light"] div[data-testid="stFileUploaderDropzoneInstructions"] * {
+  color: #64748b !important;
 }
 
 /* Dark Mode Pill Tokens & Contrast Enhancements */
