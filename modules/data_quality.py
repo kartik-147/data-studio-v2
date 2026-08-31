@@ -266,28 +266,31 @@ def _render_quality_kpis(report: Dict[str, Any], metadata: Dict[str, Any]) -> No
         render_metric_card(
             label="Overall Score",
             value=f"{report['overall_score']:.1f}",
+            description=f"Health Grade: {report['grade']}",
             status=report["status"]
         )
     with c2:
         miss_cnt = missing["total_missing_cells"]
         miss_pct = missing["missing_percentage"]
+        human_miss = f"About {max(1, round(miss_pct))} in 100 cells empty" if miss_pct >= 1 else (f"{miss_cnt} empty cells" if miss_cnt > 0 else "100% complete")
         render_metric_card(
-            label="Missing Values",
+            label="Empty Values",
             value=f"{miss_cnt:,}",
             change=f"{miss_pct:.1f}% rate",
             change_type="positive" if miss_cnt == 0 else "neutral",
-            description=f"{missing['columns_affected_count']} col(s) affected",
+            description=human_miss,
             status="Health"
         )
     with c3:
         dup_cnt = duplicates["duplicate_rows"]
         dup_pct = duplicates["duplicate_percentage"]
+        human_dup = f"About {max(1, round(dup_pct))} in 100 rows repeated" if dup_pct >= 1 else ("Zero repeated rows" if dup_cnt == 0 else f"{dup_cnt} repeated rows")
         render_metric_card(
-            label="Duplicate Records",
+            label="Repeated Records",
             value=f"{dup_cnt:,}",
             change=f"{dup_pct:.1f}% rate",
             change_type="positive" if dup_cnt == 0 else "negative",
-            description="Unique" if dup_cnt == 0 else f"{dup_cnt} duplicates",
+            description=human_dup,
             status="Uniqueness"
         )
     with c4:

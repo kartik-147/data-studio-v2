@@ -475,88 +475,119 @@ def _render_preparation_summary_bar(
 # REUSABLE DECISION CARD & PREVIEW MODAL RENDERERS
 # =============================================================================
 
+def _render_explanation_level_selector() -> None:
+    """Render the AI Explanation Level selector control (Beginner, Standard, Technical)."""
+    if "ai_explanation_level" not in st.session_state:
+        st.session_state["ai_explanation_level"] = "Beginner"
+
+    lvl_c1, lvl_c2 = st.columns([5, 7])
+    with lvl_c1:
+        st.markdown(
+            "<div style='font-size: 13px; font-weight: 600; color: var(--text-secondary); padding-top: 6px;'>"
+            "🎓 <b>AI Data Mentor Mode:</b>"
+            "</div>",
+            unsafe_allow_html=True
+        )
+    with lvl_c2:
+        current_lvl = st.session_state["ai_explanation_level"]
+        opts = ["Beginner", "Standard", "Technical"]
+        idx = opts.index(current_lvl) if current_lvl in opts else 0
+        new_lvl = st.radio(
+            "AI Explanation Level",
+            options=opts,
+            index=idx,
+            horizontal=True,
+            key="ai_explanation_level_radio",
+            label_visibility="collapsed",
+            help="Beginner uses simple language with no jargon; Standard provides analyst summaries; Technical includes full statistical metrics."
+        )
+        if new_lvl != current_lvl:
+            st.session_state["ai_explanation_level"] = new_lvl
+            st.rerun()
+
+
 def _render_decision_card(
     df: pd.DataFrame,
     dec: Dict[str, Any],
     key_prefix: str,
     resolved_message: Optional[str] = None
 ) -> None:
-    """Render an intelligent remediation decision card with why-reasoning, alternatives, and actions."""
+    """Render a beginner-friendly AI Data Mentor decision card with adaptive explanation levels."""
+    level = st.session_state.get("ai_explanation_level", "Beginner")
     sev = dec.get("severity", "MEDIUM")
     sev_class = f"sev-{sev.lower()}"
     badge_class = f"ds-sev-{sev.lower()}"
 
-    card_html = (
-        f'<div class="ds-decision-card {sev_class}">'
-        f'<div class="ds-decision-header">'
-        f'<div class="ds-decision-title-group">'
-        f'<span class="ds-sev-badge {badge_class}">{sev}</span>'
-        f'<h4 class="ds-decision-title">{html.escape(dec.get("title", ""))}</h4>'
-        f'</div>'
-        f'<span class="ds-affected-badge">{dec.get("affected_label", "")}</span>'
-        f'</div>'
-        f'<div class="ds-recommendation-box">'
-        f'<div class="ds-rec-top-row">'
-        f'<span class="ds-rec-label">Recommended Decision</span>'
-        f'<div class="ds-rec-meta-badges">'
-        f'<span class="ds-conf-badge">Confidence: <b>{dec.get("confidence", "HIGH")}</b></span>'
-        f'<span class="ds-risk-badge">Risk: <b>{dec.get("risk", "LOW")}</b></span>'
-        f'</div>'
-        f'</div>'
-        f'<div class="ds-rec-action-name">{html.escape(dec.get("recommended_action", ""))}</div>'
-        f'<div class="ds-decision-why"><b>Why?</b> {html.escape(dec.get("why_reason", ""))}</div>'
-        f'<div class="ds-decision-impact"><span>Expected Impact:</span> <b>{html.escape(dec.get("expected_impact", ""))}</b></div>'
-        f'</div>'
-        f'</div>'
-    )
+    # 1. Determine Title & Why based on Explanation Level
+    if level == "Beginner":
+        rec_action = dec.get("recommended_action_friendly") or dec.get("recommended_action", "")
+        why_text = dec.get("why_beginner") or dec.get("why_reason", "")
+    elif level == "Technical":
+        rec_action = dec.get("recommended_action_technical") or dec.get("recommended_action", "")
+        why_text = dec.get("why_technical") or dec.get("why_reason", "")
+    else:  # Standard
+        rec_action = dec.get("recommended_action_friendly") or dec.get("recommended_action", "")
+        why_text = dec.get("why_standard") or dec.get("why_reason", "")
+
+    # What We Found block
+    found = dec.get("what_we_found", {})
+    found_badge = found.get("badge", f"{sev} PRIORITY")
+    found_primary = found.get("primary_text", dec.get("title", ""))
+    found_secondary = found.get("secondary_text", dec.get("affected_label", ""))
+    human_summary = found.get("human_summary", "")
+
+    # What Will Happen items
+    happen_items = dec.get("what_will_happen", [])
+    if not happen_items and dec.get("expected_impact"):
+        happen_items = [dec.get("expected_impact")]
+
+    happen_html_list = "".join([
+        f'<div class="ds-happen-item"><span class="ds-happen-check">✓</span><span>{html.escape(item)}</span></div>'
+        for item in happen_items
+    ])
+
+    card_html = f"""
+    <div class="ds-decision-card {sev_class}">
+        <div class="ds-mentor-found-box">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                <span class="ds-mentor-found-badge">🔍 WHAT WE FOUND</span>
+                <span class="ds-sev-badge {badge_class}">{found_badge}</span>
+            </div>
+            <div class="ds-mentor-found-primary">{html.escape(found_primary)}</div>
+            <div class="ds-mentor-found-desc">
+                {html.escape(found_secondary)}
+                {f" · <b>{html.escape(human_summary)}</b>" if human_summary else ""}
+            </div>
+        </div>
+
+        <div class="ds-recommendation-box">
+            <div class="ds-rec-top-row">
+                <span class="ds-rec-label">🤖 OUR RECOMMENDATION</span>
+                <div class="ds-rec-meta-badges">
+                    <span class="ds-conf-badge">Confidence: <b>{dec.get("confidence", "HIGH")}</b></span>
+                    <span class="ds-risk-badge">Risk: <b>{dec.get("risk", "LOW")}</b></span>
+                </div>
+            </div>
+            <div class="ds-rec-action-name">{html.escape(rec_action)}</div>
+
+            <div class="ds-mentor-section-label" style="margin-top:10px;">WHY ARE WE RECOMMENDING THIS?</div>
+            <div class="ds-decision-why">{html.escape(why_text)}</div>
+
+            <div class="ds-mentor-section-label" style="margin-top:12px;">WHAT WILL HAPPEN?</div>
+            <div class="ds-mentor-happen-box" style="margin-top:4px; margin-bottom:4px;">
+                {happen_html_list}
+            </div>
+        </div>
+    </div>
+    """
     st.markdown(card_html, unsafe_allow_html=True)
 
-    # Expanders for Alternatives and Evidence
-    exp_col1, exp_col2 = st.columns(2)
-    
-    with exp_col1:
-        with st.expander("Alternative Strategies", expanded=False):
-            alts = dec.get("alternatives", [])
-            if alts:
-                alt_rows = []
-                for a in alts:
-                    rec_tag = " <b>(Recommended)</b>" if a.get("is_recommended") else ""
-                    alt_rows.append(
-                        f"<tr>"
-                        f"<td class='ds-alt-rating'>{a.get('rating', '★★★☆☆')}</td>"
-                        f"<td><b>{html.escape(a.get('label', ''))}</b>{rec_tag}<br><span style='color:var(--text-muted);font-size:11px;'>{html.escape(a.get('why', ''))}</span></td>"
-                        f"<td style='font-size:11px;color:var(--text-muted);'>{html.escape(a.get('trade_off', ''))}</td>"
-                        f"</tr>"
-                    )
-                table_html = (
-                    f"<table class='ds-alt-table'>"
-                    f"<thead><tr><th>Rating</th><th>Strategy</th><th>Trade-Off</th></tr></thead>"
-                    f"<tbody>{''.join(alt_rows)}</tbody>"
-                    f"</table>"
-                )
-                st.markdown(table_html, unsafe_allow_html=True)
-
-    with exp_col2:
-        with st.expander("Technical Distribution Evidence", expanded=False):
-            ev = dec.get("evidence", {})
-            if ev:
-                ev_items = []
-                for k, v in ev.items():
-                    if isinstance(v, (int, float)):
-                        ev_items.append({"Metric": k.replace("_", " ").title(), "Value": f"{v:,.2f}" if isinstance(v, float) else f"{v:,}"})
-                    elif isinstance(v, str):
-                        ev_items.append({"Metric": k.replace("_", " ").title(), "Value": v})
-                if ev_items:
-                    st.dataframe(pd.DataFrame(ev_items), use_container_width=True, hide_index=True)
-                else:
-                    st.caption("Standard profile evidence captured.")
-
     # Action Triggers: Preview Fix vs Apply Fix
-    act_c1, act_c2, _ = st.columns([3, 3, 6], gap="small")
+    act_c1, act_c2, _ = st.columns([3.5, 3.5, 5], gap="small")
     
     is_previewing = (st.session_state.get("_active_preview_decision_id") == dec["id"])
     with act_c1:
-        btn_label = "Close Preview" if is_previewing else "Preview Fix"
+        btn_label = "✕ Close Preview" if is_previewing else "⚡ Preview This Change"
         if st.button(btn_label, key=f"preview_btn_{key_prefix}_{dec['id']}", use_container_width=True):
             if is_previewing:
                 st.session_state["_active_preview_decision_id"] = None
@@ -565,14 +596,68 @@ def _render_decision_card(
             st.rerun()
 
     with act_c2:
-        if st.button("Apply Fix", key=f"apply_btn_{key_prefix}_{dec['id']}", type="primary", use_container_width=True):
+        if st.button("✓ Apply Recommendation", key=f"apply_btn_{key_prefix}_{dec['id']}", type="primary", use_container_width=True):
             _execute_decision_fix(df, dec)
 
     # Active Preview Drawer
     if is_previewing:
         _render_decision_preview_drawer(df, dec, key_prefix)
 
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    # Collapsible 1: Why did AI choose this?
+    ai_reason = dec.get("ai_reasoning_beginner") or "AI analyzed statistical distributions and edge boundaries to select this strategy."
+    with st.expander("▼ Why did AI choose this?", expanded=(level == "Beginner")):
+        st.markdown(
+            f"""
+            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; padding: 4px 0;">
+                💡 <b>AI Mentor Insight:</b> {html.escape(ai_reason)}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    # Collapsible 2: Alternative Strategies
+    with st.expander("▼ Alternative Strategies", expanded=False):
+        alts = dec.get("alternatives", [])
+        if alts:
+            alt_rows = []
+            for a in alts:
+                friendly_n = a.get("friendly_name") or a.get("label", "")
+                tech_n = a.get("technical_name", "")
+                tech_display = f" <span style='color:var(--text-muted); font-size:11px;'>({html.escape(tech_n)})</span>" if tech_n else ""
+                rec_tag = " <span class='ds-sev-badge ds-sev-low' style='font-size:9px;'>RECOMMENDED</span>" if a.get("is_recommended") else ""
+                desc = a.get("description") or a.get("why", "")
+                
+                alt_rows.append(
+                    f"<tr>"
+                    f"<td class='ds-alt-rating' style='width:90px;'>{a.get('rating', '★★★☆☆')}</td>"
+                    f"<td><b>{html.escape(friendly_n)}</b>{tech_display}{rec_tag}<br><span style='color:var(--text-secondary);font-size:12px;'>{html.escape(desc)}</span></td>"
+                    f"<td style='font-size:11.5px;color:var(--text-muted);width:200px;'>{html.escape(a.get('trade_off', 'None'))}</td>"
+                    f"</tr>"
+                )
+            table_html = (
+                f"<table class='ds-alt-table'>"
+                f"<thead><tr><th>Rating</th><th>Strategy</th><th>Trade-Off</th></tr></thead>"
+                f"<tbody>{''.join(alt_rows)}</tbody>"
+                f"</table>"
+            )
+            st.markdown(table_html, unsafe_allow_html=True)
+        else:
+            st.caption("No alternative strategies recorded for this recommendation.")
+
+    # Collapsible 3: Technical details & evidence
+    with st.expander("▼ Technical details & evidence", expanded=(level == "Technical")):
+        tech_ev = dec.get("technical_evidence") or {}
+        if not tech_ev:
+            ev = dec.get("evidence", {})
+            tech_ev = {k.replace("_", " ").title(): f"{v:,.2f}" if isinstance(v, float) else str(v) for k, v in ev.items() if not isinstance(v, (pd.DataFrame, list))}
+        
+        if tech_ev:
+            ev_df = pd.DataFrame([{"Metric": k, "Value": str(v)} for k, v in tech_ev.items()])
+            st.dataframe(ev_df, use_container_width=True, hide_index=True)
+        else:
+            st.caption("Standard feature distribution profile recorded.")
+
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
 
 def _render_decision_preview_drawer(df: pd.DataFrame, dec: Dict[str, Any], key_prefix: str) -> None:
@@ -756,6 +841,8 @@ def _render_section_missing_values(working_df: pd.DataFrame) -> None:
         subtitle="Statistical recommendations and automated remediation decisions tailored to feature distributions."
     )
 
+    _render_explanation_level_selector()
+
     if total_missing_cells == 0 or affected_cols_df.empty:
         render_notification(
             title="100% Complete Data",
@@ -767,10 +854,10 @@ def _render_section_missing_values(working_df: pd.DataFrame) -> None:
     # Generate Decision Engine Recommendations for affected columns
     decisions = []
     for col in affected_cols_df["Column"]:
-        series = working_df[col]
-        miss_count = int(series.isna().sum())
+        miss_count = int(working_df[col].isna().sum())
         if miss_count > 0:
-            dec = generate_missing_value_decision(col, series, len(working_df), working_df)
+            prof = investigate_column_distribution(working_df[col], col, working_df)
+            dec = generate_missing_value_decision(col, prof, working_df)
             if dec:
                 decisions.append(dec)
 
@@ -865,6 +952,8 @@ def _render_section_duplicates(working_df: pd.DataFrame) -> None:
         title="AI Deduplication Recommendation",
         subtitle="Automated uniqueness assessment and intelligent deduplication strategy."
     )
+
+    _render_explanation_level_selector()
 
     if dup_cnt > 0:
         dup_dec = generate_duplicate_decision(dup_info, working_df)
@@ -965,6 +1054,8 @@ def _render_section_outliers_and_validity(working_df: pd.DataFrame) -> None:
         title="AI Outlier Recommendations",
         subtitle="Domain-aware AI reasoning based on distribution shape and statistical outlier severity."
     )
+
+    _render_explanation_level_selector()
 
     outlier_decisions = []
     for col in numeric_cols:

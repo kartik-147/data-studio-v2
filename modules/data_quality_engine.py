@@ -815,7 +815,13 @@ def investigate_column_distribution(series: pd.Series, col_name: str, df: pd.Dat
     is_id = bool(ID_KEYWORDS.search(col_str))
     is_numeric = pd.api.types.is_numeric_dtype(series) and not is_id
     is_datetime = pd.api.types.is_datetime64_any_dtype(series)
-    is_categorical = pd.api.types.is_object_dtype(series) or pd.api.types.is_categorical_dtype(series) or pd.api.types.is_bool_dtype(series)
+    is_categorical = (
+        pd.api.types.is_object_dtype(series)
+        or pd.api.types.is_string_dtype(series)
+        or pd.api.types.is_bool_dtype(series)
+        or isinstance(series.dtype, pd.CategoricalDtype)
+        or (not is_numeric and not is_datetime and not is_id)
+    )
 
     # Detect high-value analytical target names
     is_target = any(kw in col_lower for kw in ["revenue", "sales", "profit", "price", "amount", "target", "churn", "label", "income", "cost", "salary", "spend"])
@@ -898,19 +904,39 @@ def investigate_column_distribution(series: pd.Series, col_name: str, df: pd.Dat
     return stats
 
 
+# =============================================================================
+# AI DATA MENTOR DECISION GENERATION ENGINE
+# =============================================================================
+
+def _build_human_frequency_text(count: int, total: int, item_type: str = "cells") -> str:
+    """Produce an intuitive, human-understandable ratio sentence for beginners."""
+    if total <= 0 or count <= 0:
+        return f"0 {item_type} affected."
+    pct = (count / total) * 100
+    if pct >= 95:
+        return f"Nearly all {item_type} ({count:,} of {total:,}) are affected."
+    elif 45 <= pct <= 55:
+        return f"About half of the {item_type} ({count:,} of {total:,}) are affected."
+    elif pct < 1:
+        return f"Less than 1 out of every 100 {item_type} is affected ({count:,} total)."
+    else:
+        out_of_100 = max(1, round(pct))
+        return f"About {out_of_100} out of every 100 {item_type} are empty." if "empty" in item_type or "cell" in item_type else f"About {out_of_100} out of every 100 {item_type} are affected."
+
+
 def generate_missing_value_decision(col_name: str, prof: Dict[str, Any], df: pd.DataFrame) -> Dict[str, Any]:
     """
     Generate an intelligent, statistically reasoned remediation recommendation
-    for a column with missing values, complete with confidence, alternatives, and risk.
+    for a column with missing values following the AI Data Mentor structure.
     """
-    missing_cnt = prof["missing_count"]
-    missing_pct = prof["missing_percentage"]
+    missing_cnt = prof.get("missing_count", 0)
+    missing_pct = prof.get("missing_percentage", 0.0)
     is_numeric = prof.get("is_numeric", False)
     is_categorical = prof.get("is_categorical", False)
     is_datetime = prof.get("is_datetime", False)
     is_id = prof.get("is_id", False)
     is_target = prof.get("is_target", False)
-    total_rows = prof["total_rows"]
+    total_rows = prof.get("total_rows", len(df))
 
     # ── Severity Assessment ──────────────────────────────────────────────────
     if missing_pct >= 60.0 or (missing_pct >= 30.0 and (is_id or is_target)):
@@ -926,45 +952,93 @@ def generate_missing_value_decision(col_name: str, prof: Dict[str, Any], df: pd.
         severity = "LOW"
         priority_weight = 10 + missing_pct
 
+    # Human frequency description
+    human_freq = _build_human_frequency_text(missing_cnt, total_rows, "cells")
+
+    # What We Found block
+    what_we_found = {
+        "badge": "EMPTY VALUES FOUND",
+        "column": col_name,
+        "primary_text": f"{missing_cnt:,} out of {total_rows:,} values are missing",
+        "secondary_text": f"{missing_pct:.1f}% of this column is empty",
+        "human_summary": human_freq
+    }
+
     # ── Strategy Generation & Reasoning ──────────────────────────────────────
     if missing_pct >= 70.0:
-        recommended_action = "Drop Column"
+        rec_friendly = f"Remove the '{col_name}' column from your analysis"
+        rec_technical = "Drop Incomplete Column (>70% Missing)"
         action_key = "drop_cols"
-        why_reason = (
+        
+        why_beginner = (
+            f"Over {missing_pct:.0f}% of '{col_name}' is empty ({missing_cnt:,} missing entries). "
+            f"Trying to guess this many missing values could give misleading results. "
+            f"Removing this column is safer and keeps all other columns completely intact."
+        )
+        why_standard = (
             f"Over {missing_pct:.1f}% of observations in '{col_name}' are missing. "
             f"Imputing {missing_cnt:,} values would introduce artificial variance and bias. "
             f"Dropping this column prevents model degradation while retaining 100% of rows for other features."
         )
+        why_technical = (
+            f"Nullity rate ({missing_pct:.1f}%) exceeds safety tolerance for MCAR/MAR imputation. "
+            f"Feature pruning eliminates pseudo-variance while preserving all {total_rows:,} sample records."
+        )
+        
         confidence = "HIGH"
         risk = "LOW"
-        expected_impact = f"Removes 1 column from dataset ({len(df.columns)} → {len(df.columns)-1} columns). Preserves all {total_rows:,} records."
         
+        what_will_happen = [
+            f"The '{col_name}' column will be removed from your dataset",
+            "No customer or transaction rows will be deleted",
+            f"Your dataset will keep all {total_rows:,} rows across {max(1, len(df.columns)-1)} columns"
+        ]
+        
+        ai_reasoning_beginner = (
+            "When more than half a column is missing, guessing the values is like flipping a coin. "
+            "AI recommends dropping the column so your overall numbers remain trustworthy."
+        )
+
         alternatives = [
             {
                 "rating": "★★★★★",
-                "label": "Drop Column",
+                "friendly_name": "Remove this column",
+                "technical_name": "Drop column",
                 "strategy": "drop_cols",
                 "is_recommended": True,
+                "description": "Safest choice when most values are missing. Leaves all rows intact.",
                 "why": "Prunes column with >70% nulls; avoids massive data fabrication.",
                 "trade_off": "Removes the feature entirely from downstream analyses."
             },
             {
                 "rating": "★★★☆☆",
-                "label": "Fill with 'Unknown' / Indicator",
+                "friendly_name": "Fill with 'Unknown' / 0",
+                "technical_name": "Categorical indicator",
                 "strategy": "unknown" if is_categorical else "zero",
                 "is_recommended": False,
-                "why": "Retains the column by tagging missingness as a distinct category.",
-                "trade_off": "High null volume may dilute model predictive signal."
+                "description": "Keeps the column by labeling blanks as Unknown or Zero.",
+                "why": "Retains the column by tagging missingness distinctly.",
+                "trade_off": "High empty volume may dilute analytical signal."
             },
             {
                 "rating": "★☆☆☆☆",
-                "label": "Delete Incomplete Rows",
+                "friendly_name": "Delete incomplete rows",
+                "technical_name": "Listwise deletion",
                 "strategy": "drop_rows",
                 "is_recommended": False,
+                "description": f"Removes all rows containing missing values in this column.",
                 "why": "Removes any rows with missing values.",
-                "trade_off": f"Destructive: would eliminate {missing_cnt:,} rows ({missing_pct:.1f}% of the entire dataset)."
+                "trade_off": f"Destructive: would eliminate {missing_cnt:,} rows ({missing_pct:.1f}% of your data)."
             }
         ]
+
+        technical_evidence = {
+            "Total Missing Count": f"{missing_cnt:,} cells",
+            "Missingness Rate": f"{missing_pct:.2f}%",
+            "Column Classification": "Categorical" if is_categorical else ("Numeric" if is_numeric else "Text/General"),
+            "Recommended Strategy": "Drop Column (Pruning)",
+            "Preserved Records": f"{total_rows:,} rows (100%)"
+        }
 
     elif is_numeric:
         is_skewed = prof.get("is_skewed", False)
@@ -973,208 +1047,416 @@ def generate_missing_value_decision(col_name: str, prof: Dict[str, Any], df: pd.
         median_val = prof.get("median", 0.0)
         outlier_cnt = prof.get("outliers_count", 0)
 
+        fmt_median = f"{int(median_val)}" if float(median_val).is_integer() else f"{median_val:,.2f}"
+        fmt_mean = f"{int(mean_val)}" if float(mean_val).is_integer() else f"{mean_val:,.2f}"
+
         if is_skewed or outlier_cnt > 0:
-            recommended_action = "Median Imputation"
+            rec_friendly = f"Fill the missing values with {fmt_median}"
+            rec_technical = "Median Imputation (Robust to Outliers)"
             action_key = "median"
-            skew_desc = f"right-skewed (skewness: {skew_val:.2f})" if skew_val > 0 else f"left-skewed (skewness: {skew_val:.2f})"
-            why_reason = (
-                f"The distribution of '{col_name}' is {skew_desc} with {outlier_cnt:,} outliers detected. "
-                f"The median ({median_val:,.2f}) is mathematically robust to extreme values, whereas the mean "
-                f"({mean_val:,.2f}) would pull imputed values into the skewed tail."
-            )
-            confidence = "HIGH"
-            risk = "LOW"
-            expected_impact = f"Fills {missing_cnt:,} cells ({missing_pct:.1f}%). Preserves all {total_rows:,} rows and central median at {median_val:,.2f}."
             
-            alternatives = [
-                {
-                    "rating": "★★★★★",
-                    "label": "Median Imputation",
-                    "strategy": "median",
-                    "is_recommended": True,
-                    "why": f"Preserves robust central tendency ({median_val:,.2f}) against {outlier_cnt:,} outliers.",
-                    "trade_off": "Reduces standard deviation slightly near the center."
-                },
-                {
-                    "rating": "★★★☆☆",
-                    "label": "Mean Imputation",
-                    "strategy": "mean",
-                    "is_recommended": False,
-                    "why": "Standard mathematical average across available values.",
-                    "trade_off": f"Biased by skewness ({skew_val:.2f}); inflates imputed values toward {mean_val:,.2f}."
-                },
-                {
-                    "rating": "★★☆☆☆" if missing_pct > 3.0 else "★★★☆☆",
-                    "label": "Drop Incomplete Rows",
-                    "strategy": "drop_rows",
-                    "is_recommended": False,
-                    "why": "Ensures all analyzed records contain 100% measured data.",
-                    "trade_off": f"Eliminates {missing_cnt:,} rows ({missing_pct:.1f}% sample loss)."
-                }
-            ]
-        else:
-            recommended_action = "Mean Imputation"
-            action_key = "mean"
-            why_reason = (
-                f"'{col_name}' exhibits an approximately symmetric distribution (skewness: {skew_val:.2f}, mean: {mean_val:,.2f}, median: {median_val:,.2f}). "
-                f"Mean imputation seamlessly preserves the expected value without distorting sample variance."
+            why_beginner = (
+                f"Some values in '{col_name}' are unusually high or low compared with the rest. "
+                f"Because of this, using the simple average ({fmt_mean}) could give misleading replacement values. "
+                f"{fmt_median} represents the middle of the existing values, making it a safer and more realistic choice."
             )
+            why_standard = (
+                f"The distribution of '{col_name}' is {'right' if skew_val > 0 else 'left'}-skewed (skewness: {skew_val:.2f}) "
+                f"with {outlier_cnt:,} unusual values detected. The median ({fmt_median}) is mathematically robust to extreme values, "
+                f"whereas the mean ({fmt_mean}) is pulled by the long tail."
+            )
+            why_technical = (
+                f"Non-normal distribution with skewness={skew_val:.2f} and {outlier_cnt} IQR outliers. "
+                f"Median estimator ({fmt_median}) minimizes L1 loss and protects parametric estimators against leverage distortion."
+            )
+            
             confidence = "HIGH"
             risk = "LOW"
-            expected_impact = f"Fills {missing_cnt:,} cells. Maintains sample mean at {mean_val:,.2f} across all {total_rows:,} records."
+            
+            what_will_happen = [
+                f"{missing_cnt:,} empty cells will be filled with {fmt_median}",
+                "No rows will be deleted",
+                f"Your dataset will remain at {total_rows:,} rows"
+            ]
+            
+            ai_reasoning_beginner = (
+                "AI compared the average value with the middle value and checked for unusually high or low entries. "
+                "The data contains several unusual numbers, so the middle value is safer than the average."
+            )
 
             alternatives = [
                 {
                     "rating": "★★★★★",
-                    "label": "Mean Imputation",
+                    "friendly_name": "Fill with the middle value",
+                    "technical_name": "Median imputation",
+                    "strategy": "median",
+                    "is_recommended": True,
+                    "description": "Best option for this dataset. Safe against unusual high or low values.",
+                    "why": f"Preserves middle value ({fmt_median}) against {outlier_cnt:,} outliers.",
+                    "trade_off": "Slightly reduces data spread near the middle."
+                },
+                {
+                    "rating": "★★★★☆",
+                    "friendly_name": "Fill with the average",
+                    "technical_name": "Mean imputation",
+                    "strategy": "mean",
+                    "is_recommended": False,
+                    "description": f"Uses the mathematical average ({fmt_mean}). Works best when values are evenly balanced.",
+                    "why": "Standard mathematical average across available values.",
+                    "trade_off": f"Biased by skewness ({skew_val:.2f}); pulls imputed values toward {fmt_mean}."
+                },
+                {
+                    "rating": "★★☆☆☆" if missing_pct > 3.0 else "★★★☆☆",
+                    "friendly_name": "Delete incomplete rows",
+                    "technical_name": "Drop rows",
+                    "strategy": "drop_rows",
+                    "is_recommended": False,
+                    "description": "Removes any row containing an empty value in this column.",
+                    "why": "Ensures all analyzed records contain 100% measured data.",
+                    "trade_off": f"Eliminates {missing_cnt:,} rows ({missing_pct:.1f}% sample loss)."
+                },
+                {
+                    "rating": "★☆☆☆☆",
+                    "friendly_name": "Keep values empty",
+                    "technical_name": "Do nothing",
+                    "strategy": "none",
+                    "is_recommended": False,
+                    "description": "Leave the empty cells as they are. Use only if blanks have a specific meaning.",
+                    "why": "Leaves raw entries untouched.",
+                    "trade_off": "May cause errors or exclusions in charts and calculations."
+                }
+            ]
+
+            technical_evidence = {
+                "Median (Middle Value)": fmt_median,
+                "Mean (Average)": fmt_mean,
+                "Skewness": f"{skew_val:.2f} ({'Right-skewed' if skew_val > 0 else 'Left-skewed'})",
+                "Unusual Values (Outliers)": f"{outlier_cnt:,} detected",
+                "Standard Deviation": f"{prof.get('std', 0.0):,.2f}",
+                "Method": "Median Imputation"
+            }
+        else:
+            rec_friendly = f"Fill the missing values with the average ({fmt_mean})"
+            rec_technical = "Mean Imputation (Symmetric Distribution)"
+            action_key = "mean"
+            
+            why_beginner = (
+                f"The values in '{col_name}' are fairly evenly balanced without extreme unusual numbers. "
+                f"Using the average ({fmt_mean}) is a safe, natural choice that keeps the overall dataset balanced."
+            )
+            why_standard = (
+                f"'{col_name}' exhibits an approximately symmetric distribution (skewness: {skew_val:.2f}, "
+                f"mean: {fmt_mean}, median: {fmt_median}). Mean imputation seamlessly preserves the expected value."
+            )
+            why_technical = (
+                f"Symmetric distribution (skewness: {skew_val:.2f} ≈ 0, mean ≈ median). "
+                f"Mean imputation unbiasedly preserves sample first moment E[X] without shifting location parameters."
+            )
+            
+            confidence = "HIGH"
+            risk = "LOW"
+            
+            what_will_happen = [
+                f"{missing_cnt:,} empty cells will be filled with {fmt_mean}",
+                "No rows will be deleted",
+                f"Your dataset will remain at {total_rows:,} rows"
+            ]
+            
+            ai_reasoning_beginner = (
+                "AI checked whether the numbers were spread out evenly. Because there are no extreme outliers, "
+                "the average value accurately reflects the typical observation in this column."
+            )
+
+            alternatives = [
+                {
+                    "rating": "★★★★★",
+                    "friendly_name": "Fill with the average",
+                    "technical_name": "Mean imputation",
                     "strategy": "mean",
                     "is_recommended": True,
-                    "why": f"Matches symmetric distribution ({mean_val:,.2f}); preserves expected value.",
+                    "description": f"Best option for evenly balanced numbers. Fills with {fmt_mean}.",
+                    "why": f"Matches symmetric distribution ({fmt_mean}); preserves expected value.",
                     "trade_off": "Mild variance reduction around the mean."
                 },
                 {
                     "rating": "★★★★☆",
-                    "label": "Median Imputation",
+                    "friendly_name": "Fill with the middle value",
+                    "technical_name": "Median imputation",
                     "strategy": "median",
                     "is_recommended": False,
-                    "why": f"Close to mean ({median_val:,.2f} vs {mean_val:,.2f}); safe alternative.",
+                    "description": f"Uses the middle value ({fmt_median}). Very close to average in this case.",
+                    "why": f"Close to mean ({fmt_median} vs {fmt_mean}); safe alternative.",
                     "trade_off": "Equivalent to mean for symmetric distributions."
                 },
                 {
-                    "rating": "★★☆☆☆" if missing_pct > 2.0 else "★★★☆☆",
-                    "label": "Drop Incomplete Rows",
+                    "rating": "★★☆☆☆",
+                    "friendly_name": "Delete incomplete rows",
+                    "technical_name": "Drop rows",
                     "strategy": "drop_rows",
                     "is_recommended": False,
+                    "description": "Removes any row containing an empty value.",
                     "why": "Retains only strictly complete observations.",
                     "trade_off": f"Discards {missing_cnt:,} rows of valid measurements in other columns."
                 }
             ]
+
+            technical_evidence = {
+                "Mean (Average)": fmt_mean,
+                "Median (Middle Value)": fmt_median,
+                "Skewness": f"{skew_val:.2f} (Symmetric)",
+                "Outliers Detected": "0",
+                "Standard Deviation": f"{prof.get('std', 0.0):,.2f}",
+                "Method": "Mean Imputation"
+            }
 
     elif is_categorical:
         top_cat = prof.get("top_category", "Unknown")
         top_ratio = prof.get("top_ratio", 0.0)
         is_dominant = prof.get("is_dominant_mode", False)
 
-        if is_dominant and missing_pct <= 10.0:
-            recommended_action = f"Mode Imputation ('{top_cat}')"
+        if is_dominant and missing_pct <= 15.0:
+            rec_friendly = f"Fill missing entries with the most common value ('{top_cat}')"
+            rec_technical = f"Mode Imputation ('{top_cat}')"
             action_key = "mode"
-            why_reason = (
-                f"'{top_cat}' is the clear dominant category representing {top_ratio*100:.1f}% of known entries. "
-                f"Because missingness is low ({missing_pct:.1f}%), imputing with the mode restores completeness with minimal class frequency distortion."
+            
+            why_beginner = (
+                f"'{top_cat}' is the most common value by far, appearing in {top_ratio*100:.0f}% of existing records. "
+                f"Because only a small portion is empty ({missing_pct:.1f}%), filling empty cells with '{top_cat}' is the most natural match."
             )
+            why_standard = (
+                f"'{top_cat}' is the dominant category representing {top_ratio*100:.1f}% of known entries. "
+                f"Because missingness is low ({missing_pct:.1f}%), mode imputation restores completeness with minimal class distortion."
+            )
+            why_technical = (
+                f"Categorical distribution has dominant mode '{top_cat}' (frequency={top_ratio*100:.1f}%). "
+                f"Low missingness rate ({missing_pct:.1f}%) ensures modal imputation does not induce significant categorical entropy shift."
+            )
+            
             confidence = "HIGH"
             risk = "LOW"
-            expected_impact = f"Fills {missing_cnt:,} cells with '{top_cat}'. Preserves 100% of rows."
+            
+            what_will_happen = [
+                f"{missing_cnt:,} empty cells will be filled with '{top_cat}'",
+                "No rows will be deleted",
+                f"Your dataset will remain at {total_rows:,} rows"
+            ]
+            
+            ai_reasoning_beginner = (
+                f"AI analyzed the frequency of all categories in '{col_name}'. "
+                f"'{top_cat}' occurs much more often than any other option, making it the most probable replacement."
+            )
 
             alternatives = [
                 {
                     "rating": "★★★★★",
-                    "label": f"Mode Imputation ('{top_cat}')",
+                    "friendly_name": "Fill with most common value",
+                    "technical_name": "Mode imputation",
                     "strategy": "mode",
                     "is_recommended": True,
+                    "description": f"Fills with '{top_cat}' (accounts for {top_ratio*100:.0f}% of known entries).",
                     "why": f"Most frequent state ({top_ratio*100:.1f}% prevalence); highly plausible.",
-                    "trade_off": f"Slightly inflates frequency of '{top_cat}' by +{missing_pct:.1f}%."
+                    "trade_off": f"Slightly increases count of '{top_cat}' by +{missing_cnt:,}."
                 },
                 {
                     "rating": "★★★★☆",
-                    "label": "Tag as 'Unknown' / 'Missing'",
+                    "friendly_name": "Label as 'Unknown'",
+                    "technical_name": "Missing value indicator",
                     "strategy": "unknown",
                     "is_recommended": False,
-                    "why": "Explicitly preserves the missing state as a separate category.",
-                    "trade_off": "Creates a synthetic category that may not reflect real business domain."
+                    "description": "Explicitly preserves missing cells as a separate 'Unknown' group.",
+                    "why": "Explicitly preserves the missing state as a distinct category.",
+                    "trade_off": "Creates a new artificial category value."
                 },
                 {
                     "rating": "★★☆☆☆",
-                    "label": "Drop Incomplete Rows",
+                    "friendly_name": "Delete incomplete rows",
+                    "technical_name": "Drop rows",
                     "strategy": "drop_rows",
                     "is_recommended": False,
+                    "description": "Removes any rows with missing text values.",
                     "why": "Avoids assumption of dominant category.",
-                    "trade_off": f"Deletes {missing_cnt:,} valid customer/transaction rows."
+                    "trade_off": f"Permanently drops {missing_cnt:,} rows."
                 }
             ]
+
+            technical_evidence = {
+                "Most Common Category (Mode)": str(top_cat),
+                "Mode Prevalence": f"{top_ratio*100:.1f}%",
+                "Missing Cells": f"{missing_cnt:,} ({missing_pct:.1f}%)",
+                "Total Categories": f"{prof.get('unique_count', 0):,}",
+                "Method": "Mode Imputation"
+            }
         else:
-            recommended_action = "Categorize as 'Unknown'"
+            rec_friendly = "Label missing entries as 'Unknown'"
+            rec_technical = "Categorize as 'Unknown'"
             action_key = "unknown"
-            why_reason = (
-                f"No single category dominates '{col_name}' (highest frequency is {top_ratio*100:.1f}%). "
-                f"Imputing an arbitrary mode would introduce heavy bias. Labeling missing entries as 'Unknown' "
-                f"preserves data integrity and allows models to treat missingness as an explicit signal."
+            
+            why_beginner = (
+                f"There is no single dominant value in '{col_name}' (the top value only appears in {top_ratio*100:.0f}% of entries). "
+                f"Guessing a category could introduce bias. Labeling empty cells as 'Unknown' keeps your data honest without deleting records."
             )
+            why_standard = (
+                f"No single category dominates '{col_name}' (highest frequency is {top_ratio*100:.1f}%). "
+                f"Imputing an arbitrary mode would introduce heavy bias. Labeling missing entries as 'Unknown' preserves data integrity."
+            )
+            why_technical = (
+                f"High categorical entropy with no modal dominance (top ratio={top_ratio*100:.1f}%). "
+                f"Explicit sentinel encoding ('Unknown') preserves informational missingness without corrupting probability distribution."
+            )
+            
             confidence = "MEDIUM"
             risk = "LOW"
-            expected_impact = f"Replaces {missing_cnt:,} nulls with 'Unknown'. No rows removed."
+            
+            what_will_happen = [
+                f"{missing_cnt:,} empty cells will be labeled as 'Unknown'",
+                "No rows will be deleted",
+                f"Your dataset will remain at {total_rows:,} rows"
+            ]
+            
+            ai_reasoning_beginner = (
+                "AI checked whether one category appeared significantly more than others. "
+                "Since values are spread out, guessing could distort your results, so a neutral 'Unknown' label is recommended."
+            )
 
             alternatives = [
                 {
                     "rating": "★★★★★",
-                    "label": "Categorize as 'Unknown'",
+                    "friendly_name": "Label as 'Unknown'",
+                    "technical_name": "Categorize as 'Unknown'",
                     "strategy": "unknown",
                     "is_recommended": True,
+                    "description": "Safe and neutral. Does not guess or distort existing categories.",
                     "why": "Does not fabricate category assumptions; neutral to distribution.",
-                    "trade_off": "Adds a new distinct category value."
+                    "trade_off": "Adds 'Unknown' as a distinct category."
                 },
                 {
                     "rating": "★★★☆☆",
-                    "label": f"Mode Imputation ('{top_cat}')",
+                    "friendly_name": "Fill with most frequent value",
+                    "technical_name": "Mode imputation",
                     "strategy": "mode",
                     "is_recommended": False,
+                    "description": f"Uses '{top_cat}' even though it only represents {top_ratio*100:.0f}% of data.",
                     "why": "Uses most frequent observed value.",
-                    "trade_off": "May introduce artificial bias since mode represents only {top_ratio*100:.1f}%."
+                    "trade_off": f"May introduce artificial bias since mode is only {top_ratio*100:.1f}%."
                 },
                 {
                     "rating": "★★☆☆☆",
-                    "label": "Drop Incomplete Rows",
+                    "friendly_name": "Delete incomplete rows",
+                    "technical_name": "Drop rows",
                     "strategy": "drop_rows",
                     "is_recommended": False,
+                    "description": "Removes any rows missing this information.",
                     "why": "Removes unclassified entries.",
                     "trade_off": f"Permanently drops {missing_cnt:,} rows."
                 }
             ]
 
+            technical_evidence = {
+                "Top Category": str(top_cat),
+                "Top Category Share": f"{top_ratio*100:.1f}%",
+                "Unique Categories": f"{prof.get('unique_count', 0):,}",
+                "Missing Cells": f"{missing_cnt:,} ({missing_pct:.1f}%)",
+                "Method": "Explicit Sentinel Categorization"
+            }
+
     elif is_datetime:
-        recommended_action = "Forward Fill (Time Series)"
+        rec_friendly = "Fill missing timestamps using the previous recorded time"
+        rec_technical = "Forward Fill (Time Series Propagation)"
         action_key = "ffill"
-        why_reason = (
+        
+        why_beginner = (
+            f"'{col_name}' represents dates or times. When a date is missing in sequential records, "
+            f"carrying forward the previous known date is a natural and standard way to fill the gap."
+        )
+        why_standard = (
             f"'{col_name}' is a temporal sequence. Forward filling propagates the last valid timestamp, "
             f"which is standard for sequential time-series observations without introducing future lookahead bias."
         )
+        why_technical = (
+            f"Temporal sequence indexed column. First-order forward sample-and-hold (ffill) maintains chronological "
+            f"continuity while strictly adhering to non-anticipative causality (no future lookahead)."
+        )
+        
         confidence = "MEDIUM"
         risk = "LOW"
-        expected_impact = f"Interpolates {missing_cnt:,} datetime values. Preserves temporal continuum."
+        
+        what_will_happen = [
+            f"{missing_cnt:,} missing timestamps will be filled from the preceding record",
+            "No rows will be deleted",
+            f"Your dataset will remain at {total_rows:,} rows"
+        ]
+        
+        ai_reasoning_beginner = (
+            "In timelines and dates, numbers usually move forward. AI recommends using the most recent known date to keep the timeline unbroken."
+        )
 
         alternatives = [
             {
                 "rating": "★★★★★",
-                "label": "Forward Fill",
+                "friendly_name": "Fill from previous record",
+                "technical_name": "Forward fill (ffill)",
                 "strategy": "ffill",
                 "is_recommended": True,
+                "description": "Propagates the last known date forward. Ideal for sequential data.",
                 "why": "Standard sequential propagation for time-indexed data.",
-                "trade_off": "Cannot fill missing values at the very beginning of the series."
+                "trade_off": "Cannot fill missing values at the very start of the series."
             },
             {
                 "rating": "★★★☆☆",
-                "label": "Drop Incomplete Rows",
+                "friendly_name": "Delete rows with missing dates",
+                "technical_name": "Drop rows",
                 "strategy": "drop_rows",
                 "is_recommended": False,
+                "description": "Removes rows where the timestamp is unknown.",
                 "why": "Ensures every analyzed row has an exact confirmed timestamp.",
                 "trade_off": f"Deletes {missing_cnt:,} rows ({missing_pct:.1f}%)."
             }
         ]
+
+        technical_evidence = {
+            "Data Type": "Datetime / Timestamp",
+            "Missing Timestamps": f"{missing_cnt:,} ({missing_pct:.1f}%)",
+            "Method": "Forward Fill (ffill)",
+            "Lookahead Bias": "None (Causal propagation)"
+        }
     else:
-        # Fallback for general columns
-        recommended_action = "Drop Incomplete Rows" if missing_pct <= 1.0 else "Fill with 'Unknown'"
-        action_key = "drop_rows" if missing_pct <= 1.0 else "unknown"
-        why_reason = (
+        rec_friendly = "Fill missing values with 'Unknown'" if missing_pct > 1.0 else "Remove rows with missing values"
+        rec_technical = "Categorize as 'Unknown'" if missing_pct > 1.0 else "Drop Incomplete Rows"
+        action_key = "unknown" if missing_pct > 1.0 else "drop_rows"
+        
+        why_beginner = (
+            f"Missingness is minor ({missing_pct:.1f}% / {missing_cnt:,} cells). "
+            f"Filling with 'Unknown' preserves all records without causing calculation errors."
+        )
+        why_standard = (
             f"Missingness is minor ({missing_pct:.1f}% / {missing_cnt:,} cells). "
             f"Remediating prevents downstream null errors without significant data loss."
         )
+        why_technical = (
+            f"Low nullity proportion ({missing_pct:.1f}%). Remediating eliminates missingness indicator overhead."
+        )
+        
         confidence = "MEDIUM"
         risk = "LOW"
-        expected_impact = f"Cleans {missing_cnt:,} null values across the column."
-        alternatives = [
-            {"rating": "★★★★☆", "label": "Fill with 'Unknown'", "strategy": "unknown", "is_recommended": True, "why": "Safe placeholder.", "trade_off": "None."},
-            {"rating": "★★★☆☆", "label": "Drop Incomplete Rows", "strategy": "drop_rows", "is_recommended": False, "why": "Clean complete records.", "trade_off": f"Drops {missing_cnt:,} rows."}
+        
+        what_will_happen = [
+            f"{missing_cnt:,} empty cells will be resolved",
+            "No rows will be deleted" if action_key == "unknown" else f"{missing_cnt:,} rows deleted",
+            f"Your dataset will have {total_rows:,} rows"
         ]
+        
+        ai_reasoning_beginner = "AI identified a small number of empty cells and recommends safe replacement to avoid errors."
+
+        alternatives = [
+            {"rating": "★★★★☆", "friendly_name": "Fill with 'Unknown'", "technical_name": "Sentinel placeholder", "strategy": "unknown", "is_recommended": True, "description": "Safe placeholder.", "why": "Safe placeholder.", "trade_off": "None."},
+            {"rating": "★★★☆☆", "friendly_name": "Delete incomplete rows", "technical_name": "Drop rows", "strategy": "drop_rows", "is_recommended": False, "description": "Removes incomplete rows.", "why": "Clean complete records.", "trade_off": f"Drops {missing_cnt:,} rows."}
+        ]
+
+        technical_evidence = {
+            "Missing Cells": f"{missing_cnt:,}",
+            "Missing Percentage": f"{missing_pct:.2f}%",
+            "Method": "Fallback Safe Handler"
+        }
 
     return {
         "id": f"missing_{col_name.replace(' ', '_')}",
@@ -1186,13 +1468,24 @@ def generate_missing_value_decision(col_name: str, prof: Dict[str, Any], df: pd.
         "affected_count": missing_cnt,
         "affected_percentage": missing_pct,
         "affected_label": f"{missing_cnt:,} cells ({missing_pct:.1f}%)",
-        "recommended_action": recommended_action,
+        
+        # AI Data Mentor Structured Fields
+        "what_we_found": what_we_found,
+        "recommended_action": rec_friendly,
+        "recommended_action_friendly": rec_friendly,
+        "recommended_action_technical": rec_technical,
         "action_key": action_key,
-        "why_reason": why_reason,
+        "why_reason": why_beginner,
+        "why_beginner": why_beginner,
+        "why_standard": why_standard,
+        "why_technical": why_technical,
+        "what_will_happen": what_will_happen,
+        "ai_reasoning_beginner": ai_reasoning_beginner,
         "confidence": confidence,
         "risk": risk,
-        "expected_impact": expected_impact,
+        "expected_impact": what_will_happen[0],
         "alternatives": alternatives,
+        "technical_evidence": technical_evidence,
         "evidence": prof,
         "execution_payload": {
             "action_type": "missing",
@@ -1204,7 +1497,7 @@ def generate_missing_value_decision(col_name: str, prof: Dict[str, Any], df: pd.
 
 
 def generate_duplicate_decision(dup_analysis: Dict[str, Any], df: pd.DataFrame) -> Optional[Dict[str, Any]]:
-    """Generate intelligent recommendations for row-level and key-level duplicates."""
+    """Generate intelligent recommendations for row-level duplicates following AI Data Mentor structure."""
     dup_cnt = dup_analysis.get("duplicate_rows", 0)
     dup_pct = dup_analysis.get("duplicate_percentage", 0.0)
     total_rows = len(df)
@@ -1225,29 +1518,75 @@ def generate_duplicate_decision(dup_analysis: Dict[str, Any], df: pd.DataFrame) 
         severity = "LOW"
         priority_weight = 30 + dup_pct
 
-    why_reason = (
+    human_freq = _build_human_frequency_text(dup_cnt, total_rows, "records")
+
+    what_we_found = {
+        "badge": "REPEATED RECORDS FOUND",
+        "column": "Entire Dataset",
+        "primary_text": f"{dup_cnt:,} records appear to be exact copies",
+        "secondary_text": f"{dup_pct:.1f}% of your dataset is duplicated",
+        "human_summary": human_freq
+    }
+
+    rec_friendly = "Remove the repeated records"
+    rec_technical = "Exact Row Deduplication"
+    action_key = "remove_exact"
+
+    why_beginner = (
+        f"These {dup_cnt:,} records contain the exact same information as other rows in your dataset. "
+        f"Keeping them would count the same people, transactions, or items more than once, leading to inaccurate totals."
+    )
+    why_standard = (
         f"Detected {dup_cnt:,} completely identical rows ({dup_pct:.1f}% of the dataset) matching across all {len(df.columns)} columns. "
-        f"Keeping identical duplicates artificially inflates record counts, deflates statistical variance, and distorts aggregate sums (e.g. Total Revenue)."
+        f"Keeping identical duplicates artificially inflates record counts and distorts aggregate sums (e.g. Total Revenue)."
+    )
+    why_technical = (
+        f"Exact feature vector duplication across {len(df.columns)} dimensions. "
+        f"Pseudo-replication violates observational independence, deflates empirical variance, and biases estimator precision."
+    )
+
+    what_will_happen = [
+        f"{dup_cnt:,} repeated records will be removed",
+        f"Your dataset will go from {total_rows:,} rows → {total_rows - dup_cnt:,} rows",
+        "Every remaining row will represent a unique observation"
+    ]
+
+    ai_reasoning_beginner = (
+        "AI compared all columns across every row to check for identical matches. "
+        "Because these rows are 100% duplicates, removing them ensures accurate analysis without losing unique information."
     )
 
     alternatives = [
         {
             "rating": "★★★★★",
-            "label": "Remove Exact Duplicate Rows",
+            "friendly_name": "Remove repeated records",
+            "technical_name": "Exact deduplication",
             "strategy": "remove_exact",
             "is_recommended": True,
+            "description": "Best option. Eliminates identical copies so each observation is counted once.",
             "why": "Eliminates redundant identical records; restores genuine population metrics.",
             "trade_off": f"Reduces total row count from {total_rows:,} to {total_rows - dup_cnt:,}."
         },
         {
             "rating": "★★★☆☆",
-            "label": "Retain Duplicates for Audit",
+            "friendly_name": "Keep all records",
+            "technical_name": "Retain duplicates for audit",
             "strategy": "keep_all",
             "is_recommended": False,
+            "description": "Leaves raw records untouched if multiple entries represent real simultaneous events.",
             "why": "Leaves raw records untouched if multiple entries represent simultaneous transactions.",
             "trade_off": "Risk of duplicate aggregation and skewed predictive weights."
         }
     ]
+
+    technical_evidence = {
+        "Duplicate Rows Count": f"{dup_cnt:,}",
+        "Duplicate Proportion": f"{dup_pct:.2f}%",
+        "Rows Before": f"{total_rows:,}",
+        "Rows After Remediation": f"{total_rows - dup_cnt:,}",
+        "Columns Compared": f"{len(df.columns)} columns (Full row)",
+        "Detection Algorithm": "Exact multi-column tuple matching"
+    }
 
     return {
         "id": "duplicates_dataset_exact",
@@ -1259,13 +1598,24 @@ def generate_duplicate_decision(dup_analysis: Dict[str, Any], df: pd.DataFrame) 
         "affected_count": dup_cnt,
         "affected_percentage": dup_pct,
         "affected_label": f"{dup_cnt:,} rows ({dup_pct:.1f}%)",
-        "recommended_action": "Remove Exact Duplicate Rows",
-        "action_key": "remove_exact",
-        "why_reason": why_reason,
+        
+        # AI Data Mentor Fields
+        "what_we_found": what_we_found,
+        "recommended_action": rec_friendly,
+        "recommended_action_friendly": rec_friendly,
+        "recommended_action_technical": rec_technical,
+        "action_key": action_key,
+        "why_reason": why_beginner,
+        "why_beginner": why_beginner,
+        "why_standard": why_standard,
+        "why_technical": why_technical,
+        "what_will_happen": what_will_happen,
+        "ai_reasoning_beginner": ai_reasoning_beginner,
         "confidence": "HIGH",
         "risk": "LOW",
-        "expected_impact": f"Removes {dup_cnt:,} duplicate rows ({total_rows:,} → {total_rows - dup_cnt:,} rows). Retains 100% of unique entity data.",
+        "expected_impact": what_will_happen[0],
         "alternatives": alternatives,
+        "technical_evidence": technical_evidence,
         "evidence": {
             "duplicate_count": dup_cnt,
             "duplicate_percentage": dup_pct,
@@ -1282,7 +1632,7 @@ def generate_duplicate_decision(dup_analysis: Dict[str, Any], df: pd.DataFrame) 
 
 
 def generate_outlier_decision(col_name: str, prof: Dict[str, Any], df: pd.DataFrame) -> Optional[Dict[str, Any]]:
-    """Generate domain-aware outlier management recommendations."""
+    """Generate domain-aware outlier management recommendations following AI Data Mentor structure."""
     outlier_cnt = prof.get("outliers_count", 0)
     outlier_pct = prof.get("outliers_percentage", 0.0)
     if outlier_cnt == 0:
@@ -1293,66 +1643,155 @@ def generate_outlier_decision(col_name: str, prof: Dict[str, Any], df: pd.DataFr
     upper_b = prof.get("upper_bound", 0.0)
     min_v = prof.get("min", 0.0)
     max_v = prof.get("max", 0.0)
+    total_rows = len(df)
 
-    # Check for known semantic fields (e.g. Age, Salary, Quantity)
+    # Check for known semantic fields (e.g. Age, Salary, Revenue)
     is_age = "age" in col_lower
     is_financial = any(k in col_lower for k in ["salary", "income", "revenue", "price", "amount", "cost", "spend"])
+
+    human_freq = f"{outlier_cnt:,} values look unusual compared with the rest of the dataset."
+
+    what_we_found = {
+        "badge": "UNUSUAL VALUES FOUND",
+        "column": col_name,
+        "primary_text": f"{outlier_cnt:,} values in '{col_name}' are much higher or lower than most records",
+        "secondary_text": f"{outlier_pct:.1f}% of observations fall outside the standard range",
+        "human_summary": human_freq
+    }
 
     if is_age and (max_v > 120 or min_v < 0):
         severity = "HIGH"
         priority_weight = 75.0
-        recommended_action = "Cap Bounds at [0, 100]"
+        rec_friendly = "Cap unusual age values between 0 and 100"
+        rec_technical = "Domain Boundary Capping [0, 100]"
         action_key = "cap_bounds"
-        why_reason = (
-            f"Column '{col_name}' contains biologically implausible age values (Min: {min_v}, Max: {max_v}). "
-            f"Capping extreme tails preserves the valid portion of records while eliminating severe data-entry distortions."
+        
+        why_beginner = (
+            f"Some recorded ages in '{col_name}' are physically impossible (Min: {min_v}, Max: {max_v}). "
+            f"Capping them to realistic human limits (0 to 100) fixes data-entry typos without deleting valuable rows."
         )
+        why_standard = (
+            f"Column '{col_name}' contains biologically implausible age values (Min: {min_v}, Max: {max_v}). "
+            f"Capping extreme tails preserves valid records while eliminating severe entry distortions."
+        )
+        why_technical = (
+            f"Domain constraint violation detected on age attribute. Hard-clipping to [0, 100] eliminates leverage "
+            f"from corrupted outliers while retaining 100% degrees of freedom in downstream models."
+        )
+        
+        what_will_happen = [
+            f"Ages below 0 or above 100 will be brought into the safe range [0, 100]",
+            "No rows will be deleted",
+            f"Your dataset will remain at {total_rows:,} rows"
+        ]
+        confidence = "HIGH"
+        risk = "LOW"
     elif is_financial:
         severity = "LOW"
         priority_weight = 25.0
-        recommended_action = "Retain for Deep Segmentation (Do Not Delete)"
+        rec_friendly = "Review and keep these values (Do not delete)"
+        rec_technical = "Retain for Deep Segmentation (Financial Extremes)"
         action_key = "retain_outliers"
-        why_reason = (
-            f"'{col_name}' represents financial metrics with {outlier_cnt:,} extreme observations ({outlier_pct:.1f}%). "
-            f"In business datasets, high financial values frequently represent legitimate VIP accounts, executive compensation, "
-            f"or bulk transactions. Deleting them would artificially underestimate total economic value."
+        
+        why_beginner = (
+            f"'{col_name}' represents financial data with {outlier_cnt:,} very large values. "
+            f"In business, extreme numbers often represent your highest-paying VIP customers or large bulk sales. "
+            f"Deleting them would erase your most valuable real-world business insights."
         )
+        why_standard = (
+            f"'{col_name}' represents financial metrics with {outlier_cnt:,} extreme observations ({outlier_pct:.1f}%). "
+            f"High financial values frequently represent legitimate VIP accounts or bulk transactions. "
+            f"Deleting them would artificially underestimate total economic value."
+        )
+        why_technical = (
+            f"Heavy-tailed Pareto/log-normal distribution typical of financial variables. "
+            f"Trimming would introduce severe survivorship bias and truncate revenue integrals."
+        )
+        
+        what_will_happen = [
+            "All values and customer records will be preserved exactly as recorded",
+            "No rows will be deleted",
+            f"Your dataset will remain at {total_rows:,} rows"
+        ]
+        confidence = "HIGH"
+        risk = "LOW"
     else:
         severity = "MEDIUM" if outlier_pct > 8.0 else "LOW"
         priority_weight = 35.0 + outlier_pct
-        recommended_action = "Winsorize / Cap at IQR Bounds"
+        rec_friendly = f"Cap extreme values at natural bounds [{lower_b:,.1f}, {upper_b:,.1f}]"
+        rec_technical = "Winsorize / Cap at 1.5×IQR Bounds"
         action_key = "cap_bounds"
-        why_reason = (
+        
+        why_beginner = (
+            f"'{col_name}' has {outlier_cnt:,} numbers that sit far outside the normal range. "
+            f"Bringing these extreme numbers to the boundary [{lower_b:,.1f}, {upper_b:,.1f}] prevents them from "
+            f"pulling your averages in the wrong direction while keeping all your records."
+        )
+        why_standard = (
             f"Detected {outlier_cnt:,} observations ({outlier_pct:.1f}%) outside the 1.5×IQR boundary [{lower_b:,.2f}, {upper_b:,.2f}]. "
             f"Capping values at the threshold limits statistical leverage on linear models while preserving sample size."
         )
+        why_technical = (
+            f"Tukey's 1.5×IQR fence identifies {outlier_cnt} observations beyond [Q1-1.5IQR, Q3+1.5IQR]. "
+            f"Winsorization bounds extreme residual influence without reducing effective sample size N={total_rows}."
+        )
+        
+        what_will_happen = [
+            f"Adjusts {outlier_cnt:,} extreme values to the safe boundary [{lower_b:,.1f}, {upper_b:,.1f}]",
+            "No rows will be deleted",
+            f"Your dataset will remain at {total_rows:,} rows"
+        ]
+        confidence = "HIGH"
+        risk = "LOW"
+
+    ai_reasoning_beginner = (
+        "AI analyzed the spread of numbers in this column to spot values that sit unusually far from the majority. "
+        "Rather than blindly deleting them, AI recommends reviewing or capping them to protect your analysis."
+    )
 
     alternatives = [
         {
             "rating": "★★★★★",
-            "label": recommended_action,
-            "strategy": action_key,
-            "is_recommended": True,
+            "friendly_name": "Cap extreme values at boundary",
+            "technical_name": "Winsorize at 1.5×IQR",
+            "strategy": "cap_bounds",
+            "is_recommended": action_key == "cap_bounds",
+            "description": f"Brings extreme numbers to the nearest reasonable boundary [{lower_b:,.1f}, {upper_b:,.1f}] without deleting rows.",
             "why": "Optimal balance between model stability and data retention.",
             "trade_off": "Subtle boundary clipping."
         },
         {
             "rating": "★★★★☆",
-            "label": "Retain as Valid Extremes",
+            "friendly_name": "Keep all unusual values",
+            "technical_name": "Retain as valid extremes",
             "strategy": "retain_outliers",
             "is_recommended": action_key == "retain_outliers",
+            "description": "Leaves all numbers untouched. Best if extreme values represent real VIP customers or transactions.",
             "why": "Preserves genuine extreme business phenomena.",
             "trade_off": "May skew mean and variance calculations."
         },
         {
             "rating": "★★☆☆☆",
-            "label": "Delete Outlier Rows",
+            "friendly_name": "Delete rows with unusual values",
+            "technical_name": "Drop outlier rows",
             "strategy": "drop_outliers",
             "is_recommended": False,
+            "description": f"Permanently deletes {outlier_cnt:,} rows from your dataset.",
             "why": "Restricts data to strictly normal core distribution.",
             "trade_off": f"Eliminates {outlier_cnt:,} rows ({outlier_pct:.1f}% sample loss)."
         }
     ]
+
+    technical_evidence = {
+        "Outlier Count": f"{outlier_cnt:,} observations",
+        "Outlier Proportion": f"{outlier_pct:.2f}%",
+        "Lower Fence (1.5×IQR)": f"{lower_b:,.2f}",
+        "Upper Fence (1.5×IQR)": f"{upper_b:,.2f}",
+        "Min Observed Value": f"{min_v:,.2f}",
+        "Max Observed Value": f"{max_v:,.2f}",
+        "Interquartile Range (IQR)": f"{prof.get('iqr', 0.0):,.2f}",
+        "Remediation Strategy": rec_technical
+    }
 
     return {
         "id": f"outliers_{col_name.replace(' ', '_')}",
@@ -1364,13 +1803,24 @@ def generate_outlier_decision(col_name: str, prof: Dict[str, Any], df: pd.DataFr
         "affected_count": outlier_cnt,
         "affected_percentage": outlier_pct,
         "affected_label": f"{outlier_cnt:,} observations ({outlier_pct:.1f}%)",
-        "recommended_action": recommended_action,
+        
+        # AI Data Mentor Fields
+        "what_we_found": what_we_found,
+        "recommended_action": rec_friendly,
+        "recommended_action_friendly": rec_friendly,
+        "recommended_action_technical": rec_technical,
         "action_key": action_key,
-        "why_reason": why_reason,
-        "confidence": "HIGH" if is_age or is_financial else "MEDIUM",
-        "risk": "LOW",
-        "expected_impact": f"Adjusts {outlier_cnt:,} extreme values to bounds [{lower_b:,.2f}, {upper_b:,.2f}]. Preserves all rows.",
+        "why_reason": why_beginner,
+        "why_beginner": why_beginner,
+        "why_standard": why_standard,
+        "why_technical": why_technical,
+        "what_will_happen": what_will_happen,
+        "ai_reasoning_beginner": ai_reasoning_beginner,
+        "confidence": confidence,
+        "risk": risk,
+        "expected_impact": what_will_happen[0],
         "alternatives": alternatives,
+        "technical_evidence": technical_evidence,
         "evidence": prof,
         "execution_payload": {
             "action_type": "outliers",
@@ -1389,6 +1839,7 @@ def generate_invalid_and_type_decisions(
 ) -> List[Dict[str, Any]]:
     """Generate intelligent recommendations for invalid values, type anomalies, and formatting defects."""
     decisions = []
+    total_rows = len(df)
 
     # 1. Invalid Values (e.g. Negative values in non-negative columns)
     for inv in validity.get("invalid_findings", []):
@@ -1398,17 +1849,40 @@ def generate_invalid_and_type_decisions(
         issue_type = inv["issue_type"]
 
         if "Negative" in issue_type:
-            rec_act = "Clip to Zero or Convert to Null"
+            rec_friendly = f"Set negative values in '{col}' to 0 (Zero)"
+            rec_technical = "Clip Non-Negative Lower Boundary (>= 0)"
             act_key = "clip_non_negative"
-            why = f"Column '{col}' represents physical quantities or ages that cannot be negative. Negative values ({cnt:,} cells) are likely data-entry errors."
+            why_b = f"'{col}' represents quantities or counts that cannot physically be negative. Setting them to 0 fixes data-entry typos."
+            why_s = f"Column '{col}' represents physical quantities or counts that cannot be negative. Negative values ({cnt:,} cells) are likely entry errors."
+            why_t = f"Physical domain invariant violation (X < 0). Lower boundary rectification at zero restores domain validity."
         elif "Whitespace" in issue_type:
-            rec_act = "Trim & Replace Blank Strings with Null"
+            rec_friendly = f"Clean blank spaces and treat as empty cells in '{col}'"
+            rec_technical = "Trim Whitespace & Normalize Empty Strings"
             act_key = "trim_whitespace"
-            why = f"Detected {cnt:,} whitespace-only strings. Converting them to standard nulls ensures uniform missingness handling."
+            why_b = f"Found {cnt:,} cells that contain only empty spaces. Cleaning them ensures they are recognized consistently as empty cells."
+            why_s = f"Detected {cnt:,} whitespace-only strings. Converting them to standard nulls ensures uniform missingness handling."
+            why_t = f"String whitespace entropy anomaly. Trimming and null normalization ensures categorical integrity."
         else:
-            rec_act = "Investigate & Clean Values"
+            rec_friendly = f"Clean invalid formatting in '{col}'"
+            rec_technical = "Sanitize Domain Value Anomaly"
             act_key = "clean_invalid"
-            why = inv.get("description", "Anomalous values detected outside expected domain limits.")
+            why_b = f"Found {cnt:,} entries with invalid formatting or unexpected values in '{col}'."
+            why_s = inv.get("description", "Anomalous values detected outside expected domain limits.")
+            why_t = "Statistical/domain rule violation across column entries."
+
+        what_we_found = {
+            "badge": "INVALID VALUES FOUND",
+            "column": col,
+            "primary_text": f"{cnt:,} values in '{col}' have invalid formatting or values",
+            "secondary_text": f"{pct:.1f}% of entries are affected ({issue_type})",
+            "human_summary": f"{cnt:,} cells contain values that violate expected rules (e.g. negative numbers or blank spaces)."
+        }
+
+        what_will_happen = [
+            f"Fixes {cnt:,} invalid values in '{col}'",
+            "No rows will be deleted",
+            f"Your dataset will remain at {total_rows:,} rows"
+        ]
 
         decisions.append({
             "id": f"validity_{col.replace(' ', '_')}_{cnt}",
@@ -1420,16 +1894,30 @@ def generate_invalid_and_type_decisions(
             "affected_count": cnt,
             "affected_percentage": pct,
             "affected_label": f"{cnt:,} cells ({pct:.1f}%)",
-            "recommended_action": rec_act,
+            "what_we_found": what_we_found,
+            "recommended_action": rec_friendly,
+            "recommended_action_friendly": rec_friendly,
+            "recommended_action_technical": rec_technical,
             "action_key": act_key,
-            "why_reason": why,
+            "why_reason": why_b,
+            "why_beginner": why_b,
+            "why_standard": why_s,
+            "why_technical": why_t,
+            "what_will_happen": what_will_happen,
+            "ai_reasoning_beginner": "AI identified values that do not match the expected real-world format and recommended a safe correction.",
             "confidence": "HIGH",
             "risk": "LOW",
-            "expected_impact": f"Corrects {cnt:,} invalid cells in '{col}'.",
+            "expected_impact": what_will_happen[0],
             "alternatives": [
-                {"rating": "★★★★★", "label": rec_act, "strategy": act_key, "is_recommended": True, "why": "Standard data hygiene.", "trade_off": "None."},
-                {"rating": "★★☆☆☆", "label": "Drop Rows with Invalid Values", "strategy": "drop_invalid_rows", "is_recommended": False, "why": "Strict complete data.", "trade_off": f"Discards {cnt:,} records."}
+                {"rating": "★★★★★", "friendly_name": "Fix invalid values", "technical_name": rec_technical, "label": rec_friendly, "strategy": act_key, "is_recommended": True, "description": "Standard data hygiene.", "why": "Standard data hygiene.", "trade_off": "None."},
+                {"rating": "★★☆☆☆", "friendly_name": "Delete affected rows", "technical_name": "Drop invalid rows", "label": "Drop Rows with Invalid Values", "strategy": "drop_invalid_rows", "is_recommended": False, "description": "Deletes rows with errors.", "why": "Strict complete data.", "trade_off": f"Discards {cnt:,} records."}
             ],
+            "technical_evidence": {
+                "Issue Type": issue_type,
+                "Affected Cells": f"{cnt:,}",
+                "Affected Percentage": f"{pct:.2f}%",
+                "Column Name": col
+            },
             "evidence": inv,
             "execution_payload": {
                 "action_type": "validity",
@@ -1444,6 +1932,28 @@ def generate_invalid_and_type_decisions(
         cnt = inc["inconsistent_count"]
         pct = inc["inconsistent_percentage"]
 
+        rec_friendly = f"Convert '{col}' into clean numbers"
+        rec_technical = "Sanitize & Cast to Numeric"
+        act_key = "cast_numeric_clean"
+
+        what_we_found = {
+            "badge": "MIXED DATA TYPES FOUND",
+            "column": col,
+            "primary_text": f"'{col}' has mixed text and numbers",
+            "secondary_text": f"{cnt:,} entries contain symbols (like $ or %) preventing calculations",
+            "human_summary": f"{cnt:,} values contain symbols or mixed formatting that prevent charts and sums."
+        }
+
+        why_b = f"'{col}' contains numbers mixed with text or currency symbols (like $ or %). Cleaning the symbols turns them into real numbers so you can calculate sums, averages, and build charts."
+        why_s = f"Column '{col}' contains mixed text and numeric data. Mixed types prevent mathematical calculations and charts."
+        why_t = f"Mixed dtype column. Stripping currency/percentage symbols and casting to float64 unlocks vectorized numerical operations."
+
+        what_will_happen = [
+            f"Cleans symbols and converts {cnt:,} entries into standard numbers",
+            "No rows will be deleted",
+            f"Your dataset will remain at {total_rows:,} rows"
+        ]
+
         decisions.append({
             "id": f"type_inconsistency_{col.replace(' ', '_')}",
             "type": "consistency",
@@ -1454,19 +1964,30 @@ def generate_invalid_and_type_decisions(
             "affected_count": cnt,
             "affected_percentage": pct,
             "affected_label": f"{cnt:,} inconsistent values ({pct:.1f}%)",
-            "recommended_action": "Sanitize & Cast to Numeric",
-            "action_key": "cast_numeric_clean",
-            "why_reason": (
-                f"Column '{col}' contains mixed text and numeric data (e.g. {inc.get('sample_values', '')}). "
-                f"Mixed types prevent mathematical calculations, aggregations, and standard charts."
-            ),
+            "what_we_found": what_we_found,
+            "recommended_action": rec_friendly,
+            "recommended_action_friendly": rec_friendly,
+            "recommended_action_technical": rec_technical,
+            "action_key": act_key,
+            "why_reason": why_b,
+            "why_beginner": why_b,
+            "why_standard": why_s,
+            "why_technical": why_t,
+            "what_will_happen": what_will_happen,
+            "ai_reasoning_beginner": "AI found currency or percentage symbols mixed into number columns and recommends standardizing them for calculations.",
             "confidence": "HIGH",
             "risk": "LOW",
-            "expected_impact": f"Parses numeric values and coerces unparseable strings to clean standard format.",
+            "expected_impact": what_will_happen[0],
             "alternatives": [
-                {"rating": "★★★★★", "label": "Sanitize & Cast to Numeric", "strategy": "cast_numeric_clean", "is_recommended": True, "why": "Unlocks full mathematical analysis.", "trade_off": "Unparseable text becomes null."},
-                {"rating": "★★★☆☆", "label": "Retain as String/Text", "strategy": "keep_string", "is_recommended": False, "why": "Preserves raw characters.", "trade_off": "Blocks mathematical aggregations."}
+                {"rating": "★★★★★", "friendly_name": "Clean and convert to numbers", "technical_name": "Cast to numeric", "label": "Sanitize & Cast to Numeric", "strategy": "cast_numeric_clean", "is_recommended": True, "description": "Unlocks mathematical analysis and charting.", "why": "Unlocks full mathematical analysis.", "trade_off": "Unparseable text becomes null."},
+                {"rating": "★★★☆☆", "friendly_name": "Keep as plain text", "technical_name": "Retain as string", "label": "Retain as String/Text", "strategy": "keep_string", "is_recommended": False, "description": "Leaves characters as text. Blocks math.", "why": "Preserves raw characters.", "trade_off": "Blocks mathematical aggregations."}
             ],
+            "technical_evidence": {
+                "Inconsistent Count": f"{cnt:,}",
+                "Inconsistent Percentage": f"{pct:.2f}%",
+                "Sample Text Values": str(inc.get("sample_values", []))[:80],
+                "Target Dtype": "float64"
+            },
             "evidence": inc,
             "execution_payload": {
                 "action_type": "consistency",
