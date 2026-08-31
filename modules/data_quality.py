@@ -260,14 +260,28 @@ def _render_quality_kpis(report: Dict[str, Any], metadata: Dict[str, Any]) -> No
     duplicates = report["duplicate_analysis"]
     problem_cols = [c for c in report["column_quality_scores"] if c["quality_score"] < 80.0]
 
+    score = report.get("overall_score", 0.0)
+    grade = report.get("grade")
+    if not grade:
+        if score >= 90:
+            grade = "A"
+        elif score >= 80:
+            grade = "B"
+        elif score >= 70:
+            grade = "C"
+        elif score >= 60:
+            grade = "D"
+        else:
+            grade = "F"
+
     c1, c2, c3, c4 = st.columns(4)
     
     with c1:
         render_metric_card(
             label="Overall Score",
-            value=f"{report['overall_score']:.1f}",
-            description=f"Health Grade: {report['grade']}",
-            status=report["status"]
+            value=f"{score:.1f}",
+            description=f"Health Grade: {grade}",
+            status=report.get("status", "Good")
         )
     with c2:
         miss_cnt = missing["total_missing_cells"]

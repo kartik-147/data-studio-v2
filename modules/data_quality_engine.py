@@ -688,8 +688,20 @@ def analyze_data_quality(df: pd.DataFrame, metadata: Optional[Dict[str, Any]] = 
         outlier_analysis=outliers
     )
 
+    if score >= 90.0:
+        grade = "A"
+    elif score >= 80.0:
+        grade = "B"
+    elif score >= 70.0:
+        grade = "C"
+    elif score >= 60.0:
+        grade = "D"
+    else:
+        grade = "F"
+
     report = {
         "overall_score": score,
+        "grade": grade,
         "status": status,
         "status_color": status_color,
         "breakdown": breakdown,
