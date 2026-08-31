@@ -704,15 +704,84 @@ def _render_decision_preview_drawer(df: pd.DataFrame, dec: Dict[str, Any], key_p
 # =============================================================================
 
 def _render_section_missing_values(working_df: pd.DataFrame) -> None:
-    """Render Missing Values section with intelligent decision cards for every column with nulls."""
+    """Render Missing Values section with manual controls first, followed by intelligent AI decision cards."""
     render_section_header(
         title="Missing Values Remediation",
-        subtitle="Review column-by-column missingness, statistical distributions, intelligent recommendations, and safe imputation."
+        subtitle="Apply manual batch imputation or review AI-recommended statistical decisions and safe remediation."
     )
 
     missing_summary = get_missing_values_summary(working_df)
     affected_cols_df = missing_summary[missing_summary["Missing Count"] > 0]
     total_missing_cells = int(working_df.isna().sum().sum())
+
+    # ── 1. MANUAL MISSING VALUE CONTROLS (COMES FIRST) ───────────────────────
+    st.markdown("#### 🛠️ Manual Missing Value Handling")
+    st.caption("Directly apply batch imputations, custom override values, or removal strategies across selected columns.")
+
+    all_cols = list(working_df.columns)
+    affected_col_names = list(affected_cols_df["Column"]) if not affected_cols_df.empty else all_cols
+    default_selected = [affected_col_names[0]] if affected_col_names else []
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        target_cols = st.multiselect(
+            "Target Column(s)",
+            options=all_cols,
+            default=default_selected,
+            key="man_miss_cols",
+            help="Select one or more columns to apply manual imputation or removal."
+        )
+    with c2:
+        is_all_numeric = all(pd.api.types.is_numeric_dtype(working_df[c]) for c in target_cols) if target_cols else False
+        strat_opts = [
+            ("mean", "Mean Imputation"),
+            ("median", "Median Imputation"),
+            ("mode", "Mode Imputation"),
+            ("zero", "Fill with 0 (Zero)"),
+            ("unknown", "Fill with 'Unknown'"),
+            ("ffill", "Forward Fill (ffill)"),
+            ("bfill", "Backward Fill (bfill)"),
+            ("custom", "Custom Fill Value"),
+            ("drop_rows", "Drop Rows with Missing Values"),
+            ("drop_cols", "Drop Selected Columns Entirely")
+        ] if is_all_numeric else [
+            ("mode", "Mode Imputation"),
+            ("unknown", "Fill with 'Unknown'"),
+            ("zero", "Fill with 0 (Zero)"),
+            ("ffill", "Forward Fill (ffill)"),
+            ("bfill", "Backward Fill (bfill)"),
+            ("custom", "Custom Fill Value"),
+            ("drop_rows", "Drop Rows with Missing Values"),
+            ("drop_cols", "Drop Selected Columns Entirely")
+        ]
+        man_strat = st.selectbox(
+            "Strategy",
+            options=[s[0] for s in strat_opts],
+            format_func=lambda k: dict(strat_opts).get(k, k),
+            key="man_miss_strat"
+        )
+    with c3:
+        custom_val = None
+        if man_strat == "custom":
+            custom_val = st.text_input("Custom Fill Value", value="0" if is_all_numeric else "Unknown", key="man_miss_custom_val")
+        else:
+            st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+
+    if target_cols:
+        btn_col1, btn_col2 = st.columns([3, 7])
+        with btn_col1:
+            if st.button("Apply Manual Transformation", key="btn_apply_manual_missing", type="primary", use_container_width=True):
+                b_rows = len(working_df)
+                b_cols = len(working_df.columns)
+                new_df, info = handle_missing_values(working_df, target_cols, man_strat, custom_value=custom_val)
+                desc = f"Manual Fix: Resolved missing values in {', '.join(target_cols)} using {man_strat.replace('_', ' ').title()}"
+                _record_transformation(new_df, "missing_values", desc, b_rows, b_cols, column=", ".join(target_cols), strategy=man_strat)
+                st.rerun()
+
+    st.markdown("<div style='height: 18px; border-bottom: 1px solid var(--border-light); margin-bottom: 18px;'></div>", unsafe_allow_html=True)
+
+    # ── 2. AI SUGGESTIONS & INTELLIGENT DECISION CARDS (COMES AFTER) ────────
+    st.markdown("#### 🤖 AI-Powered Missing Value Suggestions")
 
     if total_missing_cells == 0 or affected_cols_df.empty:
         render_notification(
@@ -722,14 +791,9 @@ def _render_section_missing_values(working_df: pd.DataFrame) -> None:
         )
         return
 
-    st.markdown(
-        f"""
-        <div style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 14px;">
-            Detected <b>{total_missing_cells:,} missing cells</b> across <b>{len(affected_cols_df)} columns</b>. 
-            Review recommended statistical decisions below or preview alternative treatments before applying.
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        f"Detected **{total_missing_cells:,} missing cells** across **{len(affected_cols_df)} columns**. "
+        f"Review AI recommendations and statistical alternatives below:"
     )
 
     # Render a decision card for every column containing missing values
@@ -740,97 +804,98 @@ def _render_section_missing_values(working_df: pd.DataFrame) -> None:
             decision = generate_missing_value_decision(col_name, prof, working_df)
             _render_decision_card(working_df, decision, key_prefix=f"miss_{idx}")
 
-    # Manual Custom Imputation Tools (Preserved for advanced batch treatments)
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-    with st.expander("Manual / Custom Missing Value Tools", expanded=False):
-        st.markdown("##### Batch Imputation & Custom Overrides")
-        col_options = list(affected_cols_df["Column"])
-        
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            target_cols = st.multiselect("Target Column(s)", options=col_options, default=[col_options[0]] if col_options else [], key="man_miss_cols")
-        with c2:
-            is_all_numeric = all(pd.api.types.is_numeric_dtype(working_df[c]) for c in target_cols) if target_cols else False
-            strat_opts = [
-                ("mean", "Mean Imputation"),
-                ("median", "Median Imputation"),
-                ("mode", "Mode Imputation"),
-                ("zero", "Fill with 0 (Zero)"),
-                ("unknown", "Fill with 'Unknown'"),
-                ("custom", "Custom Value"),
-                ("drop_rows", "Drop Rows with Missing Values"),
-                ("drop_cols", "Drop Selected Columns Entirely")
-            ] if is_all_numeric else [
-                ("mode", "Mode Imputation"),
-                ("unknown", "Fill with 'Unknown'"),
-                ("custom", "Custom Value"),
-                ("drop_rows", "Drop Rows with Missing Values"),
-                ("drop_cols", "Drop Selected Columns Entirely")
-            ]
-            man_strat = st.selectbox("Strategy", options=[s[0] for s in strat_opts], format_func=lambda k: dict(strat_opts).get(k, k), key="man_miss_strat")
-        with c3:
-            custom_val = None
-            if man_strat == "custom":
-                custom_val = st.text_input("Custom Fill Value", value="0" if is_all_numeric else "Unknown", key="man_miss_custom_val")
-            else:
-                st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-
-        if target_cols and st.button("Apply Manual Transformation", key="btn_apply_manual_missing", type="primary"):
-            b_rows = len(working_df)
-            b_cols = len(working_df.columns)
-            new_df, info = handle_missing_values(working_df, target_cols, man_strat, custom_value=custom_val)
-            desc = f"Resolved missing values in {', '.join(target_cols)} using {man_strat.replace('_', ' ').title()}"
-            _record_transformation(new_df, "missing_values", desc, b_rows, b_cols, column=", ".join(target_cols), strategy=man_strat)
-            st.rerun()
-
 
 # =============================================================================
 # SECTION 2: DUPLICATE ROWS
 # =============================================================================
 
 def _render_section_duplicates(working_df: pd.DataFrame) -> None:
-    """Render Duplicate Rows section with intelligent deduplication decision card and sample review."""
+    """Render Duplicate Rows section with manual tools first, followed by AI deduplication decision cards."""
     render_section_header(
         title="Duplicate Rows Remediation",
-        subtitle="Detect, preview, and eliminate identical observation rows or evaluate column subsets."
+        subtitle="Manually configure deduplication or review AI recommendations to eliminate identical observations."
     )
 
     dup_info = get_duplicates_info(working_df)
     dup_cnt = dup_info["duplicate_count"]
     dup_pct = dup_info["duplicate_pct"]
+    all_cols = list(working_df.columns)
+
+    # ── 1. MANUAL DUPLICATE CONTROLS (COMES FIRST) ───────────────────────────
+    st.markdown("#### 🛠️ Manual Duplicate Rows Handling")
+    st.caption("Manually configure deduplication across all columns or specific key identifiers, set retention rules, and preview duplicate records.")
+
+    c_scope, c_keep, c_action = st.columns([4, 4, 4])
+    with c_scope:
+        dedup_scope = st.radio(
+            "Deduplication Scope",
+            options=["All Columns (Exact Duplicate Rows)", "Specific Column Subset (Key Identifiers)"],
+            key="man_dup_scope"
+        )
+    with c_keep:
+        keep_choice = st.selectbox(
+            "Retention Strategy",
+            options=[("first", "Keep First Occurrence"), ("last", "Keep Last Occurrence")],
+            format_func=lambda x: x[1],
+            key="man_dup_keep"
+        )
+        keep_val = keep_choice[0]
+
+    subset_selected = None
+    if dedup_scope == "Specific Column Subset (Key Identifiers)":
+        subset_selected = st.multiselect(
+            "Select Key Identifier Columns",
+            options=all_cols,
+            default=[all_cols[0]] if all_cols else [],
+            key="man_dup_subset_cols"
+        )
+        sub_info = get_duplicates_info(working_df, subset_cols=subset_selected) if subset_selected else dup_info
+        active_dup_cnt = sub_info["duplicate_count"]
+        active_dup_pct = sub_info["duplicate_pct"]
+        active_dup_df = sub_info["duplicate_df"]
+    else:
+        active_dup_cnt = dup_cnt
+        active_dup_pct = dup_pct
+        active_dup_df = dup_info["duplicate_df"]
+
+    with c_action:
+        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+        btn_label = f"Remove {active_dup_cnt:,} Duplicates" if active_dup_cnt > 0 else "Remove Duplicates"
+        if st.button(btn_label, key="btn_apply_manual_dup", type="primary", disabled=(active_dup_cnt == 0), use_container_width=True):
+            b_rows = len(working_df)
+            b_cols = len(working_df.columns)
+            new_df, info = remove_duplicates(working_df, subset_cols=subset_selected, keep=keep_val)
+            col_desc = f"[{', '.join(subset_selected)}]" if subset_selected else "all columns"
+            desc = f"Manual Fix: Removed {info['removed_count']:,} duplicate rows ({col_desc}, keep='{keep_val}')"
+            _record_transformation(new_df, "duplicates", desc, b_rows, b_cols, column=", ".join(subset_selected) if subset_selected else "Dataset", strategy=f"dedup_{keep_val}")
+            st.rerun()
+
+    # Duplicate Records Preview
+    if active_dup_cnt > 0:
+        st.markdown(f"##### Duplicate Observations Preview ({active_dup_cnt:,} rows · {active_dup_pct:.1f}%)")
+        st.dataframe(active_dup_df.head(15), use_container_width=True, hide_index=False)
+    else:
+        render_notification(
+            title="Zero Duplicate Rows Detected",
+            message="✓ Every row in the dataset represents a unique observation under the current scope.",
+            variant="success"
+        )
+
+    st.markdown("<div style='height: 18px; border-bottom: 1px solid var(--border-light); margin-bottom: 18px;'></div>", unsafe_allow_html=True)
+
+    # ── 2. AI DEDUPLICATION SUGGESTIONS (COMES AFTER) ────────────────────────
+    st.markdown("#### 🤖 AI Deduplication Recommendation")
 
     if dup_cnt > 0:
         dup_dec = generate_duplicate_decision(dup_info, working_df)
         if dup_dec:
             _render_decision_card(working_df, dup_dec, key_prefix="dup_main")
-
-        # Duplicate Records Table
-        st.markdown("##### Duplicate Observations Preview")
-        st.dataframe(dup_info["duplicate_df"].head(15), use_container_width=True, hide_index=False)
     else:
         render_notification(
-            title="Zero Duplicate Rows Detected",
-            message="✓ Every row in the dataset represents a unique observation. No duplicate records exist.",
+            title="Clean Uniqueness Health",
+            message="✓ No AI deduplication intervention required. All records are unique.",
             variant="success"
         )
-
-    # Column-subset duplicate detection tool
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-    with st.expander("Evaluate Duplicates on Specific Column Subsets", expanded=False):
-        all_cols = list(working_df.columns)
-        subset_cols = st.multiselect("Select Key Identifier Columns", options=all_cols, key="dup_subset_select")
-        if subset_cols:
-            sub_info = get_duplicates_info(working_df, subset_cols=subset_cols)
-            st.write(f"Subset duplicate rows matching on {', '.join(subset_cols)}: **{sub_info['duplicate_count']:,} rows ({sub_info['duplicate_pct']:.1f}%)**")
-            if sub_info["duplicate_count"] > 0:
-                st.dataframe(sub_info["duplicate_df"].head(10), use_container_width=True)
-                if st.button(f"Remove {sub_info['duplicate_count']:,} Subset Duplicates", key="btn_remove_subset_dups", type="primary"):
-                    b_rows = len(working_df)
-                    b_cols = len(working_df.columns)
-                    new_df, info = remove_duplicates(working_df, subset_cols=subset_cols, keep="first")
-                    desc = f"Removed {info['removed_count']:,} subset duplicates on [{', '.join(subset_cols)}]"
-                    _record_transformation(new_df, "duplicates_subset", desc, b_rows, b_cols, column=", ".join(subset_cols), strategy="subset_dedup")
-                    st.rerun()
 
 
 # =============================================================================
@@ -838,15 +903,90 @@ def _render_section_duplicates(working_df: pd.DataFrame) -> None:
 # =============================================================================
 
 def _render_section_outliers_and_validity(working_df: pd.DataFrame) -> None:
-    """Render Outliers & Validity section with domain-aware decision cards (Do NOT blindly delete outliers)."""
+    """Render Outliers & Validity section with manual tools first, followed by AI decision cards."""
     render_section_header(
         title="Outliers & Value Validity",
-        subtitle="Investigate distribution tail observations, domain-specific boundary capping, and invalid value sanitization."
+        subtitle="Manually cap or trim distribution boundaries, or review AI domain-aware decisions and validity fixes."
     )
 
     numeric_cols = [c for c in working_df.columns if pd.api.types.is_numeric_dtype(working_df[c])]
-    
-    # 1. Outlier Decision Cards per numeric column
+
+    # ── 1. MANUAL OUTLIER CONTROLS (COMES FIRST) ─────────────────────────────
+    st.markdown("#### 🛠️ Manual Outlier Remediation")
+    st.caption("Select a numeric feature to inspect its IQR distribution bounds, and apply custom capping or trimming.")
+
+    if numeric_cols:
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            target_outlier_col = st.selectbox("Target Numeric Column", options=numeric_cols, key="man_outlier_col")
+
+        prof = get_outliers_profile(working_df, target_outlier_col)
+        out_cnt = prof["outlier_count"]
+        lower_b = prof["lower_bound"]
+        upper_b = prof["upper_bound"]
+
+        with c2:
+            out_strat = st.selectbox(
+                "Remediation Method",
+                options=[
+                    ("cap_boundaries", "Cap at 1.5×IQR Boundaries (Winsorize)"),
+                    ("remove_rows", "Drop Outlier Rows (Remove extremes)"),
+                    ("custom_clip", "Custom Min / Max Range Clipping")
+                ],
+                format_func=lambda x: x[1],
+                key="man_outlier_strat"
+            )
+            strat_val = out_strat[0]
+
+        custom_min, custom_max = None, None
+        with c3:
+            if strat_val == "custom_clip":
+                sub_c1, sub_c2 = st.columns(2)
+                with sub_c1:
+                    custom_min = st.number_input("Lower Cap (Min)", value=float(lower_b), key="man_outlier_custom_min")
+                with sub_c2:
+                    custom_max = st.number_input("Upper Cap (Max)", value=float(upper_b), key="man_outlier_custom_max")
+            else:
+                st.markdown(
+                    f"<div style='font-size:12px; color:var(--text-secondary); padding-top:28px;'>"
+                    f"1.5×IQR Bounds: <b>[{lower_b:,.2f}, {upper_b:,.2f}]</b> ({out_cnt:,} outliers)"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
+
+        btn_c1, btn_c2 = st.columns([3, 7])
+        with btn_c1:
+            if st.button("Apply Manual Outlier Fix", key="btn_apply_manual_outlier", type="primary", use_container_width=True):
+                b_rows = len(working_df)
+                b_cols = len(working_df.columns)
+                if strat_val == "custom_clip":
+                    new_df = working_df.copy(deep=True)
+                    new_df[target_outlier_col] = new_df[target_outlier_col].clip(lower=custom_min, upper=custom_max)
+                    desc = f"Manual Fix: Clipped '{target_outlier_col}' to custom range [{custom_min:,.2f}, {custom_max:,.2f}]"
+                    _record_transformation(new_df, "outliers", desc, b_rows, b_cols, column=target_outlier_col, strategy="custom_clip")
+                else:
+                    new_df, info = handle_outliers(working_df, target_outlier_col, action=strat_val)
+                    action_name = "Capped at IQR boundaries" if strat_val == "cap_boundaries" else "Removed outlier rows"
+                    desc = f"Manual Fix: {action_name} in '{target_outlier_col}' ({info.get('affected', 0):,} outliers affected)"
+                    _record_transformation(new_df, "outliers", desc, b_rows, b_cols, column=target_outlier_col, strategy=strat_val)
+                st.rerun()
+
+        if out_cnt > 0:
+            with st.expander(f"Inspect Outlier Records in '{target_outlier_col}' ({out_cnt:,} rows)", expanded=False):
+                st.dataframe(prof["outlier_df"].head(10), use_container_width=True)
+    else:
+        render_notification(
+            title="No Numeric Columns",
+            message="Outlier remediation tools apply only to numeric columns.",
+            variant="info"
+        )
+
+    st.markdown("<div style='height: 18px; border-bottom: 1px solid var(--border-light); margin-bottom: 18px;'></div>", unsafe_allow_html=True)
+
+    # ── 2. AI OUTLIER & VALIDITY RECOMMENDATIONS (COMES AFTER) ───────────────
+    st.markdown("#### 🤖 AI Outlier Recommendations")
+    st.caption("Domain-aware AI reasoning based on distribution shape. Never delete legitimate high-value customers blindly:")
+
     outlier_decisions = []
     for col in numeric_cols:
         prof = investigate_column_distribution(working_df[col], col, working_df)
@@ -855,8 +995,6 @@ def _render_section_outliers_and_validity(working_df: pd.DataFrame) -> None:
             outlier_decisions.append(o_dec)
 
     if outlier_decisions:
-        st.markdown("#### Statistical Outlier Decisions")
-        st.caption("Never delete legitimate high-value customers or business transactions blindly. Review statistical reasons below:")
         for idx, o_dec in enumerate(outlier_decisions):
             _render_decision_card(working_df, o_dec, key_prefix=f"outlier_{idx}")
     else:
@@ -866,9 +1004,9 @@ def _render_section_outliers_and_validity(working_df: pd.DataFrame) -> None:
             variant="success"
         )
 
-    # 2. Value Validity Findings (Negative values, whitespace strings, mixed types)
+    # 3. Value Validity Findings (Negative values, whitespace strings, mixed types)
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-    st.markdown("#### Value Validity & Format Sanity")
+    st.markdown("#### 🤖 AI Value Validity & Format Sanity Decisions")
 
     audit = analyze_data_quality(working_df)
     validity_decisions = generate_invalid_and_type_decisions(

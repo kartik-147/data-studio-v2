@@ -39,6 +39,11 @@ from modules.eda_engine import (
 )
 from modules.auth import get_current_user
 from modules.firebase_service import is_admin_user
+from modules.data_loader import (
+    get_available_sample_datasets,
+    load_sample_dataset_by_key,
+    set_active_dataset
+)
 from modules.llm_service import (
     ask_ai_analyst,
     get_ai_api_key,
@@ -79,7 +84,7 @@ def render_ai_analyst_page() -> None:
     )
 
     if not is_dataset_loaded():
-        _render_no_dataset_state()
+        _render_no_dataset_state(module_name="AI Analyst", key_prefix="ai")
         return
 
     df: pd.DataFrame = st.session_state.get("dataset")
@@ -132,7 +137,7 @@ def render_data_story_page() -> None:
     )
 
     if not is_dataset_loaded():
-        _render_no_dataset_state()
+        _render_no_dataset_state(module_name="Data Story", key_prefix="story")
         return
 
     df: pd.DataFrame = st.session_state.get("dataset")
@@ -932,15 +937,39 @@ def _render_story_tab(df: pd.DataFrame, metadata: Dict[str, Any], dataset_name: 
 # EMPTY STATE
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _render_no_dataset_state() -> None:
+def _render_no_dataset_state(module_name: str = "AI Analyst", key_prefix: str = "ai") -> None:
     """Empty state shown when no dataset is loaded."""
     render_empty_state(
-        title="No Dataset Loaded for AI Analysis",
-        description="Upload or load a dataset first to enable natural language Q&A, root-cause investigations, and automated executive data stories.",
-        icon="sparkles",
+        title=f"No dataset loaded for {module_name}",
+        description=f"Upload a CSV or Excel dataset or load a sample dataset to enable natural language Q&A, root-cause investigations, and automated executive data stories.",
+        icon="sparkles" if module_name == "AI Analyst" else "book-open",
     )
-    col_l, col_c, col_r = st.columns([1, 2, 1])
-    with col_c:
-        if st.button("Upload a Dataset →", key="ai_upload_btn", type="primary", use_container_width=True):
+
+    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+    render_section_header(
+        title="Quick Start with Sample Data",
+        subtitle=f"Select a pre-loaded business dataset to immediately explore the {module_name} workspace."
+    )
+
+    sample_catalog = get_available_sample_datasets()
+    cols = st.columns(len(sample_catalog) if sample_catalog else 1)
+    for idx, (key, info) in enumerate(sample_catalog.items()):
+        with cols[idx]:
+            st.markdown(f"**{info['name']}**")
+            st.caption(info["description"])
+            if st.button(f"Load {info['name']}", key=f"{key_prefix}_sample_load_{key}", type="primary", use_container_width=True):
+                with st.spinner(f"Loading {info['name']}..."):
+                    s_df, s_err, s_file_type = load_sample_dataset_by_key(key)
+                    if not s_err and s_df is not None:
+                        set_active_dataset(s_df, info["filename"], s_file_type)
+                        st.toast(f"{info['name']} loaded successfully!")
+                        st.rerun()
+                    else:
+                        st.error(f"Failed to load sample dataset: {s_err}")
+
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    btn_c1, btn_c2, btn_c3 = st.columns([1, 2, 1])
+    with btn_c2:
+        if st.button("Upload Custom Dataset", key=f"{key_prefix}_goto_dataset_btn", use_container_width=True):
             st.session_state["current_page"] = "Dataset"
             st.rerun()

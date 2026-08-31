@@ -21,11 +21,17 @@ import streamlit as st
 from modules.config import is_dataset_loaded, mark_workflow_step, log_activity
 from modules.ui_components import (
     render_page_header,
+    render_section_header,
     render_empty_state,
     render_next_step_banner,
     render_next_workflow_steps,
     render_notification,
     get_icon_svg,
+)
+from modules.data_loader import (
+    get_available_sample_datasets,
+    load_sample_dataset_by_key,
+    set_active_dataset
 )
 from modules.dashboard_engine import (
     select_analytical_columns,
@@ -68,12 +74,36 @@ def render_dashboard_page() -> None:
         )
         render_empty_state(
             title="No dataset loaded for Dashboard",
-            description="Upload or load a dataset first to automatically generate your interactive Power BI / Tableau style AI dashboard.",
+            description="Upload a CSV or Excel dataset or load a sample dataset to automatically generate your interactive Power BI / Tableau style AI dashboard.",
             icon="layout-dashboard",
         )
-        col_l, col_c, col_r = st.columns([1, 2, 1])
-        with col_c:
-            if st.button("Upload a Dataset →", key="dash_goto_dataset_btn", type="primary", use_container_width=True):
+
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+        render_section_header(
+            title="Quick Start with Sample Data",
+            subtitle="Select a pre-loaded business dataset to immediately explore the Executive Dashboard."
+        )
+
+        sample_catalog = get_available_sample_datasets()
+        cols = st.columns(len(sample_catalog) if sample_catalog else 1)
+        for idx, (key, info) in enumerate(sample_catalog.items()):
+            with cols[idx]:
+                st.markdown(f"**{info['name']}**")
+                st.caption(info["description"])
+                if st.button(f"Load {info['name']}", key=f"dash_sample_load_{key}", type="primary", use_container_width=True):
+                    with st.spinner(f"Loading {info['name']}..."):
+                        s_df, s_err, s_file_type = load_sample_dataset_by_key(key)
+                        if not s_err and s_df is not None:
+                            set_active_dataset(s_df, info["filename"], s_file_type)
+                            st.toast(f"{info['name']} loaded successfully!")
+                            st.rerun()
+                        else:
+                            st.error(f"Failed to load sample dataset: {s_err}")
+
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+        btn_c1, btn_c2, btn_c3 = st.columns([1, 2, 1])
+        with btn_c2:
+            if st.button("Upload Custom Dataset", key="dash_goto_dataset_btn", use_container_width=True):
                 st.session_state["current_page"] = "Dataset"
                 st.rerun()
         return

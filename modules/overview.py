@@ -26,6 +26,11 @@ from modules.config import (
 )
 from modules.auth import get_current_user
 from modules.firebase_service import is_admin_user, fetch_admin_analytics
+from modules.data_loader import (
+    get_available_sample_datasets,
+    load_sample_dataset_by_key,
+    set_active_dataset
+)
 
 
 def _get_greeting() -> str:
@@ -232,6 +237,29 @@ def _render_no_dataset_state() -> None:
                 """,
                 unsafe_allow_html=True
             )
+
+    # ── Quick Start with Sample Data ─────────────────────────────────────────
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    render_section_header(
+        title="Quick Start with Sample Data",
+        subtitle="Select a pre-loaded business dataset to immediately explore the entire Data Studio platform."
+    )
+
+    sample_catalog = get_available_sample_datasets()
+    cols = st.columns(len(sample_catalog) if sample_catalog else 1)
+    for idx, (key, info) in enumerate(sample_catalog.items()):
+        with cols[idx]:
+            st.markdown(f"**{info['name']}**")
+            st.caption(info["description"])
+            if st.button(f"Load {info['name']}", key=f"ov_sample_load_{key}", type="primary", use_container_width=True):
+                with st.spinner(f"Loading {info['name']}..."):
+                    s_df, s_err, s_file_type = load_sample_dataset_by_key(key)
+                    if not s_err and s_df is not None:
+                        set_active_dataset(s_df, info["filename"], s_file_type)
+                        st.toast(f"{info['name']} loaded successfully!")
+                        st.rerun()
+                    else:
+                        st.error(f"Failed to load sample dataset: {s_err}")
 
 
 # =============================================================================

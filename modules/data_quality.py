@@ -37,6 +37,12 @@ from modules.data_quality_engine import (
     generate_outlier_bar_chart
 )
 
+from modules.data_loader import (
+    get_available_sample_datasets,
+    load_sample_dataset_by_key,
+    set_active_dataset
+)
+
 
 def render_data_quality_page() -> None:
     """Main entry point for Data Quality Module (Module 4)."""
@@ -49,13 +55,36 @@ def render_data_quality_page() -> None:
         )
         render_empty_state(
             title="No dataset available",
-            description="Upload a dataset to analyze its quality, completeness, and consistency.",
+            description="Upload a CSV or Excel dataset or load a sample dataset to analyze its quality, completeness, and consistency.",
             icon="shield-check"
         )
-        
+
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+        render_section_header(
+            title="Quick Start with Sample Data",
+            subtitle="Select a pre-loaded business dataset to immediately explore the Data Quality workspace."
+        )
+
+        sample_catalog = get_available_sample_datasets()
+        cols = st.columns(len(sample_catalog) if sample_catalog else 1)
+        for idx, (key, info) in enumerate(sample_catalog.items()):
+            with cols[idx]:
+                st.markdown(f"**{info['name']}**")
+                st.caption(info["description"])
+                if st.button(f"Load {info['name']}", key=f"quality_sample_load_{key}", type="primary", use_container_width=True):
+                    with st.spinner(f"Loading {info['name']}..."):
+                        s_df, s_err, s_file_type = load_sample_dataset_by_key(key)
+                        if not s_err and s_df is not None:
+                            set_active_dataset(s_df, info["filename"], s_file_type)
+                            st.toast(f"{info['name']} loaded successfully!")
+                            st.rerun()
+                        else:
+                            st.error(f"Failed to load sample dataset: {s_err}")
+
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
         btn_c1, btn_c2, btn_c3 = st.columns([1, 2, 1])
         with btn_c2:
-            if st.button("Go to Dataset", key="quality_goto_dataset_btn", type="primary", use_container_width=True):
+            if st.button("Upload Custom Dataset", key="quality_goto_dataset_btn", use_container_width=True):
                 st.session_state["current_page"] = "Dataset"
                 st.rerun()
         return
