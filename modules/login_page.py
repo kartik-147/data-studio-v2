@@ -27,10 +27,8 @@ High-fidelity modern split-screen SaaS login page matching the user's exact mock
   - Email address & Password fields
   - Remember me & Forgot password? row
   - Royal Blue "Sign in" Primary Button
-  - Centered "OR" Divider
-  - "👤 Continue as Guest / Demo" Action Button
   - "Don't have an account? Create an account" Switch Link
-All underlying backend authentication, bcrypt verification, guest sessions, and Firebase logging
+All underlying backend authentication, bcrypt verification, and Firebase logging
 are preserved completely intact. Strictly unindented HTML for 100% CommonMark compliance.
 """
 from typing import Optional
@@ -44,7 +42,6 @@ from modules.ui_components import (
 from modules.auth import (
     authenticate_user,
     register_user,
-    start_guest_session,
     login_user_session
 )
 from modules.google_auth import (
@@ -505,34 +502,6 @@ div[data-testid="stFormSubmitButton"] button:active {{
     color: {text_primary} !important;
 }}
 
-/* Guest / Demo Button Styling */
-.ds-guest-btn-wrap div[data-testid="stButton"] button {{
-    background: {bg_card} !important;
-    border: 1px solid {border_color} !important;
-    color: {text_primary} !important;
-    font-weight: 600 !important;
-    font-size: 13.5px !important;
-    border-radius: 8px !important;
-    height: 34px !important;
-    transition: all 0.15s ease !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
-}}
-
-.ds-guest-btn-wrap div[data-testid="stButton"] button * {{
-    color: {text_primary} !important;
-    font-weight: 600 !important;
-}}
-
-.ds-guest-btn-wrap div[data-testid="stButton"] button:hover {{
-    color: #2563eb !important;
-    border-color: rgba(37, 99, 235, 0.4) !important;
-    background: {('rgba(37,99,235,0.08)' if is_dark else 'rgba(37,99,235,0.04)')} !important;
-}}
-
-.ds-guest-btn-wrap div[data-testid="stButton"] button:hover * {{
-    color: #2563eb !important;
-}}
-
 /* Switch View Buttons */
 .ds-switch-btn-wrap div[data-testid="stButton"] button {{
     background: transparent !important;
@@ -878,24 +847,8 @@ Your data is secure and private.
                                 variant="error"
                             )
 
-                # Second "OR" Divider
-                divider_or2_html = f"""<div style="display: flex; align-items: center; margin: 4px 0 4px 0; gap: 8px;">
-<div style="flex: 1; height: 1px; background: {('rgba(51, 65, 85, 0.6)' if is_dark else '#e2e8f0')};"></div>
-<span style="font-size: 10.5px; color: {('#94a3b8' if is_dark else '#94a3b8')}; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">OR</span>
-<div style="flex: 1; height: 1px; background: {('rgba(51, 65, 85, 0.6)' if is_dark else '#e2e8f0')};"></div>
-</div>"""
-                st.markdown(divider_or2_html, unsafe_allow_html=True)
-
-                # Guest / Demo Access Button
-                st.markdown('<div class="ds-guest-btn-wrap" style="text-align: center;">', unsafe_allow_html=True)
-                if st.button("👤 Continue as Guest / Demo", key="guest_access_direct_btn", use_container_width=True):
-                    start_guest_session()
-                    st.toast("Entered Guest Demo mode.")
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-
                 # Account creation switch link
-                st.markdown('<div class="ds-switch-btn-wrap" style="text-align: center; margin-top: 4px;">', unsafe_allow_html=True)
+                st.markdown('<div class="ds-switch-btn-wrap" style="text-align: center; margin-top: 10px;">', unsafe_allow_html=True)
                 if st.button("Don't have an account? Create an account", key="switch_to_create_account_btn", use_container_width=True):
                     st.session_state["auth_view"] = "register"
                     st.rerun()
